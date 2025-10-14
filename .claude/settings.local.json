@@ -6,7 +6,8 @@
       "Bash(cat:*)",
       "Bash(php artisan route:list:*)",
       "Bash(php artisan migrate:status:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

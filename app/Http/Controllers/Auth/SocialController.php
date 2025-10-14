@@ -15,19 +15,22 @@ class SocialController extends Controller
         return Socialite::driver('google')->redirect();
     }
 
-    public function handleGoogleCallback()
+    public function handleGoogleCallback(Request $request)
     {
         try {
             $googleUser = Socialite::driver('google')->user();
-            
-            // Buscar usuario existente por email
-            $user = User::where('email', $googleUser->getEmail())->first();
-            
+
+            // Buscar usuario existente por email o google_id
+            $user = User::where('email', $googleUser->getEmail())
+                       ->orWhere('google_id', $googleUser->getId())
+                       ->first();
+
             if ($user) {
                 // Si el usuario existe, actualizar información de Google
                 $user->update([
                     'google_id' => $googleUser->getId(),
                     'avatar' => $googleUser->getAvatar(),
+                    'email_verified_at' => $user->email_verified_at ?? now(),
                 ]);
             } else {
                 // Crear nuevo usuario
@@ -39,14 +42,19 @@ class SocialController extends Controller
                     'email_verified_at' => now(),
                 ]);
             }
-            
-            // Autenticar al usuario
-            Auth::login($user);
-            
-            return redirect()->intended('/dashboard');
-            
+
+            // Autenticar al usuario con remember=true para persistir sesión
+            Auth::login($user, true);
+
+            // Regenerar sesión para evitar problemas de seguridad
+            $request->session()->regenerate();
+
+            // Redirigir al dashboard
+            return redirect()->intended('dashboard');
+
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Error al iniciar sesión con Google');
+            \Log::error('Google OAuth Error: ' . $e->getMessage());
+            return redirect('/login')->with('error', 'Error al iniciar sesión con Google: ' . $e->getMessage());
         }
     }
 }
