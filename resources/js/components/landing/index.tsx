@@ -1,8 +1,8 @@
 // Landing page components exports
-export { Header } from './Header';
-export { Hero } from './Hero';
-export { Benefits } from './Benefits';
-export { Features } from './Features';
-export { Philosophy } from './Philosophy';
-export { UserProfile } from './UserProfile';
-export { ScrollVideo } from './ScrollVideo';
+export { Header } from './Header.tsx';
+export { Hero } from './Hero.tsx';
+export { Benefits } from './Benefits.tsx';
+export { Features } from './Features.tsx';
+export { Philosophy } from './Philosophy.tsx';
+export { UserProfile } from './UserProfile.tsx';
+export { ScrollVideo } from './ScrollVideo.tsx';
