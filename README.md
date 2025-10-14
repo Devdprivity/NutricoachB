@@ -1,365 +1,336 @@
-# NutriCoach Backend API
+# 🥗 NutriCoach - Sistema de IA para Transformación Corporal
 
-Sistema de backend completo para NutriCoach Luis, un agente de IA especializado en seguimiento nutricional y transformación corporal.
+<div align="center">
 
-## 🚀 Características Principales
+![NutriCoach Logo](https://img.shields.io/badge/NutriCoach-AI%20Nutrition%20Coach-green?style=for-the-badge&logo=apple&logoColor=white)
 
-- ✅ **API RESTful completa** con Laravel 12
-- ✅ **Autenticación** con Laravel Sanctum
-- ✅ **Base de datos nutricional** completa con 12+ alimentos
-- ✅ **Sistema de coaching inteligente** con comandos especiales
-- ✅ **Alertas de seguridad** automáticas
-- ✅ **Contextos adaptativos** para ajustar tolerancia
-- ✅ **Seguimiento de hidratación** y planes de comida
-- ✅ **CORS configurado** para consumo desde apps móviles/web
+**Un agente de inteligencia artificial especializado en seguimiento nutricional y análisis calórico personalizado**
 
-## 📚 Documentación
+[![Laravel](https://img.shields.io/badge/Laravel-11.x-red?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-18.x-blue?style=flat-square&logo=react&logoColor=white)](https://reactjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Inertia.js](https://img.shields.io/badge/Inertia.js-1.x-purple?style=flat-square&logo=inertia&logoColor=white)](https://inertiajs.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.x-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
-- **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** - Documentación completa de endpoints
-- **[estructurasistemapp.md](./estructurasistemapp.md)** - Descripción del sistema
-- **[IMPLEMENTACION_COMPLETA.md](./IMPLEMENTACION_COMPLETA.md)** - Detalles de implementación
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+[![PHP Version](https://img.shields.io/badge/PHP-8.2+-blue?style=flat-square&logo=php&logoColor=white)](https://php.net)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
 
-## 🛠️ Stack Tecnológico
+</div>
 
-- **Backend:** Laravel 12 (PHP 8.2+)
-- **Frontend:** React 19 + Inertia.js + TypeScript
-- **Base de datos:** SQLite (desarrollo) / MySQL/PostgreSQL (producción)
-- **Autenticación:** Laravel Sanctum + Google OAuth
-- **Estilos:** TailwindCSS 4 + Radix UI
+---
 
-## 📦 Instalación
+## 🎯 **Descripción del Proyecto**
 
-### Requisitos Previos
+NutriCoach es un sistema de inteligencia artificial diseñado para acompañar a usuarios en procesos de transformación corporal, combinando precisión nutricional con inteligencia emocional para ofrecer un coaching integral que va más allá del simple conteo de calorías.
 
-- PHP 8.2 o superior
+### 🌟 **Características Principales**
+
+- 🧠 **Inteligencia Emocional Integrada** - Reconocimiento de patrones emocionales y apoyo psicológico
+- 🎯 **Análisis Calórico Inteligente** - Desglose detallado de macronutrientes y evaluación de adherencia
+- 🛡️ **Protocolos de Seguridad** - Alertas automáticas y disclaimer médico obligatorio
+- 📊 **Seguimiento Diario Flexible** - Registro completo con tolerancia contextual adaptativa
+- 🍎 **Base de Datos Nutricional Completa** - 12+ alimentos con valores precisos por 100g
+- 💧 **Sistema de Hidratación** - Seguimiento de consumo diario con metas personalizadas
+- 🎨 **UI/UX Moderna** - Diseño 2025 con animaciones GSAP y scroll-driven video
+
+---
+
+## 🚀 **Tecnologías Utilizadas**
+
+### **Backend**
+- **Laravel 11.x** - Framework PHP robusto
+- **Laravel Sanctum** - Autenticación API
+- **Laravel Socialite** - OAuth con Google
+- **MySQL/SQLite** - Base de datos
+- **Pest** - Testing framework
+
+### **Frontend**
+- **React 18.x** - Biblioteca de UI
+- **TypeScript 5.x** - Tipado estático
+- **Inertia.js** - SPA sin API
+- **Tailwind CSS 3.x** - Framework CSS
+- **GSAP** - Animaciones avanzadas
+- **Vite** - Build tool moderno
+
+### **Herramientas de Desarrollo**
+- **Composer** - Gestión de dependencias PHP
+- **NPM** - Gestión de paquetes Node.js
+- **Git** - Control de versiones
+
+---
+
+## 📋 **Funcionalidades Implementadas**
+
+### 🧠 **Sistema de Inteligencia Emocional**
+
+| Funcionalidad | Descripción | Estado |
+|---------------|-------------|--------|
+| **Factores Contextuales** | Ajuste de tolerancia por días estresantes, fines de semana, enfermedades | ✅ |
+| **Recomendaciones Adaptativas** | Tips personalizados según contexto emocional | ✅ |
+| **Escalas de Estado** | Medición de estrés, energía y estado de ánimo (1-10) | ✅ |
+| **Coaching Sin Culpa** | Feedback constructivo que promueve autocompasión | ✅ |
+
+### 🛡️ **Protocolos de Seguridad**
+
+| Funcionalidad | Descripción | Estado |
+|---------------|-------------|--------|
+| **Alertas Automáticas** | Detección de pérdida de peso acelerada y comportamientos obsesivos | ✅ |
+| **Disclaimer Médico** | Aceptación obligatoria de términos médicos | ✅ |
+| **Recomendaciones Médicas** | Sugerencias de consulta profesional | ✅ |
+| **Prevención de Obsesiones** | Alertas por registro excesivo de comidas | ✅ |
+
+### 📊 **Seguimiento Nutricional**
+
+| Funcionalidad | Descripción | Estado |
+|---------------|-------------|--------|
+| **Análisis Calórico** | Cálculo preciso de calorías y macronutrientes | ✅ |
+| **Evaluación Adaptativa** | Sistema de colores (Verde/Amarillo/Rojo) con tolerancia contextual | ✅ |
+| **Resúmenes Diarios** | Análisis completo con insights personalizados | ✅ |
+| **Seguimiento Semanal** | Progreso y tendencias a largo plazo | ✅ |
+
+### 🍎 **Base de Datos Nutricional**
+
+| Categoría | Alimentos Incluidos | Valores |
+|-----------|-------------------|---------|
+| **Proteínas** | Pollo, Huevos, Salmón | Por 100g cocido |
+| **Carbohidratos** | Papa, Batata, Arroz | Calorías + Macros |
+| **Grasas** | Aguacate, Aceite de Oliva | Precisión nutricional |
+| **Verduras** | Espinacas, Brócoli | Valores completos |
+| **Suplementos** | Whey Protein, Creatina | Datos específicos |
+
+### 🎯 **Comandos Especiales de Coaching**
+
+| Comando | Función | Descripción |
+|---------|---------|-------------|
+| `"Resumen del día"` | Análisis completo | Insights detallados con evaluación |
+| `"¿Cómo voy?"` | Estado de progreso | Comparación con objetivos |
+| `"Día difícil"` | Modo comprensivo | Estrategias para momentos difíciles |
+| `"SOS antojo"` | Manejo de antojos | Técnicas inmediatas |
+| `"Situación social"` | Tips sociales | Consejos para eventos y restaurantes |
+
+---
+
+## 🏗️ **Arquitectura del Sistema**
+
+```mermaid
+graph TB
+    A[Frontend React/TS] --> B[Inertia.js]
+    B --> C[Laravel Backend]
+    C --> D[MySQL Database]
+    
+    C --> E[API Endpoints]
+    E --> F[Authentication]
+    E --> G[Nutritional Data]
+    E --> H[Coaching System]
+    E --> I[Alert System]
+    
+    F --> J[Google OAuth]
+    G --> K[Food Database]
+    H --> L[AI Commands]
+    I --> M[Safety Protocols]
+```
+
+---
+
+## 📦 **Instalación y Configuración**
+
+### **Prerrequisitos**
+- PHP 8.2+
+- Node.js 18+
 - Composer
-- Node.js 18+ y npm
-- SQLite (para desarrollo)
+- MySQL/SQLite
 
-### Pasos de Instalación
-
-1. **Clonar el repositorio**
+### **1. Clonar el Repositorio**
 ```bash
-git clone <repository-url>
+git clone https://github.com/tu-usuario/nuticoachback.git
 cd nuticoachback
 ```
 
-2. **Instalar dependencias de PHP**
+### **2. Instalar Dependencias**
 ```bash
+# Backend
 composer install
-```
 
-3. **Instalar dependencias de Node**
-```bash
+# Frontend
 npm install
 ```
 
-4. **Configurar variables de entorno**
+### **3. Configurar Variables de Entorno**
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-5. **Configurar el archivo .env**
+Configurar en `.env`:
 ```env
-APP_NAME="NutriCoach API"
-APP_ENV=local
-APP_URL=http://localhost:8000
-APP_DEBUG=true
-
+# Base de datos
 DB_CONNECTION=sqlite
+DB_DATABASE=database/database.sqlite
 
-SANCTUM_STATEFUL_DOMAINS=localhost,localhost:3000,localhost:5173,127.0.0.1,127.0.0.1:8000
-
-FRONTEND_URL=http://localhost:3000
-MOBILE_APP_URL=nutricoach://
-
-# Configurar si usas Google OAuth
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI="${APP_URL}/auth/google/callback"
+# Google OAuth
+GOOGLE_CLIENT_ID=tu_client_id
+GOOGLE_CLIENT_SECRET=tu_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
 ```
 
-6. **Crear base de datos y migrar**
+### **4. Configurar Base de Datos**
 ```bash
+# Crear archivo SQLite
 touch database/database.sqlite
-php artisan migrate --seed
-```
 
-7. **Compilar assets**
-```bash
-npm run build
-```
+# Ejecutar migraciones
+php artisan migrate
 
-8. **Iniciar servidor de desarrollo**
-```bash
-# Opción 1: Solo backend
-php artisan serve
-
-# Opción 2: Backend + Frontend + Queue
-composer dev
-```
-
-El servidor estará disponible en: `http://localhost:8000`
-La API estará disponible en: `http://localhost:8000/api`
-
-## 🔐 Autenticación
-
-### Para Apps Móviles/Web Externas
-
-1. **Obtener token mediante Google OAuth:**
-```bash
-GET http://localhost:8000/auth/google/redirect
-```
-
-2. **Usar el token en las solicitudes:**
-```bash
-curl -X GET http://localhost:8000/api/profile \
-  -H "Authorization: Bearer {token}" \
-  -H "Accept: application/json"
-```
-
-### Para Desarrollo/Testing
-
-Puedes crear un usuario manualmente y obtener un token:
-
-```php
-php artisan tinker
-
-$user = \App\Models\User::create([
-    'name' => 'Usuario Test',
-    'email' => 'test@example.com',
-    'password' => bcrypt('password123'),
-]);
-
-$token = $user->createToken('dev-token')->plainTextToken;
-echo $token;
-```
-
-## 🧪 Testing
-
-```bash
-# Ejecutar tests
-php artisan test
-
-# Ejecutar tests con coverage
-php artisan test --coverage
-```
-
-## 📡 Endpoints Principales
-
-### Autenticación
-- `GET /auth/google/redirect` - Iniciar OAuth con Google
-- `GET /auth/google/callback` - Callback de Google OAuth
-- `GET /api/user` - Obtener usuario autenticado
-
-### Perfil
-- `GET /api/profile` - Obtener perfil
-- `POST /api/profile` - Crear perfil
-- `PUT /api/profile` - Actualizar perfil
-
-### Nutrición
-- `GET /api/nutrition` - Listar registros
-- `POST /api/nutrition` - Crear registro
-- `GET /api/nutrition/daily-summary` - Resumen diario
-- `GET /api/nutrition/weekly-summary` - Resumen semanal
-
-### Alimentos
-- `GET /api/foods` - Listar alimentos
-- `GET /api/foods/categories` - Categorías
-- `POST /api/foods/{id}/calculate` - Calcular nutrición
-
-### Coaching
-- `POST /api/coaching/daily-summary` - Resumen del día
-- `POST /api/coaching/progress-check` - ¿Cómo voy?
-- `POST /api/coaching/difficult-day` - Día difícil
-- `POST /api/coaching/craving-sos` - SOS antojo
-- `POST /api/coaching/social-situation` - Situación social
-
-### Alertas
-- `GET /api/alerts` - Alertas activas
-- `POST /api/alerts/check` - Verificar alertas
-- `GET /api/alerts/medical-disclaimer` - Disclaimer médico
-- `POST /api/alerts/medical-disclaimer/accept` - Aceptar disclaimer
-
-Ver **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** para documentación completa.
-
-## 🎯 Características del Sistema
-
-### Sistema de Evaluación Adaptativo
-- **Verde (✅):** Dentro del rango objetivo (±100 kcal, ±15g macros)
-- **Amarillo (⚠️):** Ligeramente fuera (±200 kcal, ±25g macros)
-- **Rojo (❌):** Significativamente fuera (>200 kcal, >25g macros)
-
-### Inteligencia Emocional Integrada
-- Reconocimiento de contextos (días estresantes, fines de semana, etc.)
-- Ajuste automático de tolerancia nutricional
-- Estrategias para manejar antojos
-- Apoyo en días difíciles
-
-### Protocolos de Seguridad
-- Alertas automáticas por pérdida de peso acelerada
-- Detección de comportamientos obsesivos
-- Recomendaciones de consulta médica
-- Disclaimer médico obligatorio
-
-### Filosofía del Sistema
-> "La transformación sostenible se construye con autocompasión inteligente, no con perfección rígida."
-
-- Busca el 80% de adherencia, no el 100%
-- Promueve flexibilidad inteligente sobre rigidez perfecta
-- Enfoque en bienestar mental además del físico
-
-## 🎨 Paleta de Colores
-
-- **Background:** E0FE10 (claro) / 1C2227 (oscuro)
-- **Text:** FFFFFF (claro) / 434B53 (oscuro)
-
-## 📂 Estructura del Proyecto
-
-```
-nuticoachback/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Api/
-│   │   │   │   ├── AlertController.php
-│   │   │   │   ├── CoachingController.php
-│   │   │   │   ├── FoodItemController.php
-│   │   │   │   ├── HydrationController.php
-│   │   │   │   ├── MealPlanController.php
-│   │   │   │   ├── NutritionalDataController.php
-│   │   │   │   ├── UserContextController.php
-│   │   │   │   └── UserProfileController.php
-│   │   │   └── Auth/
-│   │   └── Middleware/
-│   └── Models/
-│       ├── CoachingMessage.php
-│       ├── FoodItem.php
-│       ├── HydrationRecord.php
-│       ├── MealPlan.php
-│       ├── MedicalDisclaimer.php
-│       ├── NutritionalData.php
-│       ├── User.php
-│       ├── UserAlert.php
-│       ├── UserContext.php
-│       └── UserProfile.php
-├── database/
-│   ├── migrations/
-│   └── seeders/
-├── routes/
-│   ├── api.php
-│   ├── web.php
-│   └── auth.php
-├── config/
-│   ├── cors.php
-│   └── sanctum.php
-└── resources/
-    └── js/
-```
-
-## 🔧 Comandos Útiles
-
-```bash
-# Limpiar caché
-php artisan config:clear
-php artisan cache:clear
-php artisan route:clear
-
-# Ver rutas
-php artisan route:list
-
-# Crear migración
-php artisan make:migration create_table_name
-
-# Crear modelo con migración y controlador
-php artisan make:model ModelName -mcr
-
-# Ejecutar seeders
+# Poblar con datos de ejemplo
 php artisan db:seed
-
-# Refrescar base de datos (⚠️ elimina datos)
-php artisan migrate:fresh --seed
-
-# Formatear código
-./vendor/bin/pint
-npm run format
 ```
 
-## 🐛 Troubleshooting
-
-### Error: "Class 'Laravel\Sanctum\HasApiTokens' not found"
+### **5. Compilar Assets**
 ```bash
-composer require laravel/sanctum
-php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
-```
-
-### Error: "CORS policy"
-Verifica que `config/cors.php` y `config/sanctum.php` estén correctamente configurados:
-```env
-SANCTUM_STATEFUL_DOMAINS=localhost,localhost:3000
-```
-
-### Error: "Token not found"
-Asegúrate de incluir el header de autorización:
-```
-Authorization: Bearer {token}
-```
-
-### Base de datos bloqueada (SQLite)
-```bash
-php artisan queue:restart
-rm database/database.sqlite
-touch database/database.sqlite
-php artisan migrate:fresh --seed
-```
-
-## 🚀 Despliegue a Producción
-
-### Variables de Entorno para Producción
-```env
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://tu-dominio.com
-
-# Base de datos (MySQL/PostgreSQL)
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=nutricoach
-DB_USERNAME=usuario
-DB_PASSWORD=contraseña
-
-# CORS y Sanctum
-SANCTUM_STATEFUL_DOMAINS=tu-dominio.com,app.tu-dominio.com
-```
-
-### Comandos de Despliegue
-```bash
-composer install --optimize-autoloader --no-dev
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+npm run dev
+# o para producción
 npm run build
 ```
 
-## 📞 Soporte y Contribución
-
-Si encuentras algún bug o tienes sugerencias:
-1. Crea un issue en el repositorio
-2. Envía un pull request con mejoras
-3. Contacta al equipo de desarrollo
-
-## 📄 Licencia
-
-Este proyecto está bajo la licencia MIT.
-
-## ⚠️ Disclaimer Médico
-
-Este sistema de apoyo educativo **NO reemplaza** la supervisión médica profesional. Siempre se recomienda consultar con nutricionistas, médicos y entrenadores certificados antes de seguir cualquier plan nutricional o de suplementación.
+### **6. Iniciar Servidor**
+```bash
+php artisan serve
+```
 
 ---
 
-**Desarrollado con ❤️ para ayudar en procesos de transformación corporal saludable y sostenible.**
-#   N u t r i c o a c h B  
- 
+## 🔌 **API Endpoints**
+
+### **Autenticación**
+```http
+POST /auth/google/redirect    # Iniciar OAuth Google
+GET  /auth/google/callback    # Callback OAuth
+```
+
+### **Perfil de Usuario**
+```http
+GET  /api/profile             # Obtener perfil
+POST /api/profile             # Crear perfil
+PUT  /api/profile             # Actualizar perfil
+```
+
+### **Datos Nutricionales**
+```http
+GET  /api/nutrition           # Listar registros
+POST /api/nutrition           # Crear registro
+GET  /api/nutrition/daily-summary     # Resumen diario
+GET  /api/nutrition/weekly-summary    # Resumen semanal
+```
+
+### **Coaching Inteligente**
+```http
+POST /api/coaching/daily-summary      # Generar resumen del día
+POST /api/coaching/progress-check     # Verificar progreso
+POST /api/coaching/difficult-day      # Estrategias para día difícil
+POST /api/coaching/craving-sos        # SOS antojos
+POST /api/coaching/social-situation   # Tips sociales
+```
+
+### **Alertas y Seguridad**
+```http
+GET  /api/alerts                      # Alertas activas
+POST /api/alerts/check                # Verificar y generar alertas
+GET  /api/alerts/medical-disclaimer   # Obtener disclaimer
+POST /api/alerts/medical-disclaimer/accept  # Aceptar disclaimer
+```
+
+### **Contexto Adaptativo**
+```http
+GET  /api/context/tolerance           # Tolerancia ajustada
+GET  /api/context/adherence           # Evaluación con contexto
+GET  /api/context/recommendations     # Recomendaciones contextuales
+```
+
+---
+
+## 🎨 **Características de UI/UX**
+
+### **Diseño Moderno 2025**
+- 🎨 **Paleta de Colores**: BG E0FE10/1C2227, Text FFFFFF/434B53
+- ✨ **Animaciones GSAP**: Transiciones suaves y profesionales
+- 📱 **Responsive Design**: Adaptable a todos los dispositivos
+- 🎬 **Scroll-Driven Video**: Video que avanza con el scroll
+
+### **Componentes Principales**
+- **Header Translúcido** - Logo, login y descarga APK
+- **Hero Section** - Video interactivo con scroll
+- **Features Section** - Características principales animadas
+- **Benefits Section** - Ventajas del sistema
+
+---
+
+## 🧪 **Testing**
+
+```bash
+# Ejecutar tests PHP
+php artisan test
+
+# Ejecutar tests específicos
+php artisan test --filter=NutritionalDataTest
+```
+
+---
+
+## 📊 **Estructura de Base de Datos**
+
+### **Tablas Principales**
+- `users` - Usuarios del sistema
+- `user_profiles` - Perfiles nutricionales
+- `food_items` - Base de datos nutricional
+- `nutritional_data` - Registros de consumo
+- `user_contexts` - Factores contextuales
+- `meal_plans` - Planificación de comidas
+- `hydration_records` - Registros de hidratación
+- `coaching_messages` - Mensajes de coaching
+- `user_alerts` - Alertas del sistema
+- `medical_disclaimers` - Disclaimers médicos
+
+---
+
+## 🤝 **Contribución**
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+---
+
+## 📝 **Licencia**
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+---
+
+## 👥 **Equipo de Desarrollo**
+
+- **Desarrollador Principal** - Implementación completa del sistema
+- **Diseño UI/UX** - Interfaz moderna y responsive
+- **Arquitectura** - Sistema escalable y mantenible
+
+---
+
+## 📞 **Contacto**
+
+- **Proyecto**: [NutriCoach GitHub](https://github.com/tu-usuario/nuticoachback)
+- **Issues**: [Reportar Bug](https://github.com/tu-usuario/nuticoachback/issues)
+- **Discusiones**: [GitHub Discussions](https://github.com/tu-usuario/nuticoachback/discussions)
+
+---
+
+<div align="center">
+
+**⭐ Si te gusta este proyecto, ¡dale una estrella! ⭐**
+
+![GitHub stars](https://img.shields.io/github/stars/tu-usuario/nuticoachback?style=social)
+![GitHub forks](https://img.shields.io/github/forks/tu-usuario/nuticoachback?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/tu-usuario/nuticoachback?style=social)
+
+</div>
