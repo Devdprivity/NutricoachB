@@ -5,7 +5,8 @@
       "Bash(npm run build:*)",
       "Bash(cat:*)",
       "Bash(php artisan route:list:*)",
-      "Bash(php artisan migrate:status:*)"
+      "Bash(php artisan migrate:status:*)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

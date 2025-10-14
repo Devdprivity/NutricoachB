@@ -1,5 +1,5 @@
-export { Header } from './header';
-export { Hero } from './hero';
+export { Header } from './Header';
+export { Hero } from './Hero';
 export { Benefits } from './Benefits';
 export { Features } from './Features';
 export { Philosophy } from './Philosophy';
