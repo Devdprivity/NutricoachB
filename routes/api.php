@@ -26,6 +26,16 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Logout para app móvil
+Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
+    // Revocar el token actual
+    $request->user()->currentAccessToken()->delete();
+
+    return response()->json([
+        'message' => 'Logged out successfully'
+    ]);
+});
+
 // Rutas protegidas por autenticación
 Route::middleware('auth:sanctum')->group(function () {
     

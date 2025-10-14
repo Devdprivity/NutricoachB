@@ -12,8 +12,21 @@ use Laravel\Socialite\Facades\Socialite;
 
 class SocialController extends Controller
 {
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
+        // Guardar información de móvil en sesión si viene de la app
+        if ($request->has('mobile') && $request->has('redirect_uri')) {
+            session([
+                'oauth_redirect_uri' => $request->input('redirect_uri'),
+                'is_mobile' => true
+            ]);
+
+            \Log::info('OAuth Google - Inicio desde móvil', [
+                'is_mobile' => true,
+                'redirect_uri' => $request->input('redirect_uri'),
+            ]);
+        }
+
         return Socialite::driver('google')->redirect();
     }
 
@@ -46,6 +59,43 @@ class SocialController extends Controller
                 ]);
             }
 
+            // ===== DETECTAR SI ES MÓVIL =====
+            $isMobile = session('is_mobile', false);
+            $redirectUri = session('oauth_redirect_uri');
+
+            \Log::info('OAuth Google - Callback', [
+                'session_is_mobile' => $isMobile,
+                'session_redirect_uri' => $redirectUri,
+            ]);
+
+            if ($isMobile && $redirectUri) {
+                // ===== FLUJO MÓVIL =====
+
+                // Generar token Sanctum para la app móvil
+                $token = $user->createToken('mobile-app')->plainTextToken;
+
+                // Preparar datos del usuario
+                $userData = urlencode(json_encode([
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'avatar' => $user->avatar,
+                ]));
+
+                // Limpiar sesión
+                session()->forget(['oauth_redirect_uri', 'is_mobile']);
+
+                \Log::info('OAuth Google - Redirigiendo a móvil', [
+                    'redirect_uri' => $redirectUri,
+                    'user_id' => $user->id,
+                ]);
+
+                // Redirigir a la app móvil con deep link
+                return redirect("{$redirectUri}?token={$token}&user={$userData}");
+            }
+
+            // ===== FLUJO WEB (comportamiento normal) =====
+
             // Autenticar al usuario con remember=true para persistir sesión
             Auth::login($user, true);
 
@@ -57,6 +107,14 @@ class SocialController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Google OAuth Error: ' . $e->getMessage());
+
+            // Si hay error y es móvil, redirigir a la app con error
+            if (session('is_mobile') && session('oauth_redirect_uri')) {
+                $redirectUri = session('oauth_redirect_uri');
+                session()->forget(['oauth_redirect_uri', 'is_mobile']);
+                return redirect("{$redirectUri}?error=auth_failed&message=" . urlencode($e->getMessage()));
+            }
+
             return redirect('/login')->with('error', 'Error al iniciar sesión con Google: ' . $e->getMessage());
         }
     }
