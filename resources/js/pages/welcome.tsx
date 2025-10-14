@@ -1,4 +1,9 @@
-import { Header, Hero, Benefits, Features, Philosophy, UserProfile } from '@/components/landing';
+import { Header } from '@/components/landing/Header';
+import { Hero } from '@/components/landing/Hero';
+import { Benefits } from '@/components/landing/Benefits';
+import { Features } from '@/components/landing/Features';
+import { Philosophy } from '@/components/landing/Philosophy';
+import { UserProfile } from '@/components/landing/UserProfile';
 import { Head } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
