@@ -14,23 +14,16 @@ return new class extends Migration
         Schema::create('meal_plans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->date('date');
-            $table->enum('meal_type', ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout']);
-            $table->foreignId('food_item_id')->constrained()->onDelete('cascade');
-            $table->decimal('planned_quantity', 8, 2);
-            $table->string('planned_unit')->default('g');
-            $table->integer('planned_calories');
-            $table->decimal('planned_protein', 6, 2);
-            $table->decimal('planned_carbs', 6, 2);
-            $table->decimal('planned_fat', 6, 2);
+            $table->date('plan_date');
+            $table->string('meal_type'); // e.g., breakfast, lunch, dinner, snack
+            $table->foreignId('food_item_id')->nullable()->constrained()->onDelete('set null');
+            $table->float('quantity_grams')->nullable();
+            $table->float('calories_planned')->nullable();
+            $table->float('protein_planned')->nullable();
+            $table->float('carbs_planned')->nullable();
+            $table->float('fats_planned')->nullable();
             $table->boolean('is_completed')->default(false);
-            $table->timestamp('completed_at')->nullable();
-            $table->text('notes')->nullable();
             $table->timestamps();
-            
-            $table->index(['user_id', 'date']);
-            $table->index(['user_id', 'date', 'meal_type']);
-            $table->index(['user_id', 'is_completed']);
         });
     }
 
