@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class SocialController extends Controller
@@ -33,13 +35,14 @@ class SocialController extends Controller
                     'email_verified_at' => $user->email_verified_at ?? now(),
                 ]);
             } else {
-                // Crear nuevo usuario
+                // Crear nuevo usuario con password aleatorio (por si acaso)
                 $user = User::create([
                     'name' => $googleUser->getName(),
                     'email' => $googleUser->getEmail(),
                     'google_id' => $googleUser->getId(),
                     'avatar' => $googleUser->getAvatar(),
                     'email_verified_at' => now(),
+                    'password' => Hash::make(Str::random(32)), // Password aleatorio seguro
                 ]);
             }
 
