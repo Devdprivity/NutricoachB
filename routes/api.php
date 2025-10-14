@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\CoachingController;
+use App\Http\Controllers\Api\ExerciseController;
 use App\Http\Controllers\Api\FoodItemController;
 use App\Http\Controllers\Api\HydrationController;
 use App\Http\Controllers\Api\MealPlanController;
@@ -118,6 +119,38 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{mealPlan}/complete', [MealPlanController::class, 'markAsCompleted']);
         Route::put('/{mealPlan}', [MealPlanController::class, 'update']);
         Route::delete('/{mealPlan}', [MealPlanController::class, 'destroy']);
+    });
+
+    // Rutas de ejercicios
+    Route::prefix('exercises')->group(function () {
+        // Obtener recomendaciones basadas en calorías y músculos descansados
+        Route::get('/recommendations', [ExerciseController::class, 'recommendations']);
+
+        // Listar ejercicios con filtros
+        Route::get('/', [ExerciseController::class, 'index']);
+
+        // Obtener estado de músculos (fatigados/descansados)
+        Route::get('/muscle-status', [ExerciseController::class, 'muscleStatus']);
+
+        // Registrar ejercicio completado
+        Route::post('/log', [ExerciseController::class, 'logExercise']);
+
+        // Historial de ejercicios del usuario
+        Route::get('/history', [ExerciseController::class, 'history']);
+
+        // Resumen diario de ejercicios
+        Route::get('/summary', [ExerciseController::class, 'summary']);
+
+        // Sincronizar ejercicios desde API externa
+        Route::post('/sync', [ExerciseController::class, 'syncFromApi']);
+
+        // Catálogos
+        Route::get('/types', [ExerciseController::class, 'types']);
+        Route::get('/muscles', [ExerciseController::class, 'muscles']);
+        Route::get('/difficulties', [ExerciseController::class, 'difficulties']);
+
+        // Detalles de ejercicio específico
+        Route::get('/{exercise}', [ExerciseController::class, 'show']);
     });
 
     // Rutas de administración (solo para administradores)
