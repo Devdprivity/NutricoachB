@@ -1,9 +1,9 @@
-import { Header } from '@/components/landing/Header.tsx';
-import { Hero } from '@/components/landing/Hero.tsx';
-import { Benefits } from '@/components/landing/Benefits.tsx';
-import { Features } from '@/components/landing/Features.tsx';
-import { Philosophy } from '@/components/landing/Philosophy.tsx';
-import { UserProfile } from '@/components/landing/UserProfile.tsx';
+import { Header } from '../components/Header.js';
+import { Hero } from '../components/Hero.js';
+import { Benefits } from '../components/Benefits.js';
+import { Features } from '../components/Features.js';
+import { Philosophy } from '../components/Philosophy.js';
+import { UserProfile } from '../components/UserProfile.js';
 import { Head } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
