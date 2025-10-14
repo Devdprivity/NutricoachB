@@ -1,3 +1,4 @@
+// Landing page components exports
 export { Header } from './Header';
 export { Hero } from './Hero';
 export { Benefits } from './Benefits';
