@@ -41,6 +41,18 @@ Respuesta:
 
 El campo `password` ahora es nullable para permitir usuarios de OAuth sin contraseña.
 
+### 4. Migración Sanctum - Personal Access Tokens
+
+Se publicó la migración de Sanctum para crear la tabla `personal_access_tokens` necesaria para los tokens de autenticación móvil.
+
+Archivo: `database/migrations/2025_10_14_175230_create_personal_access_tokens_table.php`
+
+Esta tabla almacena:
+- Token único para cada dispositivo
+- Información del usuario (tokenable)
+- Capacidades del token (abilities)
+- Fecha de último uso y expiración
+
 ## 🔗 URLs y Flujo
 
 ### Desde la App Móvil:
@@ -144,6 +156,7 @@ Verás:
 - [x] Password nullable en users
 - [x] Logs para debugging
 - [x] Manejo de errores para móvil
+- [x] Migración de Sanctum `personal_access_tokens`
 
 ## 🚀 Listo para Deploy
 
