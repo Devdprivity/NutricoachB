@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable(); // Nullable para usuarios de OAuth
+            $table->string('google_id')->nullable()->unique(); // ID de Google OAuth
+            $table->string('avatar')->nullable(); // URL del avatar de Google
             $table->rememberToken();
             $table->timestamps();
         });

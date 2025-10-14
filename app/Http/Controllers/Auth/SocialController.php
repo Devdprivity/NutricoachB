@@ -47,6 +47,12 @@ class SocialController extends Controller
                     'avatar' => $googleUser->getAvatar(),
                     'email_verified_at' => $user->email_verified_at ?? now(),
                 ]);
+
+                \Log::info('OAuth Google - Usuario actualizado', [
+                    'user_id' => $user->id,
+                    'avatar' => $user->avatar,
+                    'google_id' => $user->google_id,
+                ]);
             } else {
                 // Crear nuevo usuario con password aleatorio (por si acaso)
                 $user = User::create([
@@ -56,6 +62,12 @@ class SocialController extends Controller
                     'avatar' => $googleUser->getAvatar(),
                     'email_verified_at' => now(),
                     'password' => Hash::make(Str::random(32)), // Password aleatorio seguro
+                ]);
+
+                \Log::info('OAuth Google - Nuevo usuario creado', [
+                    'user_id' => $user->id,
+                    'avatar' => $user->avatar,
+                    'google_id' => $user->google_id,
                 ]);
             }
 
@@ -88,6 +100,8 @@ class SocialController extends Controller
                 \Log::info('OAuth Google - Redirigiendo a móvil', [
                     'redirect_uri' => $redirectUri,
                     'user_id' => $user->id,
+                    'avatar' => $user->avatar,
+                    'name' => $user->name,
                 ]);
 
                 // Redirigir a la app móvil con deep link

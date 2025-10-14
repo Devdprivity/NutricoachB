@@ -13,9 +13,20 @@ Se actualizó `app/Http/Controllers/Auth/SocialController.php` para detectar y m
 
 #### Método `handleGoogleCallback()`
 - Detecta si la sesión indica flujo móvil
+- **Recupera datos de Google:**
+  - Nombre del usuario
+  - Email
+  - Google ID
+  - **Avatar (foto de perfil)**
+- **Si el usuario existe:**
+  - Actualiza `google_id` y `avatar` en cada login
+  - Asegura que el avatar siempre esté actualizado
+- **Si es usuario nuevo:**
+  - Crea el usuario con todos los datos incluyendo avatar
+  - Genera password aleatorio seguro
 - **Si es móvil:**
   - Genera token Sanctum
-  - Prepara datos del usuario en JSON
+  - Prepara datos del usuario en JSON (incluye avatar)
   - Redirige a deep link: `nutricoach://auth/callback?token=xxx&user=xxx`
 - **Si es web:**
   - Login tradicional con sesión
@@ -37,9 +48,19 @@ Respuesta:
 }
 ```
 
-### 3. Migración Users - Password Nullable
+### 3. Migración Users - Campos OAuth
 
-El campo `password` ahora es nullable para permitir usuarios de OAuth sin contraseña.
+Archivo: `database/migrations/0001_01_01_000000_create_users_table.php`
+
+Campos agregados:
+- `password` - Nullable para permitir usuarios de OAuth sin contraseña
+- `google_id` - ID único de Google (nullable, unique)
+- `avatar` - URL de la foto de perfil de Google (nullable)
+
+Estos campos permiten:
+- Guardar la imagen de perfil del usuario desde Google
+- Actualizar automáticamente el avatar en cada login
+- Identificar usuarios por su Google ID
 
 ### 4. Migración Sanctum - Personal Access Tokens
 
@@ -94,10 +115,15 @@ Authorization: Bearer {token}
   "id": 1,
   "name": "Usuario",
   "email": "usuario@example.com",
-  "avatar": "https://...",
-  "created_at": "2025-01-01T00:00:00.000000Z"
+  "avatar": "https://lh3.googleusercontent.com/a/...",
+  "google_id": "123456789",
+  "email_verified_at": "2025-01-01T00:00:00.000000Z",
+  "created_at": "2025-01-01T00:00:00.000000Z",
+  "updated_at": "2025-01-01T00:00:00.000000Z"
 }
 ```
+
+**Nota:** El campo `avatar` contiene la URL completa de la imagen de perfil de Google y se actualiza automáticamente en cada login.
 
 ### POST `/api/logout`
 Cierra sesión y revoca el token actual.
@@ -135,9 +161,10 @@ tail -f storage/logs/laravel.log
 ```
 
 Verás:
-- `OAuth Google - Inicio desde móvil`
-- `OAuth Google - Callback`
-- `OAuth Google - Redirigiendo a móvil`
+- `OAuth Google - Inicio desde móvil` (con redirect_uri)
+- `OAuth Google - Usuario actualizado` o `OAuth Google - Nuevo usuario creado` (con avatar, google_id)
+- `OAuth Google - Callback` (con session data)
+- `OAuth Google - Redirigiendo a móvil` (con user_id, avatar, name)
 
 ## 🔒 Seguridad
 
@@ -145,6 +172,7 @@ Verás:
 - El token se puede revocar con `/api/logout`
 - Password aleatorio generado para usuarios OAuth
 - Deep link solo se usa cuando viene `mobile=true`
+- Avatar se actualiza automáticamente en cada login (no se guarda localmente desactualizado)
 
 ## ✅ Checklist de Implementación
 
@@ -154,7 +182,9 @@ Verás:
 - [x] Redirigir con deep link
 - [x] Endpoint `/api/logout`
 - [x] Password nullable en users
-- [x] Logs para debugging
+- [x] Campos `google_id` y `avatar` en users
+- [x] Actualización automática del avatar en cada login
+- [x] Logs para debugging (incluye avatar)
 - [x] Manejo de errores para móvil
 - [x] Migración de Sanctum `personal_access_tokens`
 
