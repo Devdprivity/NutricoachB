@@ -104,8 +104,13 @@ class SocialController extends Controller
                     'name' => $user->name,
                 ]);
 
-                // Redirigir a la app móvil con deep link
-                return redirect("{$redirectUri}?token={$token}&user={$userData}");
+                // Construir URL completa del deep link
+                $deepLinkUrl = "{$redirectUri}?token={$token}&user={$userData}";
+
+                // Retornar HTML intermedio que hace el redirect
+                return response()->view('auth.mobile-redirect', [
+                    'deepLinkUrl' => $deepLinkUrl,
+                ]);
             }
 
             // ===== FLUJO WEB (comportamiento normal) =====

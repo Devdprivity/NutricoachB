@@ -7,7 +7,11 @@
       "Bash(php artisan route:list:*)",
       "Bash(php artisan migrate:status:*)",
       "Bash(mv:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(php artisan vendor:publish:*)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan make:model:*)",
+      "Bash(php artisan make:controller:*)"
     ],
     "deny": [],
     "ask": []

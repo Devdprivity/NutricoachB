@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AlertController;
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\CoachingController;
 use App\Http\Controllers\Api\ExerciseController;
 use App\Http\Controllers\Api\FoodItemController;
@@ -87,6 +88,36 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/difficult-day', [CoachingController::class, 'difficultDay']);
         Route::post('/craving-sos', [CoachingController::class, 'cravingSos']);
         Route::post('/social-situation', [CoachingController::class, 'socialSituation']);
+    });
+
+    // Rutas de chat con Gemini IA
+    Route::prefix('chat')->group(function () {
+        // Enviar mensaje al chat
+        Route::post('/send', [ChatController::class, 'sendMessage']);
+        
+        // Obtener historial de conversaciones
+        Route::get('/conversations', [ChatController::class, 'getConversations']);
+        
+        // Obtener conversación de una sesión específica
+        Route::get('/session/{sessionId}', [ChatController::class, 'getSessionConversation']);
+        
+        // Marcar conversación como leída
+        Route::post('/conversations/{conversation}/read', [ChatController::class, 'markAsRead']);
+        
+        // Obtener estadísticas de conversación
+        Route::get('/stats', [ChatController::class, 'getConversationStats']);
+        
+        // Obtener sugerencias de seguimiento populares
+        Route::get('/suggestions', [ChatController::class, 'getFollowUpSuggestions']);
+        
+        // Crear nueva sesión de chat
+        Route::post('/session', [ChatController::class, 'createSession']);
+        
+        // Obtener contexto del usuario
+        Route::get('/context', [ChatController::class, 'getUserContext']);
+        
+        // Obtener contexto reciente para conversación
+        Route::get('/recent-context', [ChatController::class, 'getRecentContext']);
     });
 
     // Rutas de alertas y seguridad
