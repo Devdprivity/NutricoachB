@@ -109,82 +109,9 @@ class SocialController extends Controller
                 // Limpiar sesión
                 session()->forget(['oauth_redirect_uri', 'is_mobile']);
 
-                // Escapar el deep link URL para JavaScript (evitar problemas con comillas y caracteres especiales)
-                $deepLinkUrlEscaped = htmlspecialchars($deepLinkUrl, ENT_QUOTES, 'UTF-8');
-                $deepLinkUrlJson = json_encode($deepLinkUrl);
-
-                // Retornar HTML simple con meta refresh y JavaScript para deep link
-                $html = <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autenticación exitosa</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-align: center;
-        }
-        .container { padding: 2rem; }
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        a { color: white; text-decoration: underline; margin-top: 1rem; display: inline-block; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="spinner"></div>
-        <h1>Autenticación exitosa</h1>
-        <p>Redirigiendo a la aplicación...</p>
-        <a href="{$deepLinkUrlEscaped}" id="manualLink" style="display:none;">Toca aquí si no redirige automáticamente</a>
-    </div>
-    <script>
-        (function() {
-            var deepLinkUrl = {$deepLinkUrlJson};
-            console.log('Intentando redirigir a:', deepLinkUrl);
-
-            // Intentar redirección inmediata
-            window.location.href = deepLinkUrl;
-
-            // Mostrar enlace manual después de 2 segundos
-            setTimeout(function() {
-                document.getElementById('manualLink').style.display = 'inline-block';
-            }, 2000);
-
-            // Intentar cerrar ventana después de 3 segundos
-            setTimeout(function() {
-                try {
-                    window.close();
-                } catch(e) {
-                    console.log('No se puede cerrar la ventana');
-                }
-            }, 3000);
-        })();
-    </script>
-</body>
-</html>
-HTML;
-
-                return response($html, 200)->header('Content-Type', 'text/html');
+                // Redirigir con 302 al deep link
+                // WebBrowser.openAuthSessionAsync() captura este redirect automáticamente
+                return redirect()->away($deepLinkUrl);
             }
 
             // ===== FLUJO WEB (comportamiento normal) =====
