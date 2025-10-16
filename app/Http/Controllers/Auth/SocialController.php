@@ -86,13 +86,13 @@ class SocialController extends Controller
                 // Generar token Sanctum para la app móvil
                 $token = $user->createToken('mobile-app')->plainTextToken;
 
-                // Preparar datos del usuario
+                // Preparar datos del usuario (sin escapar slashes)
                 $userData = urlencode(json_encode([
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'avatar' => $user->avatar,
-                ]));
+                ], JSON_UNESCAPED_SLASHES));
 
                 // Construir URL completa del deep link
                 $deepLinkUrl = "{$redirectUri}?token={$token}&user={$userData}";
@@ -109,6 +109,10 @@ class SocialController extends Controller
                 // Limpiar sesión
                 session()->forget(['oauth_redirect_uri', 'is_mobile']);
 
+                // Escapar el deep link URL para JavaScript (evitar problemas con comillas y caracteres especiales)
+                $deepLinkUrlEscaped = htmlspecialchars($deepLinkUrl, ENT_QUOTES, 'UTF-8');
+                $deepLinkUrlJson = json_encode($deepLinkUrl);
+
                 // Retornar HTML simple con meta refresh y JavaScript para deep link
                 $html = <<<HTML
 <!DOCTYPE html>
@@ -117,7 +121,6 @@ class SocialController extends Controller
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autenticación exitosa</title>
-    <meta http-equiv="refresh" content="0;url={$deepLinkUrl}">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -144,6 +147,7 @@ class SocialController extends Controller
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        a { color: white; text-decoration: underline; margin-top: 1rem; display: inline-block; }
     </style>
 </head>
 <body>
@@ -151,10 +155,30 @@ class SocialController extends Controller
         <div class="spinner"></div>
         <h1>Autenticación exitosa</h1>
         <p>Redirigiendo a la aplicación...</p>
+        <a href="{$deepLinkUrlEscaped}" id="manualLink" style="display:none;">Toca aquí si no redirige automáticamente</a>
     </div>
     <script>
-        window.location.href = "{$deepLinkUrl}";
-        setTimeout(function() { window.close(); }, 1000);
+        (function() {
+            var deepLinkUrl = {$deepLinkUrlJson};
+            console.log('Intentando redirigir a:', deepLinkUrl);
+
+            // Intentar redirección inmediata
+            window.location.href = deepLinkUrl;
+
+            // Mostrar enlace manual después de 2 segundos
+            setTimeout(function() {
+                document.getElementById('manualLink').style.display = 'inline-block';
+            }, 2000);
+
+            // Intentar cerrar ventana después de 3 segundos
+            setTimeout(function() {
+                try {
+                    window.close();
+                } catch(e) {
+                    console.log('No se puede cerrar la ventana');
+                }
+            }, 3000);
+        })();
     </script>
 </body>
 </html>
