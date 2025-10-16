@@ -94,23 +94,23 @@ class SocialController extends Controller
                     'avatar' => $user->avatar,
                 ]));
 
-                // Limpiar sesión
-                session()->forget(['oauth_redirect_uri', 'is_mobile']);
-
-                \Log::info('OAuth Google - Redirigiendo a móvil', [
-                    'redirect_uri' => $redirectUri,
-                    'user_id' => $user->id,
-                    'avatar' => $user->avatar,
-                    'name' => $user->name,
-                ]);
-
                 // Construir URL completa del deep link
                 $deepLinkUrl = "{$redirectUri}?token={$token}&user={$userData}";
 
-                // Retornar HTML intermedio que hace el redirect
-                return response()->view('auth.mobile-redirect', [
-                    'deepLinkUrl' => $deepLinkUrl,
+                \Log::info('OAuth Google - Redirigiendo a móvil', [
+                    'redirect_uri' => $redirectUri,
+                    'deep_link_url' => $deepLinkUrl,
+                    'user_id' => $user->id,
+                    'avatar' => $user->avatar,
+                    'name' => $user->name,
+                    'token_length' => strlen($token),
                 ]);
+
+                // Limpiar sesión
+                session()->forget(['oauth_redirect_uri', 'is_mobile']);
+
+                // Redirigir directamente con el deep link
+                return redirect($deepLinkUrl);
             }
 
             // ===== FLUJO WEB (comportamiento normal) =====
