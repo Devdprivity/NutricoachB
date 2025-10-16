@@ -11,7 +11,8 @@
       "Bash(php artisan vendor:publish:*)",
       "Bash(php artisan make:migration:*)",
       "Bash(php artisan make:model:*)",
-      "Bash(php artisan make:controller:*)"
+      "Bash(php artisan make:controller:*)",
+      "Bash(php artisan:*)"
     ],
     "deny": [],
     "ask": []

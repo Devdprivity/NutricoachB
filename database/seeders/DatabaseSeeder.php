@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             MealPlanSeeder::class,
             MedicalDisclaimerSeeder::class,
             UserAlertSeeder::class,
+            ExerciseSeeder::class,
         ]);
     }
 }
