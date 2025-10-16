@@ -109,8 +109,58 @@ class SocialController extends Controller
                 // Limpiar sesión
                 session()->forget(['oauth_redirect_uri', 'is_mobile']);
 
-                // Redirigir directamente con el deep link
-                return redirect($deepLinkUrl);
+                // Retornar HTML simple con meta refresh y JavaScript para deep link
+                $html = <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticación exitosa</title>
+    <meta http-equiv="refresh" content="0;url={$deepLinkUrl}">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .container { padding: 2rem; }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>Autenticación exitosa</h1>
+        <p>Redirigiendo a la aplicación...</p>
+    </div>
+    <script>
+        window.location.href = "{$deepLinkUrl}";
+        setTimeout(function() { window.close(); }, 1000);
+    </script>
+</body>
+</html>
+HTML;
+
+                return response($html, 200)->header('Content-Type', 'text/html');
             }
 
             // ===== FLUJO WEB (comportamiento normal) =====
