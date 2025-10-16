@@ -11,6 +11,8 @@ class UserMuscleFatigue extends Model
 {
     use HasFactory;
 
+    protected $table = 'user_muscle_fatigue';
+
     protected $fillable = [
         'user_id',
         'muscle_group',
