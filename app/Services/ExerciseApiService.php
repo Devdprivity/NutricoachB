@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Log;
 
 class ExerciseApiService
 {
-    private string $apiKey;
+    private ?string $apiKey;
     private string $baseUrl = 'https://api.api-ninjas.com/v1';
 
     public function __construct()
     {
-        $this->apiKey = config('services.api_ninjas.key', '');
+        $this->apiKey = config('services.api_ninjas.key');
     }
 
     /**
@@ -21,6 +21,12 @@ class ExerciseApiService
      */
     public function fetchAndCacheExercises(array $params = [])
     {
+        // Si no hay API key configurada, retornar array vacío
+        if (!$this->apiKey) {
+            Log::warning('API Ninjas key not configured. Please add EXERCISE_API_KEY to .env');
+            return [];
+        }
+
         try {
             $response = Http::withHeaders([
                 'X-Api-Key' => $this->apiKey,
