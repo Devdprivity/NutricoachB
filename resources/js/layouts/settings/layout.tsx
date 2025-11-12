@@ -17,6 +17,11 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
+        title: 'Nutritional Profile',
+        href: '/settings/nutritional-profile',
+        icon: null,
+    },
+    {
         title: 'Password',
         href: editPassword(),
         icon: null,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\NutritionalProfileController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
@@ -12,6 +13,9 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('settings/nutritional-profile', [NutritionalProfileController::class, 'edit'])->name('nutritional-profile.edit');
+    Route::post('settings/nutritional-profile', [NutritionalProfileController::class, 'update'])->name('nutritional-profile.update');
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
 
