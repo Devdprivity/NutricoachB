@@ -100,22 +100,22 @@
 .dark {
     --background: #000000;
     --foreground: #00FFD1;
-    --card: #000000;
-    --card-foreground: #00FFD1;
-    --popover: #000000;
-    --popover-foreground: #00FFD1;
+    --card: #1f1f1f;
+    --card-foreground: #ffffff;
+    --popover: #1f1f1f;
+    --popover-foreground: #ffffff;
     --primary: #000000;
     --primary-foreground: #00FFD1;
-    --secondary: #2E4F4F;
-    --secondary-foreground: #00FFD1;
-    --muted: #2E4F4F;
-    --muted-foreground: #00FFD1;
+    --secondary: #121212;
+    --secondary-foreground: #ffffff;
+    --muted: #121212;
+    --muted-foreground: #ffffff;
     --accent: #0E8388;
     --accent-foreground: #00FFD1;
     --destructive: oklch(0.396 0.141 25.723);
     --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: #2E4F4F;
-    --input: #2E4F4F;
+    --border: #1f1f1f;
+    --input: #1f1f1f;
     --ring: #0E8388;
     --chart-1: oklch(0.488 0.243 264.376);
     --chart-2: oklch(0.696 0.17 162.48);
@@ -146,6 +146,22 @@
         color: #00FFD1;
     }
 
+    /* Cards en todas las vistas con fondo #1f1f1f y texto blanco */
+    .dark [data-slot="card"],
+    .dark [class*="Card"] {
+        background-color: #1f1f1f !important;
+        border-color: #1f1f1f !important;
+        color: #ffffff !important;
+    }
+
+    /* Cards secundarias con fondo #121212 */
+    .dark [data-slot="card"][class*="bg-secondary"],
+    .dark [class*="Card"][class*="bg-secondary"],
+    .dark .bg-secondary {
+        background-color: #121212 !important;
+        color: #ffffff !important;
+    }
+
     /* Asegurar que todos los elementos de texto usen el color global en modo oscuro */
     .dark p,
     .dark span,
@@ -163,9 +179,38 @@
         color: #00FFD1;
     }
 
+    /* Texto dentro de cards debe ser blanco */
+    .dark [data-slot="card"] p,
+    .dark [data-slot="card"] span,
+    .dark [data-slot="card"] div,
+    .dark [data-slot="card"] h1,
+    .dark [data-slot="card"] h2,
+    .dark [data-slot="card"] h3,
+    .dark [data-slot="card"] h4,
+    .dark [data-slot="card"] h5,
+    .dark [data-slot="card"] h6,
+    .dark [class*="Card"] p,
+    .dark [class*="Card"] span,
+    .dark [class*="Card"] div,
+    .dark [class*="Card"] h1,
+    .dark [class*="Card"] h2,
+    .dark [class*="Card"] h3,
+    .dark [class*="Card"] h4,
+    .dark [class*="Card"] h5,
+    .dark [class*="Card"] h6 {
+        color: #ffffff !important;
+    }
+
     /* Mantener colores específicos de utilidades de Tailwind */
     .dark .text-muted-foreground {
         color: #00FFD1;
+        opacity: 0.7;
+    }
+
+    /* Texto muted dentro de cards */
+    .dark [data-slot="card"] .text-muted-foreground,
+    .dark [class*="Card"] .text-muted-foreground {
+        color: #ffffff !important;
         opacity: 0.7;
     }
 
@@ -175,5 +220,176 @@
 
     .dark .text-destructive {
         color: var(--destructive-foreground);
+    }
+
+    /* Estilos específicos para el Dashboard en modo oscuro */
+    .dark [data-page="dashboard"] {
+        --dashboard-bg: #000000;
+        --dashboard-card: #1f1f1f;
+        --dashboard-card-alt: #121212;
+        --dashboard-text: #ffffff;
+        --dashboard-text-muted: #ffffff;
+        --dashboard-button-bg: #5ddc8a;
+        --dashboard-button-text: #000000;
+        --dashboard-accent: #00331e;
+        --dashboard-border: #1f1f1f;
+    }
+
+    /* Fondo siempre negro en dashboard */
+    .dark [data-page="dashboard"],
+    .dark [data-page="dashboard"] * {
+        background-color: transparent;
+    }
+
+    .dark [data-page="dashboard"] {
+        background-color: #000000 !important;
+    }
+
+    /* Cards con fondo #1f1f1f */
+    .dark [data-page="dashboard"] [data-slot="card"],
+    .dark [data-page="dashboard"] [class*="Card"] {
+        background-color: #1f1f1f !important;
+        border-color: #1f1f1f !important;
+        color: #ffffff !important;
+    }
+
+    /* Cards alternativas con fondo #121212 - aplicar a algunas cards específicas */
+    .dark [data-page="dashboard"] [data-slot="card"]:nth-of-type(2n),
+    .dark [data-page="dashboard"] .bg-secondary,
+    .dark [data-page="dashboard"] [class*="Card"][class*="bg-secondary"] {
+        background-color: #121212 !important;
+    }
+
+    /* Texto blanco en dashboard */
+    .dark [data-page="dashboard"] .text-foreground,
+    .dark [data-page="dashboard"] h1,
+    .dark [data-page="dashboard"] h2,
+    .dark [data-page="dashboard"] h3,
+    .dark [data-page="dashboard"] h4,
+    .dark [data-page="dashboard"] h5,
+    .dark [data-page="dashboard"] h6,
+    .dark [data-page="dashboard"] p,
+    .dark [data-page="dashboard"] span:not([class*="text-"]),
+    .dark [data-page="dashboard"] div:not([class*="bg-"]):not([class*="text-"]) {
+        color: #ffffff !important;
+    }
+
+    .dark [data-page="dashboard"] .text-muted-foreground {
+        color: #ffffff !important;
+        opacity: 0.7;
+    }
+
+    /* Botones con fondo verde (#5ddc8a) y texto negro - variant default */
+    .dark [data-page="dashboard"] [data-slot="button"][class*="bg-primary"],
+    .dark [data-page="dashboard"] [data-slot="button"]:not([class*="outline"]):not([class*="ghost"]):not([class*="link"]):not([class*="secondary"]):not([class*="destructive"]),
+    .dark [data-page="dashboard"] button[class*="bg-primary"],
+    .dark [data-page="dashboard"] button:not([class*="outline"]):not([class*="ghost"]):not([class*="link"]):not([class*="secondary"]):not([class*="destructive"]) {
+        background-color: #5ddc8a !important;
+        color: #000000 !important;
+        border-color: #5ddc8a !important;
+    }
+
+    .dark [data-page="dashboard"] [data-slot="button"]:not([class*="outline"]):not([class*="ghost"]):not([class*="link"]):hover,
+    .dark [data-page="dashboard"] button:not([class*="outline"]):not([class*="ghost"]):not([class*="link"]):hover {
+        background-color: #4bc977 !important;
+    }
+
+    /* Asegurar que los botones con variant default tengan el estilo verde */
+    .dark [data-page="dashboard"] [data-slot="button"][class*="hover:bg-primary"] {
+        background-color: #5ddc8a !important;
+        color: #000000 !important;
+    }
+
+    .dark [data-page="dashboard"] [data-slot="button"][class*="hover:bg-primary"]:hover {
+        background-color: #4bc977 !important;
+    }
+
+    /* Botones outline mantienen su estilo pero con borde verde */
+    .dark [data-page="dashboard"] button[class*="outline"] {
+        border-color: #5ddc8a !important;
+        color: #5ddc8a !important;
+    }
+
+    /* Bordes */
+    .dark [data-page="dashboard"] .border,
+    .dark [data-page="dashboard"] [class*="border"]:not([class*="border-0"]) {
+        border-color: #1f1f1f !important;
+    }
+
+    /* Acentos y elementos destacados */
+    .dark [data-page="dashboard"] .bg-accent {
+        background-color: #00331e !important;
+        color: #ffffff !important;
+    }
+
+    /* Progress bars con color verde */
+    .dark [data-page="dashboard"] [role="progressbar"],
+    .dark [data-page="dashboard"] [class*="Progress"] {
+        background-color: #1f1f1f !important;
+    }
+
+    .dark [data-page="dashboard"] [role="progressbar"] > div,
+    .dark [data-page="dashboard"] [class*="Progress"] > div {
+        background-color: #5ddc8a !important;
+    }
+
+    /* NutriCouch Welcome Page Styles */
+    [data-page="nutricouch"] {
+        --nutricouch-bg: #000000;
+        --nutricouch-card: #1f1f1f;
+        --nutricouch-card-alt: #121212;
+        --nutricouch-button: #5ddc8a;
+        --nutricouch-button-text: #000000;
+        --nutricouch-accent: #5ddc8a;
+        --nutricouch-border: #1f1f1f;
+        --nutricouch-text: #ffffff;
+    }
+
+    [data-page="nutricouch"] {
+        background-color: var(--nutricouch-bg);
+        color: var(--nutricouch-text);
+    }
+
+    [data-page="nutricouch"] .nutricouch-card {
+        background-color: var(--nutricouch-card);
+        color: var(--nutricouch-text);
+        border-color: var(--nutricouch-border);
+    }
+
+    [data-page="nutricouch"] .nutricouch-card-alt {
+        background-color: var(--nutricouch-card-alt);
+        color: var(--nutricouch-text);
+        border-color: var(--nutricouch-border);
+    }
+
+    [data-page="nutricouch"] .nutricouch-button {
+        background-color: var(--nutricouch-button);
+        color: var(--nutricouch-button-text);
+    }
+
+    [data-page="nutricouch"] .nutricouch-button:hover {
+        background-color: #4bc977;
+    }
+
+    [data-page="nutricouch"] .nutricouch-button-outline {
+        background-color: transparent;
+        color: var(--nutricouch-button);
+        border: 2px solid var(--nutricouch-button);
+    }
+
+    [data-page="nutricouch"] .nutricouch-button-outline:hover {
+        background-color: rgba(93, 220, 138, 0.1);
+    }
+
+    [data-page="nutricouch"] .nutricouch-accent {
+        color: var(--nutricouch-button);
+    }
+
+    [data-page="nutricouch"] .nutricouch-progress {
+        background-color: var(--nutricouch-card-alt);
+    }
+
+    [data-page="nutricouch"] .nutricouch-progress-bar {
+        background-color: var(--nutricouch-button);
     }
 }

@@ -23,10 +23,12 @@ export default function Login() {
                     {/* Logo */}
                     <div className="text-center mb-8">
                         <div className="flex items-center justify-center gap-3 mb-6">
-                            <div className="w-16 h-16 bg-[#E0FE10] rounded-2xl flex items-center justify-center shadow-2xl">
-                                <span className="text-3xl font-bold text-[#1C2227]">N</span>
+                            <div className="w-16 h-16 bg-[#5ddc8a] rounded-2xl flex items-center justify-center shadow-2xl">
+                                <span className="text-3xl font-bold text-black">N</span>
                             </div>
-                            <span className="text-3xl font-bold text-white">NutriCoach</span>
+                            <span className="text-3xl font-bold text-white">
+                                Nutri<span className="text-[#5ddc8a]">Coach</span>
+                            </span>
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-2">Bienvenido de vuelta</h2>
                         <p className="text-white/80">Inicia sesión en tu cuenta</p>
