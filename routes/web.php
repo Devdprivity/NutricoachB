@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\SocialController;
+use App\Http\Controllers\Web\ExercisesController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
 use Illuminate\Support\Facades\Route;
@@ -26,9 +27,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('nutrition', [NutritionController::class, 'store'])->name('nutrition.store');
     Route::delete('nutrition/{id}', [NutritionController::class, 'destroy'])->name('nutrition.destroy');
 
-    Route::get('exercises', function () {
-        return Inertia::render('exercises');
-    })->name('exercises');
+    // Ejercicios
+    Route::get('exercises', [ExercisesController::class, 'index'])->name('exercises');
+    Route::post('exercises', [ExercisesController::class, 'store'])->name('exercises.store');
+    Route::delete('exercises/{id}', [ExercisesController::class, 'destroy'])->name('exercises.destroy');
 
     Route::get('coaching', function () {
         return Inertia::render('coaching');

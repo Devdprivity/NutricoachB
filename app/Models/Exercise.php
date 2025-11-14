@@ -12,21 +12,29 @@ class Exercise extends Model
 
     protected $fillable = [
         'name',
-        'type',
-        'muscle',
-        'equipment',
+        'description',
+        'category',
         'difficulty',
-        'instructions',
-        'image_url',
         'calories_per_minute',
+        'image_url',
+        'video_url',
+        'muscles_worked',
+        'instructions',
+        'equipment',
+        'duration_minutes',
+    ];
+
+    protected $casts = [
+        'calories_per_minute' => 'decimal:2',
+        'duration_minutes' => 'integer',
     ];
 
     /**
-     * Relación con ejercicios de usuarios
+     * Relación con registros de ejercicios
      */
-    public function userExercises(): HasMany
+    public function logs(): HasMany
     {
-        return $this->hasMany(UserExercise::class);
+        return $this->hasMany(ExerciseLog::class);
     }
 
     /**
@@ -38,11 +46,11 @@ class Exercise extends Model
     }
 
     /**
-     * Obtener ejercicios por grupo muscular
+     * Obtener ejercicios por categoría
      */
-    public static function byMuscle(string $muscle)
+    public static function byCategory(string $category)
     {
-        return static::where('muscle', $muscle)->get();
+        return static::where('category', $category)->get();
     }
 
     /**
@@ -51,13 +59,5 @@ class Exercise extends Model
     public static function byDifficulty(string $difficulty)
     {
         return static::where('difficulty', $difficulty)->get();
-    }
-
-    /**
-     * Obtener ejercicios por tipo
-     */
-    public static function byType(string $type)
-    {
-        return static::where('type', $type)->get();
     }
 }
