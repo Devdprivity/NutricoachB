@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\Web\CoachingController;
+use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ExercisesController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
@@ -14,9 +15,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Hidratación
     Route::get('hydration', [HydrationController::class, 'index'])->name('hydration');
@@ -38,13 +37,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('coaching/message', [CoachingController::class, 'sendMessage'])->name('coaching.message');
     Route::delete('coaching/clear', [CoachingController::class, 'clearHistory'])->name('coaching.clear');
 
-    Route::get('progress', function () {
-        return Inertia::render('progress');
-    })->name('progress');
+    Route::get('progress', [\App\Http\Controllers\Web\ProgressController::class, 'index'])->name('progress');
 
-    Route::get('context', function () {
-        return Inertia::render('context');
-    })->name('context');
+    Route::get('context', [\App\Http\Controllers\Web\ContextController::class, 'index'])->name('context');
 });
 
 // Rutas para autenticación con Google

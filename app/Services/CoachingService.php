@@ -30,8 +30,8 @@ class CoachingService
             ]
         );
 
-        // Actualizar contexto si han pasado más de 1 hora
-        if (!$context->last_updated_at || $context->last_updated_at->diffInHours(now()) >= 1) {
+        // Actualizar contexto si han pasado más de 5 minutos o no existe
+        if (!$context->last_updated_at || $context->last_updated_at->diffInMinutes(now()) >= 5) {
             $this->updateUserContext($context, $user);
         }
 
@@ -55,20 +55,33 @@ class CoachingService
             'total_meals' => $nutritionData->count(),
             'avg_calories_per_day' => $nutritionData->groupBy('date')
                 ->map(fn($meals) => $meals->sum('calories'))
-                ->avg(),
+                ->avg() ?? 0,
             'total_calories_week' => $nutritionData->sum('calories'),
-            'total_protein' => $nutritionData->sum('protein'),
-            'total_carbs' => $nutritionData->sum('carbs'),
-            'total_fats' => $nutritionData->sum('fats'),
+            'total_protein' => round($nutritionData->sum('protein'), 2),
+            'total_carbs' => round($nutritionData->sum('carbs'), 2),
+            'total_fats' => round($nutritionData->sum('fat'), 2),
             'meal_types_distribution' => $nutritionData->groupBy('meal_type')
                 ->map(fn($meals) => $meals->count())
                 ->toArray(),
-            'recent_meals' => $nutritionData->take(5)->map(fn($meal) => [
-                'name' => $meal->name,
-                'calories' => $meal->calories,
-                'date' => $meal->date->format('Y-m-d'),
-                'meal_type' => $meal->meal_type,
-            ])->toArray(),
+            'recent_meals' => $nutritionData->take(5)->map(function($meal) {
+                // Obtener nombre de la comida desde food_items (JSON) o AI description
+                $foodName = 'Comida';
+                if ($meal->food_items) {
+                    $foodItems = is_string($meal->food_items) ? json_decode($meal->food_items, true) : $meal->food_items;
+                    if (is_array($foodItems) && count($foodItems) > 0) {
+                        $foodName = is_array($foodItems[0]) ? ($foodItems[0]['name'] ?? 'Comida') : $foodItems[0];
+                    }
+                } elseif ($meal->ai_description) {
+                    $foodName = $meal->ai_description;
+                }
+                
+                return [
+                    'name' => $foodName,
+                    'calories' => (float) $meal->calories,
+                    'date' => $meal->date->format('Y-m-d'),
+                    'meal_type' => $meal->meal_type,
+                ];
+            })->toArray(),
         ];
 
         // Resumen de ejercicios
@@ -99,15 +112,16 @@ class CoachingService
             ->where('date', '>=', $startDate)
             ->get();
 
+        $waterGoal = $user->profile?->water_goal ?? 4000;
         $hydrationSummary = [
             'total_records' => $hydrationData->count(),
             'total_ml' => $hydrationData->sum('amount_ml'),
             'avg_ml_per_day' => $hydrationData->groupBy('date')
                 ->map(fn($records) => $records->sum('amount_ml'))
-                ->avg(),
-            'daily_goal' => $user->profile?->daily_water_goal ?? 2000,
+                ->avg() ?? 0,
+            'daily_goal' => $waterGoal,
             'days_met_goal' => $hydrationData->groupBy('date')
-                ->filter(fn($records) => $records->sum('amount_ml') >= ($user->profile?->daily_water_goal ?? 2000))
+                ->filter(fn($records) => $records->sum('amount_ml') >= $waterGoal)
                 ->count(),
         ];
 
@@ -159,9 +173,20 @@ class CoachingService
         ];
 
         try {
+            $apiKey = config('services.openai.api_key');
+            
+            // Verificar si la API key está configurada
+            if (!$apiKey) {
+                Log::warning('OpenAI API key not configured');
+                return [
+                    'success' => false,
+                    'message' => 'El servicio de coaching no está configurado. Por favor, contacta al administrador.',
+                ];
+            }
+            
             // Llamar a OpenAI API
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . config('services.openai.key'),
+                'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
             ])->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
@@ -236,7 +261,7 @@ class CoachingService
             $prompt .= "- Peso actual: " . ($profile->weight ?? 'No especificado') . " kg\n";
             $prompt .= "- Nivel de actividad: " . ($profile->activity_level ?? 'sedentary') . "\n";
             $prompt .= "- Meta calórica diaria: " . ($profile->daily_calorie_goal ?? 2000) . " kcal\n";
-            $prompt .= "- Meta de hidratación: " . ($profile->daily_water_goal ?? 2000) . " ml\n";
+            $prompt .= "- Meta de hidratación: " . ($profile->water_goal ?? 4000) . " ml\n";
         }
 
         // Resumen de nutrición

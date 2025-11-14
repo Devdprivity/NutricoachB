@@ -25,7 +25,11 @@ class CoachingController extends Controller
     {
         $user = $request->user();
 
-        // Obtener resumen del contexto
+        // Forzar actualización del contexto para obtener datos actualizados
+        $context = $this->coachingService->getOrCreateUserContext($user);
+        $this->coachingService->updateUserContext($context, $user);
+
+        // Obtener resumen del contexto actualizado
         $contextSummary = $this->coachingService->getContextSummary($user);
 
         // Obtener historial de conversación

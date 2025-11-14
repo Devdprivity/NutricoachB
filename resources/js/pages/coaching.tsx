@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { message, clear } from '@/routes/coaching';
 import AppLayout from '@/layouts/app-layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -66,7 +67,7 @@ export default function Coaching({ contextSummary, conversations }: Props) {
         if (!data.message.trim()) return;
 
         setIsTyping(true);
-        post(route('coaching.message'), {
+        post(message.url(), {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
@@ -80,7 +81,7 @@ export default function Coaching({ contextSummary, conversations }: Props) {
 
     const handleClearHistory = () => {
         if (confirm('¿Estás seguro de que quieres borrar todo el historial de conversación?')) {
-            router.delete(route('coaching.clear'));
+            router.delete(clear.url());
         }
     };
 

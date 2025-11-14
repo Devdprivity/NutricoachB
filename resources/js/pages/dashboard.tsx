@@ -3,9 +3,11 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Activity, Apple, Droplet, Heart, Scale, TrendingUp, User } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useInitials } from '@/hooks/use-initials';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 
@@ -22,24 +24,60 @@ interface DashboardData {
         total_ml: number;
         goal_ml: number;
         percentage: number;
+        records?: Array<{
+            id: number;
+            amount_ml: number;
+            type: string;
+            time: string;
+        }>;
     };
     todayNutrition?: {
         total_calories: number;
         goal_calories: number;
         total_protein: number;
         goal_protein: number;
+        total_carbs?: number;
+        goal_carbs?: number;
+        total_fat?: number;
+        goal_fat?: number;
+        records?: Array<{
+            id: number;
+            calories: number;
+            protein: number;
+            carbs: number;
+            fat: number;
+            meal_type: string;
+            food_name: string;
+            time: string;
+        }>;
     };
+    hydrationChart?: Array<{
+        hour: number;
+        total_ml: number;
+        count: number;
+    }>;
+    nutritionChart?: Array<{
+        type: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        count: number;
+    }>;
     hasProfile: boolean;
 }
 
 export default function Dashboard() {
     const { auth } = usePage<SharedData>().props;
     const dashboardData = usePage<{ dashboardData: DashboardData }>().props.dashboardData;
+    const getInitials = useInitials();
 
     const hasProfile = dashboardData?.hasProfile;
     const profile = dashboardData?.profileData?.profile;
     const hydration = dashboardData?.todayHydration;
     const nutrition = dashboardData?.todayNutrition;
+    const hydrationChart = dashboardData?.hydrationChart;
+    const nutritionChart = dashboardData?.nutritionChart;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -48,18 +86,26 @@ export default function Dashboard() {
             <div className="flex flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            ¡Hola, {auth.user.name}! 👋
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {new Date().toLocaleDateString('es-ES', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
+                            <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
+                                {getInitials(auth.user.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">
+                                ¡Hola, {auth.user.name}! 👋
+                            </h1>
+                            <p className="text-muted-foreground">
+                                {new Date().toLocaleDateString('es-ES', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                })}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -156,7 +202,7 @@ export default function Dashboard() {
                             <CardDescription>Tu consumo de agua del día</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {hydration ? (
+                            {hydration && hydration.total_ml > 0 ? (
                                 <>
                                     <div className="flex items-end justify-between">
                                         <div>
@@ -179,6 +225,47 @@ export default function Dashboard() {
                                         <p className="text-sm text-muted-foreground">
                                             Te faltan {hydration.goal_ml - hydration.total_ml} ml para tu meta
                                         </p>
+                                    )}
+                                    
+                                    {/* Gráfico de hidratación por horas */}
+                                    {hydrationChart && hydrationChart.length > 0 && (
+                                        <div className="pt-4 border-t">
+                                            <p className="text-sm font-medium mb-3">Consumo por Horas</p>
+                                            <div className="flex items-end gap-1 h-24">
+                                                {hydrationChart.map((item, index) => {
+                                                    const maxMl = Math.max(...hydrationChart.map(h => h.total_ml), 1);
+                                                    const height = (item.total_ml / maxMl) * 100;
+                                                    return (
+                                                        <div key={index} className="flex-1 flex flex-col items-center gap-1">
+                                                            <div 
+                                                                className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
+                                                                style={{ height: `${height}%` }}
+                                                                title={`${item.total_ml}ml a las ${item.hour}:00`}
+                                                            />
+                                                            <span className="text-xs text-muted-foreground">{item.hour}h</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Registros recientes */}
+                                    {hydration.records && hydration.records.length > 0 && (
+                                        <div className="pt-4 border-t">
+                                            <p className="text-sm font-medium mb-2">Registros Recientes</p>
+                                            <div className="space-y-2">
+                                                {hydration.records.slice(0, 3).map((record) => (
+                                                    <div key={record.id} className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <Droplet className="h-4 w-4 text-blue-500" />
+                                                            <span>{record.amount_ml} ml</span>
+                                                        </div>
+                                                        <span className="text-muted-foreground">{record.time}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     )}
                                 </>
                             ) : (
@@ -212,7 +299,7 @@ export default function Dashboard() {
                             <CardDescription>Calorías y macronutrientes</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {nutrition ? (
+                            {nutrition && nutrition.total_calories > 0 ? (
                                 <>
                                     <div className="space-y-3">
                                         <div>
@@ -223,7 +310,7 @@ export default function Dashboard() {
                                                 </span>
                                             </div>
                                             <Progress
-                                                value={(nutrition.total_calories / nutrition.goal_calories) * 100}
+                                                value={Math.min(100, (nutrition.total_calories / nutrition.goal_calories) * 100)}
                                                 className="h-2"
                                             />
                                         </div>
@@ -235,10 +322,38 @@ export default function Dashboard() {
                                                 </span>
                                             </div>
                                             <Progress
-                                                value={(nutrition.total_protein / nutrition.goal_protein) * 100}
+                                                value={Math.min(100, (nutrition.total_protein / nutrition.goal_protein) * 100)}
                                                 className="h-2"
                                             />
                                         </div>
+                                        {nutrition.total_carbs && nutrition.goal_carbs && (
+                                            <div>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-sm font-medium">Carbohidratos</span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {nutrition.total_carbs} / {nutrition.goal_carbs} g
+                                                    </span>
+                                                </div>
+                                                <Progress
+                                                    value={Math.min(100, (nutrition.total_carbs / nutrition.goal_carbs) * 100)}
+                                                    className="h-2"
+                                                />
+                                            </div>
+                                        )}
+                                        {nutrition.total_fat && nutrition.goal_fat && (
+                                            <div>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-sm font-medium">Grasas</span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {nutrition.total_fat} / {nutrition.goal_fat} g
+                                                    </span>
+                                                </div>
+                                                <Progress
+                                                    value={Math.min(100, (nutrition.total_fat / nutrition.goal_fat) * 100)}
+                                                    className="h-2"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
                                         {nutrition.total_calories < nutrition.goal_calories &&
@@ -246,6 +361,59 @@ export default function Dashboard() {
                                         {nutrition.total_calories >= nutrition.goal_calories &&
                                             '✅ Meta de calorías cumplida'}
                                     </p>
+
+                                    {/* Gráfico de nutrición por tipo de comida */}
+                                    {nutritionChart && nutritionChart.length > 0 && (
+                                        <div className="pt-4 border-t">
+                                            <p className="text-sm font-medium mb-3">Calorías por Tipo de Comida</p>
+                                            <div className="space-y-2">
+                                                {nutritionChart.map((item, index) => {
+                                                    const maxCalories = Math.max(...nutritionChart.map(n => n.calories), 1);
+                                                    const percentage = (item.calories / maxCalories) * 100;
+                                                    const mealTypeLabels: Record<string, string> = {
+                                                        breakfast: 'Desayuno',
+                                                        lunch: 'Almuerzo',
+                                                        dinner: 'Cena',
+                                                        snack: 'Snack',
+                                                        pre_workout: 'Pre-entreno',
+                                                        post_workout: 'Post-entreno',
+                                                    };
+                                                    return (
+                                                        <div key={index} className="space-y-1">
+                                                            <div className="flex justify-between text-xs">
+                                                                <span className="text-muted-foreground">
+                                                                    {mealTypeLabels[item.type] || item.type}
+                                                                </span>
+                                                                <span className="font-medium">{item.calories} kcal</span>
+                                                            </div>
+                                                            <Progress value={percentage} className="h-1.5" />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Registros recientes */}
+                                    {nutrition.records && nutrition.records.length > 0 && (
+                                        <div className="pt-4 border-t">
+                                            <p className="text-sm font-medium mb-2">Comidas Recientes</p>
+                                            <div className="space-y-2">
+                                                {nutrition.records.slice(0, 3).map((record) => (
+                                                    <div key={record.id} className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <Apple className="h-4 w-4 text-green-500" />
+                                                            <span className="truncate">{record.food_name}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-medium">{record.calories} kcal</span>
+                                                            <span className="text-muted-foreground">{record.time}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             ) : (
                                 <div className="text-center py-8">
