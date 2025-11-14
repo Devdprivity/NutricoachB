@@ -52,4 +52,8 @@ return [
         'max_tokens' => env('GEMINI_MAX_TOKENS', 1024),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
 ];

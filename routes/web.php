@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\Web\HydrationController;
+use App\Http\Controllers\Web\NutritionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -19,9 +20,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('hydration', [HydrationController::class, 'store'])->name('hydration.store');
     Route::delete('hydration/{id}', [HydrationController::class, 'destroy'])->name('hydration.destroy');
 
-    Route::get('nutrition', function () {
-        return Inertia::render('nutrition');
-    })->name('nutrition');
+    // Nutrición
+    Route::get('nutrition', [NutritionController::class, 'index'])->name('nutrition');
+    Route::post('nutrition', [NutritionController::class, 'store'])->name('nutrition.store');
+    Route::delete('nutrition/{id}', [NutritionController::class, 'destroy'])->name('nutrition.destroy');
 
     Route::get('exercises', function () {
         return Inertia::render('exercises');

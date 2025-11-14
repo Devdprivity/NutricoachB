@@ -11,10 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('google_id')->nullable()->unique();
-            $table->string('avatar')->nullable();
-        });
+        // Verificar si las columnas ya existen antes de agregarlas
+        if (!Schema::hasColumn('users', 'google_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('google_id')->nullable()->unique();
+            });
+        }
+        if (!Schema::hasColumn('users', 'avatar')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('avatar')->nullable();
+            });
+        }
     }
 
     /**
@@ -22,8 +29,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['google_id', 'avatar']);
-        });
+        // Verificar si las columnas existen antes de eliminarlas
+        if (Schema::hasColumn('users', 'google_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('google_id');
+            });
+        }
+        if (Schema::hasColumn('users', 'avatar')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('avatar');
+            });
+        }
     }
 };
