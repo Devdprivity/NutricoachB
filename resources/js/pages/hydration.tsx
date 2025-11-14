@@ -44,10 +44,13 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
 
     const handleQuickAdd = (ml: number) => {
         setIsSubmitting(true);
+        const now = new Date();
+
         router.post('/hydration', {
             amount_ml: ml,
             type: drinkType,
-            time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+            time: now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+            date: now.toISOString().split('T')[0],
         }, {
             preserveScroll: true,
             onFinish: () => setIsSubmitting(false),
