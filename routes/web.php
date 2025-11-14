@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\SocialController;
+use App\Http\Controllers\Web\CoachingController;
 use App\Http\Controllers\Web\ExercisesController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
@@ -32,9 +33,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('exercises', [ExercisesController::class, 'store'])->name('exercises.store');
     Route::delete('exercises/{id}', [ExercisesController::class, 'destroy'])->name('exercises.destroy');
 
-    Route::get('coaching', function () {
-        return Inertia::render('coaching');
-    })->name('coaching');
+    // Coaching
+    Route::get('coaching', [CoachingController::class, 'index'])->name('coaching');
+    Route::post('coaching/message', [CoachingController::class, 'sendMessage'])->name('coaching.message');
+    Route::delete('coaching/clear', [CoachingController::class, 'clearHistory'])->name('coaching.clear');
 
     Route::get('progress', function () {
         return Inertia::render('progress');
