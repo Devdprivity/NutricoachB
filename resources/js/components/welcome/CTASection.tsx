@@ -71,8 +71,8 @@ export function CTASection() {
             <div className="relative">
               <div className="relative z-10 rounded-2xl overflow-hidden border-4 border-[#1f1f1f]">
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1544021601-3e5723f9d333?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b3Jrb3V0JTIwZXhlcmNpc2UlMjB0cmFpbmluZ3xlbnwxfHx8fDE3NjMxNTc4NDB8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                  alt="Goals Achievement"
+                  src="https://images.unsplash.com/photo-1556911220-bff31c812dba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaG90b2dyYXBoeSUyMGZvb2QlMjBwaG9uZXxlbnwxfHx8fDE3NjMxNTgwNDl8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                  alt="Person taking photo of food"
                   className="w-full h-auto"
                 />
               </div>

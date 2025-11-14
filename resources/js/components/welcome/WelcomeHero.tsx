@@ -67,7 +67,7 @@ export function WelcomeHero() {
           </div>
 
           {/* Right Content - Image */}
-          <div className="relative">
+          <div className="relative overflow-visible">
             <div className="relative z-10 rounded-2xl overflow-hidden border-4 border-[#1f1f1f] shadow-2xl">
               <ImageWithFallback
                 src="https://images.unsplash.com/photo-1654084982335-d404ccf9c6f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwbnV0cml0aW9uJTIwZml0bmVzc3xlbnwxfHx8fDE3NjMxNTc4NDB8MA&ixlib=rb-4.1.0&q=80&w=1080"
@@ -144,7 +144,7 @@ export function WelcomeHero() {
             </div>
 
             {/* Floating Card 2 - Top Right */}
-            <div className="absolute -top-6 -right-6 bg-[#1f1f1f] p-4 rounded-xl border border-[#1f1f1f] shadow-xl hidden sm:block">
+            <div className="absolute -top-6 -right-6 z-30 bg-[#1f1f1f] p-4 rounded-xl border border-[#1f1f1f] shadow-xl hidden sm:block">
               <div className="flex items-center gap-3">
                 <div className="bg-[#5ddc8a] p-3 rounded-lg">
                   <Target className="w-6 h-6 text-black" />
