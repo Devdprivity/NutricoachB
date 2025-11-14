@@ -24,7 +24,16 @@ class NutritionController extends Controller
         $todayRecords = MealRecord::where('user_id', $user->id)
             ->whereDate('date', $today)
             ->orderBy('time', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($record) {
+                // Convertir image_path a URL completa
+                if ($record->image_path) {
+                    $filename = basename($record->image_path);
+                    $record->image_url = route('meal.image', ['filename' => $filename]);
+                }
+
+                return $record;
+            });
 
         // Obtener perfil nutricional del usuario
         $profile = $user->profile;

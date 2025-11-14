@@ -17,7 +17,9 @@
       "Bash(git push:*)",
       "Bash(git add:*)",
       "Bash(git fetch:*)",
-      "Bash(composer require:*)"
+      "Bash(composer require:*)",
+      "Bash($null)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

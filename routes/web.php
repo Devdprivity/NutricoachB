@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -45,6 +46,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Rutas para autenticación con Google
 Route::get('/auth/google', [SocialController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [SocialController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+
+// Ruta alternativa para servir imágenes de comidas (útil en Windows donde symlinks pueden fallar)
+Route::get('/meal-images/{filename}', function ($filename) {
+    $path = 'meals/' . $filename;
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404);
+    }
+    return Storage::disk('public')->response($path);
+})->middleware(['auth'])->where('filename', '.*')->name('meal.image');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

@@ -20,6 +20,7 @@ interface MealRecord {
     meal_type: string;
     time: string;
     image_path?: string;
+    image_url?: string;
     calories: number;
     protein: number;
     carbs: number;
@@ -327,7 +328,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                         {record.image_path && (
                                             <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border">
                                                 <img
-                                                    src={`/storage/${record.image_path}`}
+                                                    src={record.image_url || `/storage/${record.image_path}`}
                                                     alt="Meal"
                                                     className="w-full h-full object-cover"
                                                 />
