@@ -141,7 +141,7 @@ export default function Exercises({ exerciseData }: Props) {
         ? exerciseData.exercises
         : exerciseData.exercises.filter(ex => ex.category === selectedCategory);
 
-    const categories = ['all', ...Array.from(new Set(exerciseData.exercises.map(ex => ex.category)))];
+    const categories = ['all', ...Array.from(new Set(exerciseData.exercises.map(ex => ex.category).filter(cat => cat != null && cat !== '')))];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -330,7 +330,7 @@ export default function Exercises({ exerciseData }: Props) {
                                     variant={selectedCategory === category ? 'default' : 'outline'}
                                     onClick={() => setSelectedCategory(category)}
                                 >
-                                    {category === 'all' ? 'Todos' : category.charAt(0).toUpperCase() + category.slice(1)}
+                                    {category === 'all' ? 'Todos' : (category && category.length > 0 ? category.charAt(0).toUpperCase() + category.slice(1) : category)}
                                 </Button>
                             ))}
                         </div>
