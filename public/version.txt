@@ -1,2 +1,6 @@
-Version: 25dd421 - CSRF Exception Added
-Deployed: 2025-11-15 14:50:00
+Version: Session Config Fix - Cookie Domain Support
+Deployed: 2025-11-15 15:30:00
+Changes:
+- Added default value for SESSION_DOMAIN in config/session.php
+- Session now supports .laravel.cloud domain
+- Requires environment variables to be set in Laravel Cloud
