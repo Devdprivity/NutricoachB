@@ -72,6 +72,7 @@ interface BarcodeProduct {
 }
 
 interface NutritionData {
+    selected_date: string;
     today_records: MealRecord[];
     today_totals: {
         calories: number;
@@ -108,6 +109,21 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
+
+    // Fecha seleccionada para la vista completa (filtro de día)
+    const initialSelectedDate =
+        nutritionData?.selected_date || new Date().toISOString().split('T')[0];
+    const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
+
+    // Fecha y hora de la comida a registrar (por defecto, fecha seleccionada)
+    const [mealDate, setMealDate] = useState(initialSelectedDate);
+    const [mealTime, setMealTime] = useState(
+        new Date().toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+        }),
+    );
     
     // Determinar automáticamente el tipo de comida basándose en la hora actual
     const getMealTypeByTime = (): string => {
@@ -168,6 +184,25 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         });
     };
 
+    const handleDateFilterChange = (date: string) => {
+        setSelectedDate(date);
+        setMealDate(date);
+        router.get(
+            '/nutrition',
+            { date },
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const handleChangeDay = (offset: number) => {
+        const dateObj = new Date(selectedDate);
+        dateObj.setDate(dateObj.getDate() + offset);
+        const newDate = dateObj.toISOString().split('T')[0];
+        handleDateFilterChange(newDate);
+    };
+
     const handleSaveAsFavorite = (mealId: number) => {
         router.post(`/favorite-meals/from-meal/${mealId}`, {}, {
             onSuccess: () => {
@@ -208,8 +243,8 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
 
         const formData = new FormData();
         formData.append('meal_type', mealType);
-        formData.append('time', new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
-        formData.append('date', new Date().toISOString().split('T')[0]);
+        formData.append('time', mealTime);
+        formData.append('date', mealDate);
         formData.append('calories', String(Math.round(nutritional.calories * servingMultiplier)));
         formData.append('protein', String(Math.round(nutritional.protein * servingMultiplier)));
         formData.append('carbs', String(Math.round(nutritional.carbs * servingMultiplier)));
@@ -265,8 +300,8 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         const formData = new FormData();
         formData.append('image', selectedImage);
         formData.append('meal_type', mealType);
-        formData.append('time', new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
-        formData.append('date', new Date().toISOString().split('T')[0]);
+        formData.append('time', mealTime);
+        formData.append('date', mealDate);
 
         router.post('/nutrition', formData, {
             preserveScroll: true,
@@ -277,6 +312,13 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
             },
         });
     };
+
+    const formattedSelectedDate = new Date(selectedDate).toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -426,6 +468,47 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                     </Dialog>
                 </div>
 
+                {/* Filtro de fecha para toda la vista */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleChangeDay(-1)}
+                        >
+                            Día anterior
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                handleDateFilterChange(
+                                    new Date().toISOString().split('T')[0],
+                                )
+                            }
+                        >
+                            Hoy
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleChangeDay(1)}
+                        >
+                            Día siguiente
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="date-filter">Fecha</Label>
+                        <Input
+                            id="date-filter"
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => handleDateFilterChange(e.target.value)}
+                            className="w-[180px]"
+                        />
+                    </div>
+                </div>
+
                 {/* Primera fila: Próxima comida pequeña y Grid principal */}
                 <div className="flex gap-4 items-start">
                     {/* Columna izquierda: Cards pequeñas */}
@@ -481,10 +564,14 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                     <div className="grid gap-6 md:grid-cols-2 flex-1">
                         {/* Resumen del Día */}
                         {totals && goals && percentages && (
-                            <Card>
+                        <Card>
                         <CardHeader>
-                            <CardTitle>Resumen Nutricional de Hoy</CardTitle>
-                            <CardDescription>Comparación con tus objetivos diarios</CardDescription>
+                            <CardTitle>
+                                Resumen Nutricional del Día
+                            </CardTitle>
+                            <CardDescription>
+                                {formattedSelectedDate} · Comparación con tus objetivos diarios
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {/* Calorías */}
@@ -573,7 +660,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="grid gap-4 md:grid-cols-3">
                                         <div className="space-y-2">
                                             <div className="flex items-center justify-between">
                                                 <Label>Tipo de Comida</Label>
@@ -592,6 +679,28 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="meal-date">Fecha de la comida</Label>
+                                            <Input
+                                                id="meal-date"
+                                                type="date"
+                                                value={mealDate}
+                                                onChange={(e) => setMealDate(e.target.value)}
+                                                disabled={isSubmitting}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="meal-time">Hora de la comida</Label>
+                                            <Input
+                                                id="meal-time"
+                                                type="time"
+                                                value={mealTime}
+                                                onChange={(e) => setMealTime(e.target.value)}
+                                                disabled={isSubmitting}
+                                            />
                                         </div>
 
                                         <div className="space-y-2">
@@ -645,11 +754,13 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                     </div>
                 </div>
 
-                {/* Registros de Hoy - Tabla Moderna */}
+                {/* Registros del día - Tabla Moderna */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Comidas de Hoy</CardTitle>
-                        <CardDescription>Historial de consumo del día</CardDescription>
+                        <CardTitle>Comidas del día</CardTitle>
+                        <CardDescription>
+                            {formattedSelectedDate} · Historial de consumo del día
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {records.length === 0 ? (

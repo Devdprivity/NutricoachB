@@ -21,11 +21,11 @@ class NutritionController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $today = now()->toDateString();
+        $date = $request->get('date', now()->toDateString());
 
-        // Obtener registros de hoy
+        // Obtener registros del día seleccionado
         $todayRecords = MealRecord::where('user_id', $user->id)
-            ->whereDate('date', $today)
+            ->whereDate('date', $date)
             ->orderBy('time', 'desc')
             ->get()
             ->map(function ($record) {
@@ -48,7 +48,7 @@ class NutritionController extends Controller
         // Obtener perfil nutricional del usuario
         $profile = $user->profile;
 
-        // Calcular totales del día
+        // Calcular totales del día seleccionado
         $todayTotals = [
             'calories' => $todayRecords->sum('calories'),
             'protein' => $todayRecords->sum('protein'),
@@ -73,7 +73,7 @@ class NutritionController extends Controller
             'fat' => $goals['fat'] > 0 ? round(($todayTotals['fat'] / $goals['fat']) * 100, 1) : 0,
         ];
 
-        // Determinar próxima comida sugerida
+        // Determinar próxima comida sugerida (según la fecha seleccionada y la hora actual)
         $currentHour = now()->hour;
         $nextMeal = $this->getNextMealSuggestion($currentHour, $todayRecords);
 
@@ -100,6 +100,7 @@ class NutritionController extends Controller
             });
 
         $nutritionData = [
+            'selected_date' => $date,
             'today_records' => $todayRecords,
             'today_totals' => $todayTotals,
             'goals' => $goals,
@@ -198,7 +199,7 @@ class NutritionController extends Controller
         // Registrar actividad en gamificación
         app(GamificationService::class)->logMealActivity($user);
 
-        return redirect()->route('nutrition');
+        return redirect()->route('nutrition', ['date' => $mealData['date']]);
     }
 
     /**
@@ -208,6 +209,8 @@ class NutritionController extends Controller
     {
         $record = MealRecord::where('user_id', $request->user()->id)
             ->findOrFail($id);
+
+        $date = $record->date?->toDateString() ?? now()->toDateString();
 
         // Eliminar imagen de Cloudinary si existe
         if ($record->image_public_id) {
@@ -224,7 +227,7 @@ class NutritionController extends Controller
 
         $record->delete();
 
-        return redirect()->route('nutrition');
+        return redirect()->route('nutrition', ['date' => $date]);
     }
 
     /**

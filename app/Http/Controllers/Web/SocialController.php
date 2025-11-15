@@ -251,7 +251,7 @@ class SocialController extends Controller
     /**
      * Obtener ranking de usuarios (leaderboard)
      */
-    public function leaderboard(Request $request)
+    public function leaderboard(Request $request): Response
     {
         $currentUser = $request->user();
         $type = $request->input('type', 'followers'); // followers, activities, points
@@ -281,6 +281,9 @@ class SocialController extends Controller
             ];
         });
 
-        return response()->json($topUsers);
+        return Inertia::render('leaderboard', [
+            'leaderboard' => $topUsers,
+            'type' => $type,
+        ]);
     }
 }

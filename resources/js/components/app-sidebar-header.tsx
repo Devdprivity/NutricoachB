@@ -37,18 +37,24 @@ export function AppSidebarHeader({
     );
 
     return (
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
+        <header className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
             <div className="flex items-center gap-2">
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
+
+            {/* Reproductor de Música centrado en el header (solo desktop) */}
+            {hasAnyMusicService && (
+                <div className="pointer-events-none absolute inset-0 hidden lg:flex items-center justify-center">
+                    <div className="pointer-events-auto">
+                        <MusicPlayerContainer />
+                    </div>
+                </div>
+            )}
             
             {auth?.user && (
                 <div className="flex items-center gap-2">
                     <NotificationsDropdown initialUnreadCount={auth.user?.unread_notifications_count || 0} />
-
-                    {/* Reproductor de Música (Spotify, YouTube Music, Apple Music) */}
-                    {hasAnyMusicService && <MusicPlayerContainer />}
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
