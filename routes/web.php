@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\ExercisesController;
 use App\Http\Controllers\Web\GamificationController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
+use App\Http\Controllers\Web\ProgressPhotoController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -43,6 +44,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('gamification/stats', [GamificationController::class, 'getStats'])->name('gamification.stats');
 
     Route::get('progress', [\App\Http\Controllers\Web\ProgressController::class, 'index'])->name('progress');
+
+    // Fotos de Progreso
+    Route::post('progress/photos', [ProgressPhotoController::class, 'store'])->name('progress.photos.store');
+    Route::delete('progress/photos/{id}', [ProgressPhotoController::class, 'destroy'])->name('progress.photos.destroy');
+    Route::post('progress/photos/{id}/baseline', [ProgressPhotoController::class, 'setBaseline'])->name('progress.photos.baseline');
+    Route::post('progress/photos/{id}/notes', [ProgressPhotoController::class, 'updateNotes'])->name('progress.photos.notes');
 
     Route::get('context', [\App\Http\Controllers\Web\ContextController::class, 'index'])->name('context');
 });

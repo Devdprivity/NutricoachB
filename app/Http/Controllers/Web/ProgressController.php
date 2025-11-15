@@ -7,6 +7,7 @@ use App\Models\NutritionalData;
 use App\Models\ExerciseLog;
 use App\Models\UserContext;
 use App\Models\HydrationRecord;
+use App\Models\ProgressPhoto;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -149,6 +150,45 @@ class ProgressController extends Controller
             'goal_compliance' => $this->calculateHydrationCompliance($hydrationHistory, $profile),
         ];
 
+        // Obtener fotos de progreso
+        $progressPhotos = ProgressPhoto::where('user_id', $user->id)
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function ($photo) {
+                return [
+                    'id' => $photo->id,
+                    'date' => $photo->date->format('Y-m-d'),
+                    'image_url' => asset('storage/' . $photo->image_path),
+                    'weight' => $photo->weight,
+                    'body_fat_percentage' => $photo->body_fat_percentage,
+                    'measurements' => $photo->measurements,
+                    'notes' => $photo->notes,
+                    'is_baseline' => $photo->is_baseline,
+                    'visibility' => $photo->visibility,
+                    'days_since_baseline' => $photo->days_since_baseline,
+                    'weight_change' => $photo->weight_change,
+                ];
+            });
+
+        // Obtener foto baseline para comparación
+        $baselinePhoto = ProgressPhoto::where('user_id', $user->id)
+            ->where('is_baseline', true)
+            ->first();
+
+        $progressPhotosSummary = [
+            'total_photos' => $progressPhotos->count(),
+            'baseline_photo' => $baselinePhoto ? [
+                'id' => $baselinePhoto->id,
+                'date' => $baselinePhoto->date->format('Y-m-d'),
+                'image_url' => asset('storage/' . $baselinePhoto->image_path),
+                'weight' => $baselinePhoto->weight,
+            ] : null,
+            'latest_photo' => $progressPhotos->first(),
+            'total_weight_change' => $baselinePhoto && $progressPhotos->first() && $baselinePhoto->weight && $progressPhotos->first()['weight']
+                ? round($progressPhotos->first()['weight'] - $baselinePhoto->weight, 2)
+                : null,
+        ];
+
         return Inertia::render('progress', [
             'progressData' => [
                 'profileData' => $profileData,
@@ -169,6 +209,8 @@ class ProgressController extends Controller
                 'contextHistory' => $contextHistory,
                 'contextSummary' => $contextSummary,
                 'hydrationSummary' => $hydrationSummary,
+                'progressPhotos' => $progressPhotos,
+                'progressPhotosSummary' => $progressPhotosSummary,
             ],
         ]);
     }

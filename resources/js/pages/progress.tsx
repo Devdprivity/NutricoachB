@@ -1,24 +1,34 @@
 import { type BreadcrumbItem } from '@/types';
-import { Head, usePage } from '@inertiajs/react';
-import { 
-    TrendingUp, 
-    Target, 
-    Calendar, 
-    Activity, 
-    Apple, 
+import { Head, router, usePage } from '@inertiajs/react';
+import {
+    TrendingUp,
+    Target,
+    Calendar,
+    Activity,
+    Apple,
     Droplet,
     CheckCircle2,
     AlertCircle,
     Info,
     Dumbbell,
     Heart,
-    Scale
+    Scale,
+    Camera,
+    Upload,
+    Trash2,
+    Flag
 } from 'lucide-react';
+import { useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress as ProgressBar } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -112,12 +122,48 @@ interface ProgressData {
             percentage: number;
         };
     };
+    progressPhotos?: Array<{
+        id: number;
+        date: string;
+        image_url: string;
+        weight?: number;
+        body_fat_percentage?: number;
+        measurements?: Record<string, number>;
+        notes?: string;
+        is_baseline: boolean;
+        visibility: string;
+        days_since_baseline?: number;
+        weight_change?: number;
+    }>;
+    progressPhotosSummary?: {
+        total_photos: number;
+        baseline_photo?: {
+            id: number;
+            date: string;
+            image_url: string;
+            weight?: number;
+        };
+        latest_photo?: {
+            id: number;
+            date: string;
+            image_url: string;
+            weight?: number;
+            weight_change?: number;
+        };
+        total_weight_change?: number;
+    };
     error?: string;
 }
 
 export default function ProgressPage() {
     const { progressData } = usePage<{ progressData: ProgressData }>().props;
     const data = progressData || {};
+
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [showUploadDialog, setShowUploadDialog] = useState(false);
+    const [compareMode, setCompareMode] = useState(false);
 
     if (data.error) {
         return (
@@ -139,6 +185,50 @@ export default function ProgressPage() {
     const nutritionSummary = data.nutritionSummary;
     const contextSummary = data.contextSummary;
     const hydrationSummary = data.hydrationSummary;
+    const progressPhotos = data.progressPhotos || [];
+    const photosSummary = data.progressPhotosSummary;
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleUpload = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!selectedImage) return;
+
+        setIsUploading(true);
+        const formData = new FormData(e.currentTarget);
+
+        router.post('/progress/photos', formData, {
+            onSuccess: () => {
+                setShowUploadDialog(false);
+                setSelectedImage(null);
+                setImagePreview(null);
+                setIsUploading(false);
+            },
+            onError: () => {
+                setIsUploading(false);
+            },
+        });
+    };
+
+    const handleDelete = (photoId: number) => {
+        if (confirm('¿Estás seguro de que deseas eliminar esta foto?')) {
+            router.delete(`/progress/photos/${photoId}`);
+        }
+    };
+
+    const handleSetBaseline = (photoId: number) => {
+        router.post(`/progress/photos/${photoId}/baseline`, {});
+    };
 
     const getBMIBadge = (category?: string) => {
         const badges = {
@@ -496,6 +586,233 @@ export default function ProgressPage() {
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Fotos de Progreso */}
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Camera className="h-5 w-5" />
+                                <CardTitle>Fotos de Progreso</CardTitle>
+                            </div>
+                            <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <Upload className="h-4 w-4 mr-2" />
+                                        Subir Foto
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Subir Foto de Progreso</DialogTitle>
+                                        <DialogDescription>
+                                            Documenta tu transformación con fotos
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleUpload} className="space-y-4">
+                                        <div>
+                                            <Label htmlFor="image">Foto *</Label>
+                                            <Input
+                                                id="image"
+                                                name="image"
+                                                type="file"
+                                                accept="image/*"
+                                                required
+                                                onChange={handleImageChange}
+                                            />
+                                            {imagePreview && (
+                                                <img
+                                                    src={imagePreview}
+                                                    alt="Preview"
+                                                    className="mt-2 w-full h-48 object-cover rounded"
+                                                />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="date">Fecha *</Label>
+                                            <Input
+                                                id="date"
+                                                name="date"
+                                                type="date"
+                                                defaultValue={new Date().toISOString().split('T')[0]}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="weight">Peso (kg)</Label>
+                                                <Input
+                                                    id="weight"
+                                                    name="weight"
+                                                    type="number"
+                                                    step="0.1"
+                                                    placeholder="75.5"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="body_fat_percentage">Grasa Corporal (%)</Label>
+                                                <Input
+                                                    id="body_fat_percentage"
+                                                    name="body_fat_percentage"
+                                                    type="number"
+                                                    step="0.1"
+                                                    placeholder="20.5"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="notes">Notas</Label>
+                                            <Textarea
+                                                id="notes"
+                                                name="notes"
+                                                placeholder="Cómo te sientes hoy..."
+                                                rows={3}
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="is_baseline"
+                                                name="is_baseline"
+                                                value="1"
+                                                className="h-4 w-4"
+                                            />
+                                            <Label htmlFor="is_baseline" className="font-normal cursor-pointer">
+                                                Marcar como foto de referencia (baseline)
+                                            </Label>
+                                        </div>
+                                        <Button type="submit" className="w-full" disabled={isUploading || !selectedImage}>
+                                            {isUploading ? 'Subiendo...' : 'Subir Foto'}
+                                        </Button>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                        <CardDescription>
+                            Documenta tu transformación visual a lo largo del tiempo
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {/* Comparador Antes/Después */}
+                        {photosSummary?.baseline_photo && photosSummary?.latest_photo && (
+                            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg">
+                                <h3 className="font-semibold mb-4 text-center">Comparación: Antes y Después</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Badge variant="secondary" className="mb-2">Baseline - {photosSummary.baseline_photo.date}</Badge>
+                                        <img
+                                            src={photosSummary.baseline_photo.image_url}
+                                            alt="Baseline"
+                                            className="w-full h-64 object-cover rounded"
+                                        />
+                                        {photosSummary.baseline_photo.weight && (
+                                            <p className="text-sm text-center mt-2">{photosSummary.baseline_photo.weight} kg</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <Badge variant="default" className="mb-2">Actual - {photosSummary.latest_photo.date}</Badge>
+                                        <img
+                                            src={photosSummary.latest_photo.image_url}
+                                            alt="Latest"
+                                            className="w-full h-64 object-cover rounded"
+                                        />
+                                        {photosSummary.latest_photo.weight && (
+                                            <div className="text-sm text-center mt-2">
+                                                <p>{photosSummary.latest_photo.weight} kg</p>
+                                                {photosSummary.total_weight_change !== null && (
+                                                    <Badge
+                                                        variant={photosSummary.total_weight_change < 0 ? 'default' : 'secondary'}
+                                                        className="mt-1"
+                                                    >
+                                                        {photosSummary.total_weight_change > 0 ? '+' : ''}
+                                                        {photosSummary.total_weight_change} kg
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Galería de Fotos */}
+                        {progressPhotos.length > 0 ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {progressPhotos.map((photo) => (
+                                    <div key={photo.id} className="relative group">
+                                        <div className="relative">
+                                            <img
+                                                src={photo.image_url}
+                                                alt={`Progreso ${photo.date}`}
+                                                className="w-full h-48 object-cover rounded-lg"
+                                            />
+                                            {photo.is_baseline && (
+                                                <Badge className="absolute top-2 left-2 bg-yellow-500">
+                                                    <Flag className="h-3 w-3 mr-1" />
+                                                    Baseline
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 space-y-1">
+                                            <p className="text-sm font-medium">{photo.date}</p>
+                                            {photo.weight && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    {photo.weight} kg
+                                                    {photo.weight_change !== null && photo.weight_change !== 0 && (
+                                                        <span className={photo.weight_change < 0 ? 'text-green-600' : 'text-red-600'}>
+                                                            {' '}({photo.weight_change > 0 ? '+' : ''}{photo.weight_change} kg)
+                                                        </span>
+                                                    )}
+                                                </p>
+                                            )}
+                                            {photo.days_since_baseline !== null && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Día {photo.days_since_baseline}
+                                                </p>
+                                            )}
+                                            {photo.notes && (
+                                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                                    {photo.notes}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-2 mt-2">
+                                            {!photo.is_baseline && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="flex-1"
+                                                    onClick={() => handleSetBaseline(photo.id)}
+                                                >
+                                                    <Flag className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                className="flex-1"
+                                                onClick={() => handleDelete(photo.id)}
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <Camera className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                                <p className="text-muted-foreground mb-4">
+                                    No has subido fotos de progreso aún
+                                </p>
+                                <Button onClick={() => setShowUploadDialog(true)}>
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Subir Primera Foto
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 {/* Mensaje si no hay datos */}
                 {!profile && !weightProgress && !exerciseSummary && !nutritionSummary && (
