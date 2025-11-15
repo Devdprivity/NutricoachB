@@ -1,6 +1,7 @@
-Version: Session Config Fix - Cookie Domain Support
-Deployed: 2025-11-15 15:30:00
+Version: Force Database Session Driver in Production
+Deployed: 2025-11-15 16:00:00
 Changes:
-- Added default value for SESSION_DOMAIN in config/session.php
-- Session now supports .laravel.cloud domain
-- Requires environment variables to be set in Laravel Cloud
+- Force SESSION_DRIVER to 'database' in production environment
+- Bypasses Laravel Cloud injectable SESSION_DRIVER=cookie variable
+- Cookie domain configured for .laravel.cloud
+- This should fix all cookie rejection issues
