@@ -12,6 +12,8 @@ use App\Http\Controllers\Web\NutritionController;
 use App\Http\Controllers\Web\ProgressPhotoController;
 use App\Http\Controllers\Web\SocialController;
 use App\Http\Controllers\Web\WorkoutPlanController;
+use App\Http\Controllers\Web\RecipeController;
+use App\Http\Controllers\Web\WeeklyMealPlanController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -86,6 +88,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('workout-plans/{id}', [WorkoutPlanController::class, 'destroy'])->name('workout-plans.destroy');
     Route::post('workout-plans/log', [WorkoutPlanController::class, 'logWorkout'])->name('workout-plans.log');
     Route::get('workout-plans/today/workout', [WorkoutPlanController::class, 'getTodayWorkout'])->name('workout-plans.today');
+
+    // Recetas
+    Route::get('recipes', [RecipeController::class, 'index'])->name('recipes');
+    Route::post('recipes', [RecipeController::class, 'store'])->name('recipes.store');
+    Route::get('recipes/{id}', [RecipeController::class, 'show'])->name('recipes.show');
+    Route::put('recipes/{id}', [RecipeController::class, 'update'])->name('recipes.update');
+    Route::delete('recipes/{id}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
+    Route::post('recipes/{id}/cooked', [RecipeController::class, 'markAsCooked'])->name('recipes.cooked');
+    Route::get('recipes/search/query', [RecipeController::class, 'search'])->name('recipes.search');
+
+    // Planes de Comidas Semanales
+    Route::get('weekly-meal-plans', [WeeklyMealPlanController::class, 'index'])->name('weekly-meal-plans');
+    Route::post('weekly-meal-plans', [WeeklyMealPlanController::class, 'store'])->name('weekly-meal-plans.store');
+    Route::get('weekly-meal-plans/{id}', [WeeklyMealPlanController::class, 'show'])->name('weekly-meal-plans.show');
+    Route::put('weekly-meal-plans/{id}', [WeeklyMealPlanController::class, 'update'])->name('weekly-meal-plans.update');
+    Route::delete('weekly-meal-plans/{id}', [WeeklyMealPlanController::class, 'destroy'])->name('weekly-meal-plans.destroy');
+    Route::post('weekly-meal-plans/{id}/recipes', [WeeklyMealPlanController::class, 'addRecipe'])->name('weekly-meal-plans.add-recipe');
+    Route::delete('weekly-meal-plans/{planId}/recipes/{recipeId}', [WeeklyMealPlanController::class, 'removeRecipe'])->name('weekly-meal-plans.remove-recipe');
+    Route::get('weekly-meal-plans/today/plan', [WeeklyMealPlanController::class, 'getTodayPlan'])->name('weekly-meal-plans.today');
 
     Route::get('context', [\App\Http\Controllers\Web\ContextController::class, 'index'])->name('context');
 });

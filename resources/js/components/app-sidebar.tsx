@@ -12,7 +12,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Apple, Award, Calendar, CalendarDays, Droplet, Dumbbell, LayoutGrid, MessageSquare, TrendingUp, Users } from 'lucide-react';
+import { Apple, Award, Calendar, CalendarDays, ChefHat, Droplet, Dumbbell, LayoutGrid, MessageSquare, TrendingUp, UtensilsCrossed, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -30,6 +30,16 @@ const mainNavItems: NavItem[] = [
         title: 'Nutrición',
         href: '/nutrition',
         icon: Apple,
+    },
+    {
+        title: 'Recetas',
+        href: '/recipes',
+        icon: ChefHat,
+    },
+    {
+        title: 'Planes de Comidas',
+        href: '/weekly-meal-plans',
+        icon: UtensilsCrossed,
     },
     {
         title: 'Ejercicios',
