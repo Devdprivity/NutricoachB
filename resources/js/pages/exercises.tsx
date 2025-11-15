@@ -1,7 +1,8 @@
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Activity, Dumbbell, Play, Flame, TrendingUp, Target, Clock, Zap, X, Video, Info, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ExercisesSkeleton } from '@/components/skeletons/exercises-skeleton';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,9 +76,31 @@ interface Props {
 }
 
 export default function Exercises({ exerciseData }: Props) {
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+    // Initial load
+    useEffect(() => {
+        setIsLoading(true);
+        const timer = setTimeout(() => setIsLoading(false), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Navigation events
+    useEffect(() => {
+        const handleStart = () => setIsLoading(true);
+        const handleFinish = () => setIsLoading(false);
+
+        document.addEventListener('inertia:start', handleStart);
+        document.addEventListener('inertia:finish', handleFinish);
+
+        return () => {
+            document.removeEventListener('inertia:start', handleStart);
+            document.removeEventListener('inertia:finish', handleFinish);
+        };
+    }, []);
 
     const { data, setData, post, processing, reset } = useForm({
         exercise_id: 0,
@@ -147,7 +170,10 @@ export default function Exercises({ exerciseData }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Ejercicios" />
 
-            <div className="flex flex-col gap-6 p-6">
+            {isLoading ? (
+                <ExercisesSkeleton />
+            ) : (
+                <div className="flex flex-col gap-6 p-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Ejercicios y Entrenamiento</h1>
                     <p className="text-muted-foreground">Entrena de forma inteligente basado en tu nutrición</p>
@@ -382,6 +408,7 @@ export default function Exercises({ exerciseData }: Props) {
                     </CardContent>
                 </Card>
             </div>
+            )}
 
             {/* Exercise Detail Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
