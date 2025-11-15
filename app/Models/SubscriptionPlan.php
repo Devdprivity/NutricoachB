@@ -24,6 +24,9 @@ class SubscriptionPlan extends Model
         'priority_support',
         'is_active',
         'order',
+        'stripe_product_id',
+        'stripe_price_id_monthly',
+        'stripe_price_id_yearly',
     ];
 
     protected $casts = [
