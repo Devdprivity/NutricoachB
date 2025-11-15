@@ -1,6 +1,6 @@
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Music, Music2, CheckCircle2, XCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { Music, Music2, CheckCircle2, XCircle, ExternalLink, Loader2, Play } from 'lucide-react';
 import { useState } from 'react';
 
 import HeadingSmall from '@/components/heading-small';
@@ -19,6 +19,14 @@ interface Integrations {
         connected: boolean;
         spotify_id?: string;
         share_listening: boolean;
+    };
+    apple_music: {
+        connected: boolean;
+        apple_music_id?: string | null;
+    };
+    youtube_music: {
+        connected: boolean;
+        youtube_music_id?: string | null;
     };
 }
 
@@ -180,20 +188,11 @@ export default function Integrations({ integrations }: Props) {
                                         <Button
                                             variant="destructive"
                                             onClick={handleDisconnectSpotify}
-                                            disabled={isDisconnecting}
+                                            disabled={true}
                                             className="gap-2"
                                         >
-                                            {isDisconnecting ? (
-                                                <>
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                    Desconectando...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <XCircle className="h-4 w-4" />
-                                                    Desconectar Spotify
-                                                </>
-                                            )}
+                                            <XCircle className="h-4 w-4" />
+                                            Desconectar Spotify
                                         </Button>
                                         <Button
                                             variant="outline"
@@ -204,6 +203,9 @@ export default function Integrations({ integrations }: Props) {
                                             Abrir Spotify
                                         </Button>
                                     </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Esta integración está temporalmente deshabilitada
+                                    </p>
                                 </>
                             ) : (
                                 <>
@@ -216,23 +218,170 @@ export default function Integrations({ integrations }: Props) {
                                     <Button
                                         onClick={handleConnectSpotify}
                                         className="gap-2"
+                                        disabled
                                     >
                                         <Music className="h-4 w-4" />
                                         Conectar con Spotify
                                     </Button>
+                                    <p className="text-xs text-muted-foreground">
+                                        Esta integración está temporalmente deshabilitada
+                                    </p>
                                 </>
                             )}
                         </CardContent>
                     </Card>
 
-                    {/* Placeholder para futuras integraciones */}
-                    <Card className="opacity-50">
+                    {/* Apple Music Integration */}
+                    <Card>
                         <CardHeader>
-                            <CardTitle>Más integraciones próximamente</CardTitle>
-                            <CardDescription>
-                                Estamos trabajando en agregar más servicios que puedas conectar
-                            </CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    {integrations.apple_music.connected ? (
+                                        <Music className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                    ) : (
+                                        <Music2 className="h-6 w-6 text-muted-foreground" />
+                                    )}
+                                    <div>
+                                        <CardTitle>Apple Music</CardTitle>
+                                        <CardDescription>
+                                            Conecta tu cuenta de Apple Music para reproducir música desde el dashboard
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                                {integrations.apple_music.connected ? (
+                                    <Badge variant="default" className="gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Conectado
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="secondary" className="gap-1">
+                                        <XCircle className="h-3 w-3" />
+                                        Desconectado
+                                    </Badge>
+                                )}
+                            </div>
                         </CardHeader>
+                        <CardContent className="space-y-4">
+                            {integrations.apple_music.connected ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-muted-foreground">
+                                            Tu cuenta de Apple Music está conectada. Puedes usar el reproductor desde el header del dashboard.
+                                        </p>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="destructive"
+                                            disabled
+                                            className="gap-2"
+                                        >
+                                            <XCircle className="h-4 w-4" />
+                                            Desconectar Apple Music
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <Alert>
+                                        <AlertDescription>
+                                            Conecta tu cuenta de Apple Music para acceder a todas las funciones del reproductor de música.
+                                        </AlertDescription>
+                                    </Alert>
+                                    <Button
+                                        onClick={() => {}}
+                                        className="gap-2"
+                                        disabled
+                                    >
+                                        <Music className="h-4 w-4" />
+                                        Conectar con Apple Music
+                                    </Button>
+                                    <p className="text-xs text-muted-foreground">
+                                        Esta integración está temporalmente deshabilitada
+                                    </p>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* YouTube Music Integration */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    {integrations.youtube_music.connected ? (
+                                        <Play className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                    ) : (
+                                        <Play className="h-6 w-6 text-muted-foreground" />
+                                    )}
+                                    <div>
+                                        <CardTitle>YouTube Music</CardTitle>
+                                        <CardDescription>
+                                            Conecta tu cuenta de YouTube Music para reproducir música desde el dashboard
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                                {integrations.youtube_music.connected ? (
+                                    <Badge variant="default" className="gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Conectado
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="secondary" className="gap-1">
+                                        <XCircle className="h-3 w-3" />
+                                        Desconectado
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {integrations.youtube_music.connected ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-muted-foreground">
+                                            Tu cuenta de YouTube Music está conectada. Puedes usar el reproductor desde el header del dashboard.
+                                        </p>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="destructive"
+                                            disabled
+                                            className="gap-2"
+                                        >
+                                            <XCircle className="h-4 w-4" />
+                                            Desconectar YouTube Music
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => window.open('https://music.youtube.com', '_blank')}
+                                            className="gap-2"
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                            Abrir YouTube Music
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <Alert>
+                                        <AlertDescription>
+                                            Conecta tu cuenta de YouTube Music para acceder a todas las funciones del reproductor de música.
+                                        </AlertDescription>
+                                    </Alert>
+                                    <Button
+                                        onClick={() => {
+                                            // TODO: Implementar conexión con YouTube Music
+                                            alert('Funcionalidad de conexión con YouTube Music próximamente');
+                                        }}
+                                        className="gap-2"
+                                    >
+                                        <Play className="h-4 w-4" />
+                                        Conectar con YouTube Music
+                                    </Button>
+                                </>
+                            )}
+                        </CardContent>
                     </Card>
                 </div>
             </SettingsLayout>

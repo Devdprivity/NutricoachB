@@ -22,6 +22,14 @@ class IntegrationsController extends Controller
                 'spotify_id' => $user->spotify_id,
                 'share_listening' => $user->spotify_share_listening ?? false,
             ],
+            'apple_music' => [
+                'connected' => false,
+                'apple_music_id' => null,
+            ],
+            'youtube_music' => [
+                'connected' => false,
+                'youtube_music_id' => null,
+            ],
         ];
 
         return Inertia::render('settings/integrations', [
