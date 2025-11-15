@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 // import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, Play, Pause, SkipForward, SkipBack, Search, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import axios from 'axios';
 
 interface Track {
     id: string;
@@ -53,16 +54,13 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
 
         const fetchCurrentlyPlaying = async () => {
             try {
-                const response = await fetch('/spotify/currently-playing');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.item) {
-                        setCurrentlyPlaying(data);
-                        setIsPlaying(data.is_playing || false);
-                    } else {
-                        setCurrentlyPlaying(null);
-                        setIsPlaying(false);
-                    }
+                const response = await axios.get('/spotify/currently-playing');
+                if (response.data.item) {
+                    setCurrentlyPlaying(response.data);
+                    setIsPlaying(response.data.is_playing || false);
+                } else {
+                    setCurrentlyPlaying(null);
+                    setIsPlaying(false);
                 }
             } catch (error) {
                 console.error('Error fetching currently playing:', error);
@@ -80,11 +78,14 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
 
         setIsSearching(true);
         try {
-            const response = await fetch(`/spotify/search?q=${encodeURIComponent(searchQuery)}&type=track&limit=20`);
-            if (response.ok) {
-                const data = await response.json();
-                setSearchResults(data.tracks?.items || []);
-            }
+            const response = await axios.get('/spotify/search', {
+                params: {
+                    q: searchQuery,
+                    type: 'track',
+                    limit: 20
+                }
+            });
+            setSearchResults(response.data.tracks?.items || []);
         } catch (error) {
             console.error('Error searching:', error);
         } finally {
@@ -95,32 +96,22 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
     const handlePlayTrack = async (trackUri: string) => {
         setIsLoading(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const response = await fetch('/spotify/play-track', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({ track_uri: trackUri }),
+            await axios.post('/spotify/play-track', {
+                track_uri: trackUri
             });
 
-            if (response.ok) {
-                setIsPlaying(true);
-                // Actualizar canción actual después de un breve delay
-                setTimeout(() => {
-                    fetch('/spotify/currently-playing')
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.item) {
-                                setCurrentlyPlaying(data);
-                            }
-                        });
-                }, 1000);
-            }
+            setIsPlaying(true);
+            // Actualizar canción actual después de un breve delay
+            setTimeout(async () => {
+                try {
+                    const response = await axios.get('/spotify/currently-playing');
+                    if (response.data.item) {
+                        setCurrentlyPlaying(response.data);
+                    }
+                } catch (error) {
+                    console.error('Error updating currently playing:', error);
+                }
+            }, 1000);
         } catch (error) {
             console.error('Error playing track:', error);
         } finally {
@@ -131,17 +122,7 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
     const handlePlay = async () => {
         setIsLoading(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            await fetch('/spotify/play', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
+            await axios.post('/spotify/play');
             setIsPlaying(true);
         } catch (error) {
             console.error('Error playing:', error);
@@ -153,17 +134,7 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
     const handlePause = async () => {
         setIsLoading(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            await fetch('/spotify/pause', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
+            await axios.post('/spotify/pause');
             setIsPlaying(false);
         } catch (error) {
             console.error('Error pausing:', error);
@@ -175,27 +146,18 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
     const handleNext = async () => {
         setIsLoading(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            await fetch('/spotify/next', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
+            await axios.post('/spotify/next');
             // Actualizar después de un delay
-            setTimeout(() => {
-                fetch('/spotify/currently-playing')
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.item) {
-                            setCurrentlyPlaying(data);
-                            setIsPlaying(data.is_playing || false);
-                        }
-                    });
+            setTimeout(async () => {
+                try {
+                    const response = await axios.get('/spotify/currently-playing');
+                    if (response.data.item) {
+                        setCurrentlyPlaying(response.data);
+                        setIsPlaying(response.data.is_playing || false);
+                    }
+                } catch (error) {
+                    console.error('Error updating currently playing:', error);
+                }
             }, 1000);
         } catch (error) {
             console.error('Error next:', error);
@@ -207,27 +169,18 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
     const handlePrevious = async () => {
         setIsLoading(true);
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            await fetch('/spotify/previous', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
+            await axios.post('/spotify/previous');
             // Actualizar después de un delay
-            setTimeout(() => {
-                fetch('/spotify/currently-playing')
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.item) {
-                            setCurrentlyPlaying(data);
-                            setIsPlaying(data.is_playing || false);
-                        }
-                    });
+            setTimeout(async () => {
+                try {
+                    const response = await axios.get('/spotify/currently-playing');
+                    if (response.data.item) {
+                        setCurrentlyPlaying(response.data);
+                        setIsPlaying(response.data.is_playing || false);
+                    }
+                } catch (error) {
+                    console.error('Error updating currently playing:', error);
+                }
             }, 1000);
         } catch (error) {
             console.error('Error previous:', error);
