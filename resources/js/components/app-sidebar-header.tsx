@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/tooltip';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
+import { SpotifyPlayer } from '@/components/spotify-player';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem as BreadcrumbItemType, type SharedData } from '@/types';
@@ -111,37 +112,32 @@ export function AppSidebarHeader({
                 <div className="flex items-center gap-2">
                     <NotificationsDropdown initialUnreadCount={auth.user?.unread_notifications_count || 0} />
                     
-                    {/* Botón de Spotify */}
-                    <TooltipProvider delayDuration={0}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleSpotifyConnect}
-                                    disabled={isLoading}
-                                    className={cn(
-                                        "h-9 w-9 cursor-pointer transition-colors",
-                                        spotifyConnected 
-                                            ? "hover:bg-green-50 dark:hover:bg-green-950/20" 
-                                            : "hover:bg-orange-50 dark:hover:bg-orange-950/20"
-                                    )}
-                                >
-                                    {spotifyConnected ? (
-                                        <Music className={cn(
-                                            "h-5 w-5 transition-colors",
-                                            "text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300"
-                                        )} />
-                                    ) : (
+                    {/* Reproductor de Spotify o Botón de Conexión */}
+                    {spotifyConnected ? (
+                        <SpotifyPlayer isConnected={spotifyConnected} />
+                    ) : (
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleSpotifyConnect}
+                                        disabled={isLoading}
+                                        className={cn(
+                                            "h-9 w-9 cursor-pointer transition-colors",
+                                            "hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                                        )}
+                                    >
                                         <Music2 className="h-5 w-5 text-neutral-600 dark:text-neutral-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors opacity-50" />
-                                    )}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{spotifyConnected ? 'Desconectar Spotify' : 'Conectar Spotify'}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Conectar Spotify</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
