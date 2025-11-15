@@ -1,6 +1,6 @@
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Music, Music2, CheckCircle2, XCircle, ExternalLink, Loader2, Play } from 'lucide-react';
+import { Music, Music2, CheckCircle2, XCircle, ExternalLink, Loader2, Play, Star } from 'lucide-react';
 import { useState } from 'react';
 
 import HeadingSmall from '@/components/heading-small';
@@ -120,6 +120,123 @@ export default function Integrations({ integrations }: Props) {
                         title="Integraciones"
                         description="Conecta y gestiona tus servicios externos"
                     />
+
+                    {/* YouTube Music Integration - Recomendado */}
+                    <Card className="relative overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5 dark:from-primary/10 dark:via-background dark:to-primary/10">
+                        <div className="absolute top-4 right-4">
+                            <Badge variant="default" className="gap-1 bg-primary text-primary-foreground shadow-md">
+                                <Star className="h-3 w-3 fill-current" />
+                                Recomendado
+                            </Badge>
+                        </div>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    {integrations.youtube_music.connected ? (
+                                        <Play className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                    ) : (
+                                        <Play className="h-6 w-6 text-primary" />
+                                    )}
+                                    <div>
+                                        <CardTitle className="text-lg">YouTube Music</CardTitle>
+                                        <CardDescription>
+                                            Conecta tu cuenta de YouTube Music para reproducir música desde el dashboard. La opción más fácil si ya usas Google.
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                                {integrations.youtube_music.connected ? (
+                                    <Badge variant="default" className="gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Conectado
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="secondary" className="gap-1">
+                                        <XCircle className="h-3 w-3" />
+                                        Desconectado
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {integrations.youtube_music.connected ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-muted-foreground">
+                                            Tu cuenta de YouTube Music está conectada. Puedes usar el reproductor desde el header del dashboard.
+                                        </p>
+                                        {integrations.youtube_music.youtube_music_id && (
+                                            <p className="text-xs text-muted-foreground">
+                                                ID de YouTube Music: <code className="px-1 py-0.5 bg-muted rounded">{integrations.youtube_music.youtube_music_id}</code>
+                                            </p>
+                                        )}
+                                    </div>
+                                    <Separator />
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="destructive"
+                                            onClick={async () => {
+                                                if (!confirm('¿Estás seguro de que deseas desconectar YouTube Music? Esto eliminará tu conexión y no podrás usar el reproductor.')) {
+                                                    return;
+                                                }
+
+                                                try {
+                                                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                                                    const response = await fetch('/youtube-music/disconnect', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'Accept': 'application/json',
+                                                            'X-CSRF-TOKEN': csrfToken || '',
+                                                            'X-Requested-With': 'XMLHttpRequest',
+                                                        },
+                                                        credentials: 'same-origin',
+                                                    });
+
+                                                    if (response.ok) {
+                                                        router.reload();
+                                                    } else {
+                                                        alert('Error al desconectar YouTube Music. Por favor, intenta nuevamente.');
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error desconectando YouTube Music:', error);
+                                                    alert('Error al desconectar YouTube Music. Por favor, intenta nuevamente.');
+                                                }
+                                            }}
+                                            className="gap-2"
+                                        >
+                                            <XCircle className="h-4 w-4" />
+                                            Desconectar YouTube Music
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => window.open('https://music.youtube.com', '_blank')}
+                                            className="gap-2"
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                            Abrir YouTube Music
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <Alert className="border-primary/20 bg-primary/5">
+                                        <AlertDescription>
+                                            Conecta tu cuenta de YouTube Music para acceder a todas las funciones del reproductor de música. Si ya iniciaste sesión con Google, el proceso será más rápido.
+                                        </AlertDescription>
+                                    </Alert>
+                                    <Button
+                                        onClick={() => {
+                                            window.location.href = '/youtube-music/redirect';
+                                        }}
+                                        className="gap-2 bg-primary hover:bg-primary/90"
+                                    >
+                                        <Play className="h-4 w-4" />
+                                        Conectar con YouTube Music
+                                    </Button>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
 
                     {/* Spotify Integration */}
                     <Card>
@@ -299,117 +416,6 @@ export default function Integrations({ integrations }: Props) {
                                     <p className="text-xs text-muted-foreground">
                                         Esta integración está temporalmente deshabilitada
                                     </p>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* YouTube Music Integration */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    {integrations.youtube_music.connected ? (
-                                        <Play className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                    ) : (
-                                        <Play className="h-6 w-6 text-muted-foreground" />
-                                    )}
-                                    <div>
-                                        <CardTitle>YouTube Music</CardTitle>
-                                        <CardDescription>
-                                            Conecta tu cuenta de YouTube Music para reproducir música desde el dashboard
-                                        </CardDescription>
-                                    </div>
-                                </div>
-                                {integrations.youtube_music.connected ? (
-                                    <Badge variant="default" className="gap-1">
-                                        <CheckCircle2 className="h-3 w-3" />
-                                        Conectado
-                                    </Badge>
-                                ) : (
-                                    <Badge variant="secondary" className="gap-1">
-                                        <XCircle className="h-3 w-3" />
-                                        Desconectado
-                                    </Badge>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {integrations.youtube_music.connected ? (
-                                <>
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">
-                                            Tu cuenta de YouTube Music está conectada. Puedes usar el reproductor desde el header del dashboard.
-                                        </p>
-                                        {integrations.youtube_music.youtube_music_id && (
-                                            <p className="text-xs text-muted-foreground">
-                                                ID de YouTube Music: <code className="px-1 py-0.5 bg-muted rounded">{integrations.youtube_music.youtube_music_id}</code>
-                                            </p>
-                                        )}
-                                    </div>
-                                    <Separator />
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="destructive"
-                                            onClick={async () => {
-                                                if (!confirm('¿Estás seguro de que deseas desconectar YouTube Music? Esto eliminará tu conexión y no podrás usar el reproductor.')) {
-                                                    return;
-                                                }
-
-                                                try {
-                                                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                                                    const response = await fetch('/youtube-music/disconnect', {
-                                                        method: 'POST',
-                                                        headers: {
-                                                            'Content-Type': 'application/json',
-                                                            'Accept': 'application/json',
-                                                            'X-CSRF-TOKEN': csrfToken || '',
-                                                            'X-Requested-With': 'XMLHttpRequest',
-                                                        },
-                                                        credentials: 'same-origin',
-                                                    });
-
-                                                    if (response.ok) {
-                                                        router.reload();
-                                                    } else {
-                                                        alert('Error al desconectar YouTube Music. Por favor, intenta nuevamente.');
-                                                    }
-                                                } catch (error) {
-                                                    console.error('Error desconectando YouTube Music:', error);
-                                                    alert('Error al desconectar YouTube Music. Por favor, intenta nuevamente.');
-                                                }
-                                            }}
-                                            className="gap-2"
-                                        >
-                                            <XCircle className="h-4 w-4" />
-                                            Desconectar YouTube Music
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => window.open('https://music.youtube.com', '_blank')}
-                                            className="gap-2"
-                                        >
-                                            <ExternalLink className="h-4 w-4" />
-                                            Abrir YouTube Music
-                                        </Button>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <Alert>
-                                        <AlertDescription>
-                                            Conecta tu cuenta de YouTube Music para acceder a todas las funciones del reproductor de música.
-                                        </AlertDescription>
-                                    </Alert>
-                                    <Button
-                                        onClick={() => {
-                                            window.location.href = '/youtube-music/redirect';
-                                        }}
-                                        className="gap-2"
-                                    >
-                                        <Play className="h-4 w-4" />
-                                        Conectar con YouTube Music
-                                    </Button>
                                 </>
                             )}
                         </CardContent>

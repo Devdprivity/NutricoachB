@@ -29,7 +29,7 @@ class YouTubeMusicController extends Controller
     /**
      * Redirect user to YouTube OAuth authorization page
      */
-    public function redirectToYouTubeMusic()
+    public function redirectToYouTubeMusic(Request $request)
     {
         // Validar que las credenciales estén configuradas
         if (empty($this->clientId) || empty($this->clientSecret)) {
@@ -49,19 +49,38 @@ class YouTubeMusicController extends Controller
             'https://www.googleapis.com/auth/youtubepartner',
         ];
 
-        Log::info('YouTube Music Redirect', [
-            'client_id' => substr($this->clientId, 0, 10) . '...',
-            'redirect_uri' => $this->redirectUri,
-        ]);
-
-        $query = http_build_query([
+        // Si el usuario ya está autenticado con Google, no usar 'prompt' para intentar usar la sesión activa
+        // Solo pedirá permisos adicionales de YouTube sin pedir credenciales
+        $user = $request->user();
+        $hasGoogleAuth = $user && $user->google_id;
+        
+        $queryParams = [
             'client_id' => $this->clientId,
             'redirect_uri' => $this->redirectUri,
             'response_type' => 'code',
             'scope' => implode(' ', $scopes),
             'access_type' => 'offline',
-            'prompt' => 'consent',
+        ];
+
+        // Si el usuario ya está autenticado con Google, usar login_hint y no forzar prompt
+        // Esto permite que Google use la sesión activa y solo pida permisos de YouTube
+        if ($hasGoogleAuth) {
+            $queryParams['login_hint'] = $user->email;
+            // No incluir 'prompt' para que use la sesión activa si está disponible
+            // Si necesita permisos adicionales, Google los pedirá automáticamente
+        } else {
+            // Si no está autenticado con Google, pedir consentimiento
+            $queryParams['prompt'] = 'consent';
+        }
+
+        Log::info('YouTube Music Redirect', [
+            'client_id' => substr($this->clientId, 0, 10) . '...',
+            'redirect_uri' => $this->redirectUri,
+            'user_has_google_id' => $hasGoogleAuth,
+            'login_hint' => $hasGoogleAuth ? $user->email : 'none',
         ]);
+
+        $query = http_build_query($queryParams);
 
         return redirect('https://accounts.google.com/o/oauth2/v2/auth?' . $query);
     }
