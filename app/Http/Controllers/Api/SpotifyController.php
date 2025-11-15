@@ -435,5 +435,119 @@ class SpotifyController extends Controller
             return response()->json(['error' => 'Error al obtener recientemente reproducido'], 500);
         }
     }
+
+    /**
+     * Buscar canciones en Spotify
+     */
+    public function search(Request $request)
+    {
+        $user = $request->user();
+        $token = $this->getValidToken($user);
+
+        if (!$token) {
+            return response()->json(['error' => 'Spotify no conectado'], 401);
+        }
+
+        $query = $request->input('q');
+        $type = $request->input('type', 'track');
+        $limit = $request->input('limit', 20);
+
+        if (!$query) {
+            return response()->json(['error' => 'Query de búsqueda requerida'], 400);
+        }
+
+        try {
+            $response = Http::withToken($token)
+                ->get('https://api.spotify.com/v1/search', [
+                    'q' => $query,
+                    'type' => $type,
+                    'limit' => $limit,
+                ]);
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+
+            return response()->json(['error' => 'Error al buscar en Spotify'], 500);
+        } catch (\Exception $e) {
+            \Log::error('Spotify search error: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al buscar en Spotify'], 500);
+        }
+    }
+
+    /**
+     * Reproducir una canción específica
+     */
+    public function playTrack(Request $request)
+    {
+        $user = $request->user();
+        $token = $this->getValidToken($user);
+
+        if (!$token) {
+            return response()->json(['error' => 'Spotify no conectado'], 401);
+        }
+
+        $request->validate([
+            'track_uri' => 'required|string',
+            'device_id' => 'sometimes|string',
+        ]);
+
+        $trackUri = $request->input('track_uri');
+        $deviceId = $request->input('device_id');
+
+        try {
+            $payload = [
+                'uris' => [$trackUri],
+            ];
+
+            $url = 'https://api.spotify.com/v1/me/player/play';
+            if ($deviceId) {
+                $url .= '?device_id=' . $deviceId;
+            }
+
+            $response = Http::withToken($token)
+                ->put($url, $payload);
+
+            if ($response->successful()) {
+                return response()->json(['success' => true, 'message' => 'Canción reproducida']);
+            }
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al reproducir canción',
+                'details' => $response->body()
+            ], $response->status());
+        } catch (\Exception $e) {
+            \Log::error('Spotify play track error: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al reproducir canción'], 500);
+        }
+    }
+
+    /**
+     * Obtener dispositivos disponibles
+     */
+    public function getDevices(Request $request)
+    {
+        $user = $request->user();
+        $token = $this->getValidToken($user);
+
+        if (!$token) {
+            return response()->json(['error' => 'Spotify no conectado'], 401);
+        }
+
+        try {
+            $response = Http::withToken($token)
+                ->get('https://api.spotify.com/v1/me/player/devices');
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+
+            return response()->json(['error' => 'Error al obtener dispositivos'], 500);
+        } catch (\Exception $e) {
+            \Log::error('Spotify get devices error: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al obtener dispositivos'], 500);
+        }
+    }
 }
 

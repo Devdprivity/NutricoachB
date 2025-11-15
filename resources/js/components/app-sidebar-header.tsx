@@ -46,19 +46,47 @@ export function AppSidebarHeader({
             // Desconectar
             setIsLoading(true);
             try {
+                // Obtener token CSRF
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    // Si no hay token CSRF, usar Inertia router
+                    const { router } = await import('@inertiajs/react');
+                    router.post('/spotify/disconnect', {}, {
+                        onSuccess: () => {
+                            setSpotifyConnected(false);
+                            window.location.reload();
+                        },
+                        onError: (errors) => {
+                            alert('Error al desconectar Spotify: ' + (errors.message || 'Error desconocido'));
+                        }
+                    });
+                    return;
+                }
+
                 const response = await fetch('/spotify/disconnect', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
+                    credentials: 'same-origin',
                 });
+
                 if (response.ok) {
                     setSpotifyConnected(false);
                     window.location.reload();
                 } else {
-                    const data = await response.json();
-                    alert(data.message || 'Error al desconectar Spotify');
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json();
+                        alert(data.message || 'Error al desconectar Spotify');
+                    } else {
+                        const text = await response.text();
+                        console.error('Error response:', text);
+                        alert('Error al desconectar Spotify. Por favor, recarga la página.');
+                    }
                 }
             } catch (error) {
                 console.error('Error desconectando Spotify:', error);
@@ -68,12 +96,7 @@ export function AppSidebarHeader({
             }
         } else {
             // Conectar - redirigir a Spotify
-            try {
-                window.location.href = '/spotify/redirect';
-            } catch (error) {
-                console.error('Error conectando Spotify:', error);
-                alert('Error al conectar con Spotify. Verifica que las credenciales estén configuradas.');
-            }
+            window.location.href = '/spotify/redirect';
         }
     };
 

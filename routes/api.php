@@ -213,6 +213,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pause', [SpotifyController::class, 'pause']);
         Route::post('/next', [SpotifyController::class, 'next']);
         Route::post('/previous', [SpotifyController::class, 'previous']);
+        Route::post('/play-track', [SpotifyController::class, 'playTrack']);
+
+        // Búsqueda y dispositivos
+        Route::get('/search', [SpotifyController::class, 'search']);
+        Route::get('/devices', [SpotifyController::class, 'getDevices']);
 
         // Actividad musical
         Route::get('/activity/history', [SpotifyController::class, 'getActivityHistory']);

@@ -133,6 +133,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('spotify/pause', [SpotifyController::class, 'pause'])->name('spotify.pause');
     Route::post('spotify/next', [SpotifyController::class, 'next'])->name('spotify.next');
     Route::post('spotify/previous', [SpotifyController::class, 'previous'])->name('spotify.previous');
+    Route::get('spotify/search', [SpotifyController::class, 'search'])->name('spotify.search');
+    Route::post('spotify/play-track', [SpotifyController::class, 'playTrack'])->name('spotify.play-track');
+    Route::get('spotify/devices', [SpotifyController::class, 'getDevices'])->name('spotify.devices');
 });
 
 // Rutas para autenticación con Google
