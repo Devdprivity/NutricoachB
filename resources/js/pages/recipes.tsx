@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, Clock, Users, ChefHat, Star, Flame } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { RecipesSkeleton } from '@/components/skeletons/recipes-skeleton';
 
 interface Ingredient {
     id?: number;
@@ -58,6 +59,7 @@ interface RecipesProps {
 }
 
 export default function Recipes({ myRecipes, publicRecipes, stats }: RecipesProps) {
+    const [isLoading, setIsLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -80,6 +82,25 @@ export default function Recipes({ myRecipes, publicRecipes, stats }: RecipesProp
         unit: 'g',
         order: 0,
     });
+
+    useEffect(() => {
+        setIsLoading(true);
+        const timer = setTimeout(() => setIsLoading(false), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        const handleStart = () => setIsLoading(true);
+        const handleFinish = () => setIsLoading(false);
+
+        router.on('start', handleStart);
+        router.on('finish', handleFinish);
+
+        return () => {
+            router.off('start', handleStart);
+            router.off('finish', handleFinish);
+        };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -189,6 +210,9 @@ export default function Recipes({ myRecipes, publicRecipes, stats }: RecipesProp
         <AppLayout>
             <Head title="Recetas" />
 
+            {isLoading ? (
+                <RecipesSkeleton />
+            ) : (
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -577,6 +601,7 @@ export default function Recipes({ myRecipes, publicRecipes, stats }: RecipesProp
                     </TabsContent>
                 </Tabs>
             </div>
+            )}
         </AppLayout>
     );
 }
