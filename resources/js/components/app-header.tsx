@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { NotificationsDropdown } from '@/components/notifications-dropdown';
-import { SpotifyPlayer } from '@/components/spotify-player';
+import { MusicPlayerContainer } from '@/components/music-player-container';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
@@ -98,15 +98,13 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
-    const [spotifyConnected, setSpotifyConnected] = useState(false);
 
-    useEffect(() => {
-        // Verificar estado de Spotify
-        if (auth?.user) {
-            const hasSpotify = !!(auth.user as any).spotify_id;
-            setSpotifyConnected(hasSpotify);
-        }
-    }, [auth?.user]);
+    // Check if any music service is connected
+    const hasAnyMusicService = !!(
+        (auth?.user as any)?.spotify_id ||
+        (auth?.user as any)?.youtube_music_id ||
+        (auth?.user as any)?.apple_music_id
+    );
 
     // Removido handleSpotifyConnect - la conexión/desconexión ahora se maneja desde Settings > Integrations
 
@@ -251,9 +249,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <Search className="!size-5 text-neutral-600 dark:text-neutral-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors" />
                             </Button>
                             <NotificationsDropdown initialUnreadCount={auth.user?.unread_notifications_count || 0} />
-                            
-                            {/* Reproductor de Spotify (solo mostrar si está conectado) */}
-                            {spotifyConnected && <SpotifyPlayer isConnected={spotifyConnected} />}
+
+                            {/* Reproductor de Música (Spotify, YouTube Music, Apple Music) */}
+                            {hasAnyMusicService && <MusicPlayerContainer />}
 
                             <div className="hidden lg:flex">
                                 {rightNavItems.map((item) => (

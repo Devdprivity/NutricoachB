@@ -15,11 +15,10 @@ import {
 } from '@/components/ui/tooltip';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { SpotifyPlayer } from '@/components/spotify-player';
+import { MusicPlayerContainer } from '@/components/music-player-container';
 import { useInitials } from '@/hooks/use-initials';
 import { type BreadcrumbItem as BreadcrumbItemType, type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -29,15 +28,13 @@ export function AppSidebarHeader({
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
-    const [spotifyConnected, setSpotifyConnected] = useState(false);
 
-    useEffect(() => {
-        // Verificar estado de Spotify
-        if (auth?.user) {
-            const hasSpotify = !!(auth.user as any).spotify_id;
-            setSpotifyConnected(hasSpotify);
-        }
-    }, [auth?.user]);
+    // Check if any music service is connected
+    const hasAnyMusicService = !!(
+        (auth?.user as any)?.spotify_id ||
+        (auth?.user as any)?.youtube_music_id ||
+        (auth?.user as any)?.apple_music_id
+    );
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
@@ -49,9 +46,9 @@ export function AppSidebarHeader({
             {auth?.user && (
                 <div className="flex items-center gap-2">
                     <NotificationsDropdown initialUnreadCount={auth.user?.unread_notifications_count || 0} />
-                    
-                    {/* Reproductor de Spotify (solo mostrar si está conectado) */}
-                    {spotifyConnected && <SpotifyPlayer isConnected={spotifyConnected} />}
+
+                    {/* Reproductor de Música (Spotify, YouTube Music, Apple Music) */}
+                    {hasAnyMusicService && <MusicPlayerContainer />}
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
