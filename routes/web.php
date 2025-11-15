@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Auth\SocialController;
+use App\Http\Controllers\Auth\SocialController as AuthSocialController;
 use App\Http\Controllers\Web\BarcodeController;
 use App\Http\Controllers\Web\CoachingController;
 use App\Http\Controllers\Web\DashboardController;
@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\GamificationController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
 use App\Http\Controllers\Web\ProgressPhotoController;
+use App\Http\Controllers\Web\SocialController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -65,12 +66,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('progress/photos/{id}/baseline', [ProgressPhotoController::class, 'setBaseline'])->name('progress.photos.baseline');
     Route::post('progress/photos/{id}/notes', [ProgressPhotoController::class, 'updateNotes'])->name('progress.photos.notes');
 
+    // Sistema Social
+    Route::get('social', [SocialController::class, 'index'])->name('social');
+    Route::post('social/follow/{userId}', [SocialController::class, 'follow'])->name('social.follow');
+    Route::post('social/unfollow/{userId}', [SocialController::class, 'unfollow'])->name('social.unfollow');
+    Route::get('social/followers/{userId}', [SocialController::class, 'followers'])->name('social.followers');
+    Route::get('social/following/{userId}', [SocialController::class, 'following'])->name('social.following');
+    Route::post('social/activities/{activityId}/like', [SocialController::class, 'likeActivity'])->name('social.activity.like');
+    Route::delete('social/activities/{activityId}/like', [SocialController::class, 'unlikeActivity'])->name('social.activity.unlike');
+    Route::get('social/search', [SocialController::class, 'searchUsers'])->name('social.search');
+    Route::get('social/leaderboard', [SocialController::class, 'leaderboard'])->name('social.leaderboard');
+
     Route::get('context', [\App\Http\Controllers\Web\ContextController::class, 'index'])->name('context');
 });
 
 // Rutas para autenticación con Google
-Route::get('/auth/google', [SocialController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('/auth/google/callback', [SocialController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+Route::get('/auth/google', [AuthSocialController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [AuthSocialController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
 // Ruta alternativa para servir imágenes de comidas (útil en Windows donde symlinks pueden fallar)
 Route::get('/meal-images/{filename}', function ($filename) {

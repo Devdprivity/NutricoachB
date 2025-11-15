@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -139,10 +140,96 @@ class User extends Authenticatable
      */
     public function hasCompleteProfile(): bool
     {
-        return $this->profile && 
-               $this->profile->height && 
-               $this->profile->weight && 
-               $this->profile->age && 
+        return $this->profile &&
+               $this->profile->height &&
+               $this->profile->weight &&
+               $this->profile->age &&
                $this->profile->gender;
+    }
+
+    // ========== RELACIONES SOCIALES ==========
+
+    /**
+     * Usuarios que este usuario sigue
+     */
+    public function following(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'follower_id', 'following_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Usuarios que siguen a este usuario
+     */
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'following_id', 'follower_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Actividades del usuario
+     */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(Activity::class);
+    }
+
+    /**
+     * Likes dados por el usuario
+     */
+    public function activityLikes(): HasMany
+    {
+        return $this->hasMany(ActivityLike::class);
+    }
+
+    /**
+     * Verificar si este usuario sigue a otro usuario
+     */
+    public function isFollowing(User $user): bool
+    {
+        return $this->following()->where('following_id', $user->id)->exists();
+    }
+
+    /**
+     * Verificar si este usuario es seguido por otro usuario
+     */
+    public function isFollowedBy(User $user): bool
+    {
+        return $this->followers()->where('follower_id', $user->id)->exists();
+    }
+
+    /**
+     * Seguir a un usuario
+     */
+    public function follow(User $user): void
+    {
+        if (!$this->isFollowing($user) && $this->id !== $user->id) {
+            $this->following()->attach($user->id);
+        }
+    }
+
+    /**
+     * Dejar de seguir a un usuario
+     */
+    public function unfollow(User $user): void
+    {
+        $this->following()->detach($user->id);
+    }
+
+    /**
+     * Obtener contador de seguidores
+     */
+    public function getFollowersCountAttribute(): int
+    {
+        return $this->followers()->count();
+    }
+
+    /**
+     * Obtener contador de usuarios que sigue
+     */
+    public function getFollowingCountAttribute(): int
+    {
+        return $this->following()->count();
     }
 }
