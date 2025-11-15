@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 // import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, Play, Pause, SkipForward, SkipBack, Search, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import axios from 'axios';
+import axios from '@/bootstrap';
 
 interface Track {
     id: string;

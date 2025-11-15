@@ -1,4 +1,5 @@
 import '../css/app.css';
+import './bootstrap';
 
 // Silenciar errores de extensiones del navegador
 if (typeof window !== 'undefined') {
