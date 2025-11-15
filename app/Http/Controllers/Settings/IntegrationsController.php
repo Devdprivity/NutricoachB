@@ -27,8 +27,8 @@ class IntegrationsController extends Controller
                 'apple_music_id' => null,
             ],
             'youtube_music' => [
-                'connected' => false,
-                'youtube_music_id' => null,
+                'connected' => !empty($user->youtube_music_id),
+                'youtube_music_id' => $user->youtube_music_id,
             ],
         ];
 

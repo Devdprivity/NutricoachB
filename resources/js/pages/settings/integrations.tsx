@@ -341,12 +341,44 @@ export default function Integrations({ integrations }: Props) {
                                         <p className="text-sm text-muted-foreground">
                                             Tu cuenta de YouTube Music está conectada. Puedes usar el reproductor desde el header del dashboard.
                                         </p>
+                                        {integrations.youtube_music.youtube_music_id && (
+                                            <p className="text-xs text-muted-foreground">
+                                                ID de YouTube Music: <code className="px-1 py-0.5 bg-muted rounded">{integrations.youtube_music.youtube_music_id}</code>
+                                            </p>
+                                        )}
                                     </div>
                                     <Separator />
                                     <div className="flex items-center gap-2">
                                         <Button
                                             variant="destructive"
-                                            disabled
+                                            onClick={async () => {
+                                                if (!confirm('¿Estás seguro de que deseas desconectar YouTube Music? Esto eliminará tu conexión y no podrás usar el reproductor.')) {
+                                                    return;
+                                                }
+
+                                                try {
+                                                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                                                    const response = await fetch('/youtube-music/disconnect', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'Accept': 'application/json',
+                                                            'X-CSRF-TOKEN': csrfToken || '',
+                                                            'X-Requested-With': 'XMLHttpRequest',
+                                                        },
+                                                        credentials: 'same-origin',
+                                                    });
+
+                                                    if (response.ok) {
+                                                        router.reload();
+                                                    } else {
+                                                        alert('Error al desconectar YouTube Music. Por favor, intenta nuevamente.');
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error desconectando YouTube Music:', error);
+                                                    alert('Error al desconectar YouTube Music. Por favor, intenta nuevamente.');
+                                                }
+                                            }}
                                             className="gap-2"
                                         >
                                             <XCircle className="h-4 w-4" />
@@ -371,8 +403,7 @@ export default function Integrations({ integrations }: Props) {
                                     </Alert>
                                     <Button
                                         onClick={() => {
-                                            // TODO: Implementar conexión con YouTube Music
-                                            alert('Funcionalidad de conexión con YouTube Music próximamente');
+                                            window.location.href = '/youtube-music/redirect';
                                         }}
                                         className="gap-2"
                                     >
