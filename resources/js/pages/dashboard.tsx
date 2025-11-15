@@ -1,6 +1,7 @@
 import { type BreadcrumbItem, type ProfileData, type SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
 import { Activity, Apple, Droplet, Heart, Scale, Star, TrendingUp, User, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { useInitials } from '@/hooks/use-initials';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
+import { DashboardSkeleton } from '@/components/skeletons/dashboard-skeleton';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -80,6 +82,28 @@ export default function Dashboard() {
     const { auth } = usePage<SharedData>().props;
     const dashboardData = usePage<{ dashboardData: DashboardData }>().props.dashboardData;
     const getInitials = useInitials();
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        // Simulamos que los datos están cargando al montar el componente
+        setIsLoading(true);
+        const timer = setTimeout(() => setIsLoading(false), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Detectar cuando Inertia está navegando
+    useEffect(() => {
+        const handleStart = () => setIsLoading(true);
+        const handleFinish = () => setIsLoading(false);
+
+        router.on('start', handleStart);
+        router.on('finish', handleFinish);
+
+        return () => {
+            router.off('start', handleStart);
+            router.off('finish', handleFinish);
+        };
+    }, []);
 
     const hasProfile = dashboardData?.hasProfile;
     const profile = dashboardData?.profileData?.profile;
@@ -92,6 +116,10 @@ export default function Dashboard() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
+
+            {isLoading ? (
+                <DashboardSkeleton />
+            ) : (
 
             <div className="flex flex-col gap-6 p-6" data-page="dashboard">
                 {/* Header */}
@@ -526,6 +554,7 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
             </div>
+            )}
         </AppLayout>
     );
 }
