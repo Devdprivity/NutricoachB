@@ -8,14 +8,13 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
-    Route::redirect('settings', '/settings/profile');
-
-    Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::redirect('settings', '/settings/nutritional-profile');
 
     Route::get('settings/nutritional-profile', [NutritionalProfileController::class, 'edit'])->name('nutritional-profile.edit');
     Route::post('settings/nutritional-profile', [NutritionalProfileController::class, 'update'])->name('nutritional-profile.update');
+    Route::delete('settings/nutritional-profile', [NutritionalProfileController::class, 'destroy'])->name('nutritional-profile.destroy');
+
+    Route::get('settings/integrations', [\App\Http\Controllers\Settings\IntegrationsController::class, 'index'])->name('integrations.index');
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
 

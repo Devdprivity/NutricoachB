@@ -120,6 +120,66 @@ class CloudinaryService
     }
 
     /**
+     * Subir avatar de usuario a Cloudinary
+     * 
+     * @param UploadedFile $file
+     * @param int $userId
+     * @return array ['url' => string, 'public_id' => string, 'secure_url' => string]
+     */
+    public function uploadAvatar(UploadedFile $file, int $userId): array
+    {
+        $uuid = Str::uuid()->toString();
+        $timestamp = now()->format('YmdHis');
+        
+        // Estructura: usuarios/{user_id}/avatars/{timestamp}_{uuid}.{ext}
+        $folder = "usuarios/{$userId}/avatars";
+        $filename = "{$timestamp}_{$uuid}";
+        
+        try {
+            $result = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
+                'folder' => $folder,
+                'public_id' => $filename,
+                'resource_type' => 'image',
+                'overwrite' => false,
+                'unique_filename' => false,
+                'transformation' => [
+                    'width' => 400,
+                    'height' => 400,
+                    'crop' => 'fill',
+                    'gravity' => 'face',
+                    'quality' => 'auto',
+                    'fetch_format' => 'auto',
+                ],
+            ]);
+
+            $resultArray = $result instanceof \ArrayObject ? $result->getArrayCopy() : (array)$result;
+
+            $secureUrl = $resultArray['secure_url'] ?? $resultArray['url'] ?? null;
+            $publicId = $resultArray['public_id'] ?? null;
+            
+            if (!$secureUrl || !$publicId) {
+                throw new \Exception('Cloudinary upload result missing required fields');
+            }
+            
+            return [
+                'url' => $secureUrl,
+                'public_id' => $publicId,
+                'secure_url' => $secureUrl,
+                'cloudinary_url' => $secureUrl,
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Cloudinary avatar upload error: ' . $e->getMessage(), [
+                'file' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'file_mime' => $file->getMimeType(),
+                'user_id' => $userId,
+                'error' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Obtener URL de imagen optimizada
      * 
      * @param string $publicId

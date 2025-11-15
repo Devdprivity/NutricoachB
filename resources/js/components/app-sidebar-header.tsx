@@ -17,11 +17,9 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { SpotifyPlayer } from '@/components/spotify-player';
 import { useInitials } from '@/hooks/use-initials';
-import { cn } from '@/lib/utils';
 import { type BreadcrumbItem as BreadcrumbItemType, type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { Music, Music2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function AppSidebarHeader({
     breadcrumbs = [],
@@ -32,7 +30,6 @@ export function AppSidebarHeader({
     const { auth } = page.props;
     const getInitials = useInitials();
     const [spotifyConnected, setSpotifyConnected] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         // Verificar estado de Spotify
@@ -41,65 +38,6 @@ export function AppSidebarHeader({
             setSpotifyConnected(hasSpotify);
         }
     }, [auth?.user]);
-
-    const handleSpotifyConnect = async () => {
-        if (spotifyConnected) {
-            // Desconectar
-            setIsLoading(true);
-            try {
-                // Obtener token CSRF
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (!csrfToken) {
-                    // Si no hay token CSRF, usar Inertia router
-                    const { router } = await import('@inertiajs/react');
-                    router.post('/spotify/disconnect', {}, {
-                        onSuccess: () => {
-                            setSpotifyConnected(false);
-                            window.location.reload();
-                        },
-                        onError: (errors) => {
-                            alert('Error al desconectar Spotify: ' + (errors.message || 'Error desconocido'));
-                        }
-                    });
-                    return;
-                }
-
-                const response = await fetch('/spotify/disconnect', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                });
-
-                if (response.ok) {
-                    setSpotifyConnected(false);
-                    window.location.reload();
-                } else {
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        const data = await response.json();
-                        alert(data.message || 'Error al desconectar Spotify');
-                    } else {
-                        const text = await response.text();
-                        console.error('Error response:', text);
-                        alert('Error al desconectar Spotify. Por favor, recarga la página.');
-                    }
-                }
-            } catch (error) {
-                console.error('Error desconectando Spotify:', error);
-                alert('Error al desconectar Spotify. Por favor, intenta nuevamente.');
-            } finally {
-                setIsLoading(false);
-            }
-        } else {
-            // Conectar - redirigir a Spotify
-            window.location.href = '/spotify/redirect';
-        }
-    };
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
@@ -112,32 +50,8 @@ export function AppSidebarHeader({
                 <div className="flex items-center gap-2">
                     <NotificationsDropdown initialUnreadCount={auth.user?.unread_notifications_count || 0} />
                     
-                    {/* Reproductor de Spotify o Botón de Conexión */}
-                    {spotifyConnected ? (
-                        <SpotifyPlayer isConnected={spotifyConnected} />
-                    ) : (
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={handleSpotifyConnect}
-                                        disabled={isLoading}
-                                        className={cn(
-                                            "h-9 w-9 cursor-pointer transition-colors",
-                                            "hover:bg-orange-50 dark:hover:bg-orange-950/20"
-                                        )}
-                                    >
-                                        <Music2 className="h-5 w-5 text-neutral-600 dark:text-neutral-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors opacity-50" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Conectar Spotify</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    )}
+                    {/* Reproductor de Spotify (solo mostrar si está conectado) */}
+                    {spotifyConnected && <SpotifyPlayer isConnected={spotifyConnected} />}
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

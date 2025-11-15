@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\UserProfile;
+use App\Services\CloudinaryService;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -45,6 +48,15 @@ class NutritionalProfileController extends Controller
 
         return Inertia::render('settings/nutritional-profile', [
             'profileData' => $profileData,
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'address' => $user->address ?? '',
+                'avatar' => $user->avatar,
+                'avatar_public_id' => $user->avatar_public_id ?? null,
+            ],
+            'mustVerifyEmail' => $request->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
+            'status' => $request->session()->get('status'),
         ]);
     }
 
@@ -60,6 +72,9 @@ class NutritionalProfileController extends Controller
 
         try {
             $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'address' => 'nullable|string|max:500',
+                'avatar' => 'nullable|image|max:5120', // 5MB max
                 'height' => 'required|numeric|min:100|max:250',
                 'weight' => 'required|numeric|min:30|max:300',
                 'age' => 'required|integer|min:16|max:100',
@@ -155,10 +170,54 @@ class NutritionalProfileController extends Controller
                 'final_data' => $validated,
             ]);
 
+            // Manejar avatar si se subió uno nuevo
+            $avatarUrl = $user->avatar;
+            $avatarPublicId = $user->avatar_public_id ?? null;
+
+            if ($request->hasFile('avatar')) {
+                try {
+                    $cloudinaryService = app(CloudinaryService::class);
+                    
+                    // Eliminar avatar anterior de Cloudinary si existe
+                    if ($avatarPublicId) {
+                        try {
+                            $cloudinaryService->deleteImage($avatarPublicId);
+                        } catch (\Exception $e) {
+                            \Log::warning('Error deleting old avatar from Cloudinary: ' . $e->getMessage());
+                        }
+                    }
+                    
+                    // Subir nuevo avatar
+                    $uploadResult = $cloudinaryService->uploadAvatar(
+                        $request->file('avatar'),
+                        $user->id
+                    );
+                    
+                    $avatarUrl = $uploadResult['secure_url'];
+                    $avatarPublicId = $uploadResult['public_id'];
+                } catch (\Exception $e) {
+                    \Log::error('Error uploading avatar to Cloudinary: ' . $e->getMessage());
+                    return redirect()->route('nutritional-profile.edit')
+                        ->withErrors(['avatar' => 'Error al subir el avatar. Por favor intenta nuevamente.']);
+                }
+            }
+
+            // Actualizar datos del usuario (name, address y avatar)
+            $user->update([
+                'name' => $validated['name'],
+                'address' => $validated['address'] ?? null,
+                'avatar' => $avatarUrl,
+                'avatar_public_id' => $avatarPublicId,
+            ]);
+
+            // Remover name y address de validated antes de guardar en profile
+            $profileData = $validated;
+            unset($profileData['name'], $profileData['address']);
+
             // Crear o actualizar el perfil
             $profile = $user->profile()->updateOrCreate(
                 ['user_id' => $user->id],
-                $validated
+                $profileData
             );
 
             \Log::info('NutritionalProfileController::update - Perfil guardado exitosamente', [
@@ -184,6 +243,27 @@ class NutritionalProfileController extends Controller
             return redirect()->route('nutritional-profile.edit')
                 ->withErrors(['error' => 'Error al guardar el perfil. Por favor intenta nuevamente.']);
         }
+    }
+
+    /**
+     * Delete the user's account.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $user = $request->user();
+
+        Auth::logout();
+
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
     }
 
     /**
