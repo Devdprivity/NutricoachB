@@ -1,11 +1,18 @@
 import { usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { Music } from 'lucide-react';
+
 import { MusicPlayer } from './music-player';
 import { MusicServiceSelector } from './music-service-selector';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Music } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import type { MusicProvider } from '@/types/music';
-import { useState } from 'react';
 
 interface MusicPlayerContainerProps {
     showSettings?: boolean;
@@ -15,7 +22,7 @@ export function MusicPlayerContainer({ showSettings = false }: MusicPlayerContai
     const { props } = usePage<any>();
     const user = props.auth?.user;
 
-    const [showServiceSelector, setShowServiceSelector] = useState(showSettings);
+    const [showSettingsModal, setShowSettingsModal] = useState(showSettings);
 
     // Check which services are connected
     const spotifyConnected = !!user?.spotify_id;
@@ -32,7 +39,7 @@ export function MusicPlayerContainer({ showSettings = false }: MusicPlayerContai
         (youtubeMusicConnected ? 'youtube_music' : null) ||
         (appleMusicConnected ? 'apple_music' : null);
 
-    // No services connected
+    // No services connected (solo se usa en vistas donde se muestra el card grande)
     if (!spotifyConnected && !youtubeMusicConnected && !appleMusicConnected) {
         return (
             <Card className="p-6">
@@ -49,43 +56,61 @@ export function MusicPlayerContainer({ showSettings = false }: MusicPlayerContai
                             música mientras entrenas
                         </p>
                     </div>
-                    <Button onClick={() => setShowServiceSelector(true)}>
+                    <Button onClick={() => setShowSettingsModal(true)}>
                         <Music className="w-4 h-4 mr-2" />
                         Conectar Servicio de Música
                     </Button>
                 </div>
+
+                {/* Modal de configuración desde el card grande */}
+                <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+                    <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col items-center justify-center">
+                        <DialogHeader className="w-full">
+                            <DialogTitle className="text-center">
+                                Configuración de música
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="w-full">
+                            <MusicServiceSelector
+                                currentService={activeService}
+                                spotifyConnected={spotifyConnected}
+                                youtubeMusicConnected={youtubeMusicConnected}
+                                appleMusicConnected={appleMusicConnected}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </Card>
         );
     }
 
-    // Show service selector if requested
-    if (showServiceSelector) {
-        return (
-            <div className="space-y-4">
-                <MusicServiceSelector
-                    currentService={activeService}
-                    spotifyConnected={spotifyConnected}
-                    youtubeMusicConnected={youtubeMusicConnected}
-                    appleMusicConnected={appleMusicConnected}
-                />
-                <Button
-                    variant="outline"
-                    onClick={() => setShowServiceSelector(false)}
-                    className="w-full"
-                >
-                    Cerrar
-                </Button>
-            </div>
-        );
-    }
-
-    // Show active player
+    // Mostrar reproductor compacto + modal de configuración
     if (activeService) {
         return (
-            <MusicPlayer
-                provider={activeService}
-                onDisconnect={() => setShowServiceSelector(true)}
-            />
+            <>
+                <MusicPlayer
+                    provider={activeService}
+                    onDisconnect={() => setShowSettingsModal(true)}
+                />
+
+                <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+                    <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col items-center justify-center">
+                        <DialogHeader className="w-full">
+                            <DialogTitle className="text-center">
+                                Configuración de música
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="w-full">
+                            <MusicServiceSelector
+                                currentService={activeService}
+                                spotifyConnected={spotifyConnected}
+                                youtubeMusicConnected={youtubeMusicConnected}
+                                appleMusicConnected={appleMusicConnected}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </>
         );
     }
 

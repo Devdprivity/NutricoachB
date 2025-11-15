@@ -33,6 +33,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import { useHiddenRouting } from './hooks/use-hidden-routing';
+import { MusicProvider } from './contexts/music-context';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -46,13 +47,17 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        // Componente wrapper que aplica el hook de routing oculto
-        const AppWithHiddenRouting = () => {
+        // Componente wrapper que aplica el hook de routing oculto y el provider de música
+        const AppWithProviders = () => {
             useHiddenRouting();
-            return <App {...props} />;
+            return (
+                <MusicProvider>
+                    <App {...props} />
+                </MusicProvider>
+            );
         };
 
-        root.render(<AppWithHiddenRouting />);
+        root.render(<AppWithProviders />);
     },
     progress: {
         color: '#4B5563',

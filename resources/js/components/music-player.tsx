@@ -82,11 +82,46 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
 
     const config = providerConfig[provider];
 
-    // Fetch currently playing track
+    // Fetch currently playing track - con persistencia entre navegaciones
     useEffect(() => {
-        fetchCurrentlyPlaying();
-        const interval = setInterval(fetchCurrentlyPlaying, 5000);
-        return () => clearInterval(interval);
+        const fetchTrack = () => {
+            fetchCurrentlyPlaying();
+        };
+        
+        fetchTrack();
+        
+        // Usar intervalo global que persiste entre navegaciones
+        const intervalKey = `musicPlayerInterval_${provider}`;
+        if (!(window as any)[intervalKey]) {
+            (window as any)[intervalKey] = setInterval(fetchTrack, 5000);
+        }
+        
+        // Guardar función de fetch para acceso global
+        (window as any)[`fetchMusic_${provider}`] = fetchTrack;
+        
+        // Restaurar estado de reproducción si existe (especialmente para YouTube Music)
+        if (provider === 'youtube_music') {
+            const iframe = document.getElementById('youtube-music-player') as HTMLIFrameElement;
+            if (iframe && (window as any).youtubePlayer) {
+                // El reproductor ya existe, solo actualizar el estado
+                setTimeout(() => {
+                    fetchTrack();
+                }, 100);
+            }
+        }
+        
+        // No limpiar nada al desmontar - mantener todo activo para que la música continúe
+        return () => {
+            // Mantener el intervalo activo - NO limpiar
+        };
+    }, [provider]);
+
+    // Preserve player state across navigation - NO limpiar nada
+    useEffect(() => {
+        // Mantener el iframe de YouTube en el DOM incluso cuando el componente se desmonta
+        return () => {
+            // No hacer nada - mantener todo activo
+        };
     }, [provider]);
 
     const fetchCurrentlyPlaying = async () => {
@@ -214,12 +249,17 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                 });
                 
                 // Crear o actualizar iframe de YouTube para reproducir
+                // Asegurarse de que el iframe esté en el body del documento, no dentro del componente
                 let iframe = document.getElementById('youtube-music-player') as HTMLIFrameElement;
                 if (!iframe) {
                     iframe = document.createElement('iframe');
                     iframe.id = 'youtube-music-player';
                     iframe.style.display = 'none';
+                    iframe.style.position = 'fixed';
+                    iframe.style.top = '-9999px';
+                    iframe.style.left = '-9999px';
                     iframe.allow = 'autoplay';
+                    iframe.setAttribute('data-persist', 'true'); // Marcar para persistencia
                     document.body.appendChild(iframe);
                 }
                 
@@ -227,11 +267,12 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                 const videoUrl = `https://www.youtube.com/embed/${track.id}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`;
                 iframe.src = videoUrl;
                 
-                // Guardar referencia al iframe para controlar volumen
+                // Guardar referencia al iframe para controlar volumen (persistente en window)
                 (window as any).youtubePlayer = {
                     setVolume: (vol: number) => {
-                        if (iframe && iframe.contentWindow) {
-                            iframe.contentWindow.postMessage(JSON.stringify({
+                        const playerIframe = document.getElementById('youtube-music-player') as HTMLIFrameElement;
+                        if (playerIframe && playerIframe.contentWindow) {
+                            playerIframe.contentWindow.postMessage(JSON.stringify({
                                 event: 'command',
                                 func: 'setVolume',
                                 args: [vol]
@@ -239,16 +280,18 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                         }
                     },
                     playVideo: () => {
-                        if (iframe && iframe.contentWindow) {
-                            iframe.contentWindow.postMessage(JSON.stringify({
+                        const playerIframe = document.getElementById('youtube-music-player') as HTMLIFrameElement;
+                        if (playerIframe && playerIframe.contentWindow) {
+                            playerIframe.contentWindow.postMessage(JSON.stringify({
                                 event: 'command',
                                 func: 'playVideo'
                             }), '*');
                         }
                     },
                     pauseVideo: () => {
-                        if (iframe && iframe.contentWindow) {
-                            iframe.contentWindow.postMessage(JSON.stringify({
+                        const playerIframe = document.getElementById('youtube-music-player') as HTMLIFrameElement;
+                        if (playerIframe && playerIframe.contentWindow) {
+                            playerIframe.contentWindow.postMessage(JSON.stringify({
                                 event: 'command',
                                 func: 'pauseVideo'
                             }), '*');
@@ -270,20 +313,11 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
 
     return (
         <div className="relative">
-            {/* Hidden YouTube iframe for YouTube Music playback */}
-            {provider === 'youtube_music' && currentTrack?.item && (
-                <iframe
-                    id="youtube-music-player"
-                    ref={youtubeIframeRef}
-                    style={{ display: 'none' }}
-                    allow="autoplay"
-                    src={`https://www.youtube.com/embed/${currentTrack.item.id}?autoplay=${isPlaying ? 1 : 0}&enablejsapi=1&origin=${window.location.origin}`}
-                />
-            )}
+            {/* YouTube iframe se crea dinámicamente en handlePlayTrack y se mantiene en document.body */}
             
             {/* Mini Player - Horizontal Bar for Header */}
             {currentTrack?.item && !showSearch && (
-                <div className="flex items-center gap-3 h-16 px-4 bg-background/50 backdrop-blur-sm rounded-lg border border-border/50">
+                <div className="flex items-center gap-3 h-12 px-3 bg-background/60 backdrop-blur-sm rounded-lg border border-border/50 max-w-xl">
                     {/* Album Art */}
                     {currentTrack.item.album?.images?.[0]?.url && (
                         <img
@@ -421,7 +455,7 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
 
             {/* No track playing - Horizontal Bar for Header */}
             {!currentTrack?.item && !showSearch && (
-                <div className="flex items-center gap-3 h-16 px-4 bg-background/50 backdrop-blur-sm rounded-lg border border-border/50">
+                <div className="flex items-center gap-3 h-12 px-3 bg-background/60 backdrop-blur-sm rounded-lg border border-border/50 max-w-xl">
                     <div
                         className={`w-10 h-10 rounded-full ${config.color} flex items-center justify-center text-lg flex-shrink-0`}
                     >

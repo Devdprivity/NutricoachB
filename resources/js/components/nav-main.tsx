@@ -42,6 +42,8 @@ export function NavMain({ sections = [] }: { sections: NavSection[] }) {
                                     <Link 
                                         href={item.href} 
                                         prefetch={auth?.user ? 'intent' : false}
+                                        preserveState
+                                        preserveScroll
                                     >
                                         {item.icon && <item.icon />}
                                         {!isCollapsed && <span>{item.title}</span>}

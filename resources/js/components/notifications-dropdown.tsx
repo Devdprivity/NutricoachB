@@ -191,7 +191,7 @@ export function NotificationsDropdown({ initialUnreadCount = 0 }: NotificationsD
         
         if (notification.action_url) {
             setIsOpen(false);
-            router.visit(notification.action_url);
+            router.visit(notification.action_url, { preserveState: true, preserveScroll: true });
         }
     };
 
@@ -335,7 +335,7 @@ export function NotificationsDropdown({ initialUnreadCount = 0 }: NotificationsD
                             className="w-full text-xs"
                             onClick={() => {
                                 setIsOpen(false);
-                                router.visit('/notifications');
+                                router.visit('/notifications', { preserveState: true, preserveScroll: true });
                             }}
                         >
                             Ver todas las notificaciones
