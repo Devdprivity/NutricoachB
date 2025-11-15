@@ -18,9 +18,12 @@ class YouTubeMusicController extends Controller
 
     public function __construct()
     {
-        $this->clientId = config('services.youtube_music.client_id');
-        $this->clientSecret = config('services.youtube_music.client_secret');
-        $this->redirectUri = config('services.youtube_music.redirect_uri');
+        // Usar las mismas credenciales de Google OAuth que ya están funcionando
+        $this->clientId = config('services.google.client_id');
+        $this->clientSecret = config('services.google.client_secret');
+        // Usar el redirect URI de YouTube Music o el de Google si no está configurado
+        $this->redirectUri = config('services.youtube_music.redirect_uri') 
+            ?? config('app.url') . '/youtube-music/callback';
     }
 
     /**
@@ -28,11 +31,28 @@ class YouTubeMusicController extends Controller
      */
     public function redirectToYouTubeMusic()
     {
+        // Validar que las credenciales estén configuradas
+        if (empty($this->clientId) || empty($this->clientSecret)) {
+            Log::error('YouTube Music: Credenciales de Google OAuth no configuradas');
+            return redirect()->route('integrations.index')
+                ->with('error', 'YouTube Music no está configurado. Por favor, contacta al administrador.');
+        }
+
+        // Asegurar que el redirect URI esté configurado correctamente
+        if (empty($this->redirectUri)) {
+            $this->redirectUri = config('app.url') . '/youtube-music/callback';
+        }
+
         $scopes = [
             'https://www.googleapis.com/auth/youtube',
             'https://www.googleapis.com/auth/youtube.readonly',
             'https://www.googleapis.com/auth/youtubepartner',
         ];
+
+        Log::info('YouTube Music Redirect', [
+            'client_id' => substr($this->clientId, 0, 10) . '...',
+            'redirect_uri' => $this->redirectUri,
+        ]);
 
         $query = http_build_query([
             'client_id' => $this->clientId,
@@ -52,10 +72,28 @@ class YouTubeMusicController extends Controller
     public function handleYouTubeMusicCallback(Request $request)
     {
         $code = $request->get('code');
+        $error = $request->get('error');
+
+        if ($error) {
+            Log::error('YouTube Music callback error', ['error' => $error]);
+            return redirect()->route('integrations.index')
+                ->with('error', 'Error al conectar con YouTube Music: ' . $error);
+        }
 
         if (!$code) {
-            return redirect()->route('dashboard')->with('error', 'YouTube Music connection failed');
+            Log::error('YouTube Music callback sin código');
+            return redirect()->route('integrations.index')
+                ->with('error', 'Error al conectar con YouTube Music: No se recibió código de autorización');
         }
+
+        // Asegurar que el redirect URI esté configurado correctamente
+        if (empty($this->redirectUri)) {
+            $this->redirectUri = config('app.url') . '/youtube-music/callback';
+        }
+
+        Log::info('YouTube Music callback recibido', [
+            'redirect_uri' => $this->redirectUri,
+        ]);
 
         try {
             // Exchange code for access token
@@ -68,8 +106,13 @@ class YouTubeMusicController extends Controller
             ]);
 
             if ($response->failed()) {
-                Log::error('YouTube Music token exchange failed', ['response' => $response->json()]);
-                return redirect()->route('dashboard')->with('error', 'Failed to connect YouTube Music');
+                Log::error('YouTube Music token exchange failed', [
+                    'status' => $response->status(),
+                    'response' => $response->json(),
+                    'body' => $response->body(),
+                ]);
+                return redirect()->route('integrations.index')
+                    ->with('error', 'Error al conectar con YouTube Music. Verifica que el redirect URI esté configurado en Google Cloud Console.');
             }
 
             $data = $response->json();
@@ -82,15 +125,21 @@ class YouTubeMusicController extends Controller
                 ]);
 
             if ($userResponse->failed()) {
-                Log::error('YouTube Music user info failed', ['response' => $userResponse->json()]);
-                return redirect()->route('dashboard')->with('error', 'Failed to get YouTube Music profile');
+                Log::error('YouTube Music user info failed', [
+                    'status' => $userResponse->status(),
+                    'response' => $userResponse->json(),
+                ]);
+                return redirect()->route('integrations.index')
+                    ->with('error', 'Error al obtener el perfil de YouTube Music');
             }
 
             $userData = $userResponse->json();
             $channelId = $userData['items'][0]['id'] ?? null;
 
             if (!$channelId) {
-                return redirect()->route('dashboard')->with('error', 'No YouTube channel found');
+                Log::error('YouTube Music: No se encontró canal', ['user_data' => $userData]);
+                return redirect()->route('integrations.index')
+                    ->with('error', 'No se encontró canal de YouTube asociado a tu cuenta');
             }
 
             // Update user with YouTube Music credentials
@@ -99,14 +148,24 @@ class YouTubeMusicController extends Controller
                 'youtube_music_id' => $channelId,
                 'youtube_music_access_token' => $data['access_token'],
                 'youtube_music_refresh_token' => $data['refresh_token'] ?? null,
-                'youtube_music_token_expires_at' => now()->addSeconds($data['expires_in']),
+                'youtube_music_token_expires_at' => now()->addSeconds($data['expires_in'] ?? 3600),
                 'preferred_music_service' => 'youtube_music',
             ]);
 
-            return redirect()->route('dashboard')->with('success', 'YouTube Music connected successfully!');
+            Log::info('YouTube Music conectado exitosamente', [
+                'user_id' => $user->id,
+                'youtube_music_id' => $channelId,
+            ]);
+
+            return redirect()->route('integrations.index')
+                ->with('success', '¡YouTube Music conectado exitosamente!');
         } catch (\Exception $e) {
-            Log::error('YouTube Music connection error', ['error' => $e->getMessage()]);
-            return redirect()->route('dashboard')->with('error', 'An error occurred connecting YouTube Music');
+            Log::error('YouTube Music connection error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('integrations.index')
+                ->with('error', 'Error al conectar con YouTube Music: ' . $e->getMessage());
         }
     }
 
