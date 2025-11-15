@@ -7,6 +7,9 @@ import { router } from '@inertiajs/react';
  */
 export function useHiddenRouting() {
     useEffect(() => {
+        // Flag para indicar si la página acaba de cargar
+        let isInitialLoad = true;
+
         // Guardar la ruta inicial
         const saveRoute = (path: string) => {
             if (path && path !== '/') {
@@ -19,7 +22,7 @@ export function useHiddenRouting() {
             if (window.history.replaceState) {
                 const currentPath = path || window.location.pathname;
                 saveRoute(currentPath);
-                
+
                 window.history.replaceState(
                     { ...window.history.state, path: currentPath },
                     '',
@@ -32,14 +35,17 @@ export function useHiddenRouting() {
         const originalVisit = router.visit.bind(router);
         router.visit = function(url: any, options: any = {}) {
             const path = typeof url === 'string' ? url : (url?.url || url);
-            
+
+            // Marcar que ya no es la carga inicial
+            isInitialLoad = false;
+
             // Guardar la ruta antes de navegar
             if (path) {
                 saveRoute(path);
                 // Reemplazar URL inmediatamente
                 replaceUrl(path);
             }
-            
+
             // Llamar al método original
             return originalVisit(url, options);
         };
@@ -50,6 +56,10 @@ export function useHiddenRouting() {
             const originalMethod = (router as any)[method].bind(router);
             (router as any)[method] = function(url: any, data?: any, options?: any) {
                 const path = typeof url === 'string' ? url : (url?.url || url);
+
+                // Marcar que ya no es la carga inicial
+                isInitialLoad = false;
+
                 if (path) {
                     saveRoute(path);
                     replaceUrl(path);
@@ -62,12 +72,15 @@ export function useHiddenRouting() {
         const handleLinkClick = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const link = target.closest('a[href]') as HTMLAnchorElement;
-            
+
             if (link && link.href) {
                 try {
                     const url = new URL(link.href);
                     // Solo interceptar enlaces del mismo origen
                     if (url.origin === window.location.origin && url.pathname !== '/') {
+                        // Marcar que ya no es la carga inicial
+                        isInitialLoad = false;
+
                         const path = url.pathname + url.search + url.hash;
                         saveRoute(path);
                         // Reemplazar URL antes de que Inertia navegue
@@ -81,16 +94,19 @@ export function useHiddenRouting() {
 
         // Manejar botón atrás/adelante
         const handlePopState = (e: PopStateEvent) => {
+            // Marcar que ya no es la carga inicial
+            isInitialLoad = false;
+
             const savedPath = sessionStorage.getItem('_currentRoute') || '/';
             const statePath = e.state?.path;
-            
+
             if (statePath && statePath !== savedPath) {
                 saveRoute(statePath);
             } else if (savedPath !== '/') {
                 // Navegar a la ruta guardada
                 router.visit(savedPath, { preserveState: true, preserveScroll: true });
             }
-            
+
             // Mantener URL limpia
             replaceUrl();
         };
@@ -113,20 +129,39 @@ export function useHiddenRouting() {
         // Observar cambios en la URL usando un intervalo (más confiable)
         let lastPath = window.location.pathname;
         const urlCheckInterval = setInterval(() => {
-            const currentPath = window.location.pathname;
-            if (currentPath !== lastPath) {
-                lastPath = currentPath;
-                if (currentPath !== '/') {
-                    saveRoute(currentPath);
-                    replaceUrl(currentPath);
+            // Solo monitorear cambios después de la carga inicial
+            if (!isInitialLoad) {
+                const currentPath = window.location.pathname;
+                if (currentPath !== lastPath) {
+                    lastPath = currentPath;
+                    if (currentPath !== '/') {
+                        saveRoute(currentPath);
+                        replaceUrl(currentPath);
+                    }
                 }
             }
         }, 100);
 
-        // Reemplazar URL inicial si no es la raíz
-        if (window.location.pathname !== '/') {
-            replaceUrl();
-        }
+        // Manejar la carga inicial de la página
+        const initializePage = () => {
+            const currentPath = window.location.pathname;
+
+            // Si estamos en una página específica después de refresh, guardarla
+            if (currentPath !== '/' && currentPath !== '') {
+                saveRoute(currentPath);
+                // Esperar un momento antes de ocultar la URL para asegurar que Inertia cargó
+                setTimeout(() => {
+                    replaceUrl(currentPath);
+                    isInitialLoad = false;
+                }, 100);
+            } else {
+                // Si estamos en la raíz, ocultar inmediatamente
+                isInitialLoad = false;
+            }
+        };
+
+        // Ejecutar inicialización
+        initializePage();
 
         // Event listeners
         document.addEventListener('click', handleLinkClick, true);
@@ -135,9 +170,12 @@ export function useHiddenRouting() {
 
         // También interceptar después de que Inertia complete la navegación
         const handleInertiaComplete = () => {
-            const currentPath = window.location.pathname;
-            if (currentPath !== '/') {
-                replaceUrl();
+            // Solo reemplazar URL si no es la carga inicial
+            if (!isInitialLoad) {
+                const currentPath = window.location.pathname;
+                if (currentPath !== '/') {
+                    replaceUrl();
+                }
             }
         };
 
