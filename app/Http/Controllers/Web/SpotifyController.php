@@ -33,6 +33,11 @@ class SpotifyController extends Controller
                 ->with('error', 'Spotify no está configurado. Por favor, contacta al administrador.');
         }
 
+        // Asegurar que el redirect URI esté configurado correctamente
+        if (empty($this->redirectUri)) {
+            $this->redirectUri = config('app.url') . '/spotify/callback';
+        }
+
         $scopes = [
             'user-read-currently-playing',
             'user-read-playback-state',
@@ -43,6 +48,10 @@ class SpotifyController extends Controller
             'user-read-private',
         ];
 
+        // Log para debugging (remover en producción)
+        \Log::info('Spotify Redirect URI: ' . $this->redirectUri);
+        \Log::info('Spotify Client ID: ' . substr($this->clientId, 0, 10) . '...');
+
         $query = http_build_query([
             'client_id' => $this->clientId,
             'response_type' => 'code',
@@ -51,7 +60,10 @@ class SpotifyController extends Controller
             'show_dialog' => true,
         ]);
 
-        return redirect('https://accounts.spotify.com/authorize?' . $query);
+        $authUrl = 'https://accounts.spotify.com/authorize?' . $query;
+        \Log::info('Spotify Auth URL: ' . $authUrl);
+
+        return redirect($authUrl);
     }
 
     /**
@@ -60,10 +72,25 @@ class SpotifyController extends Controller
     public function handleSpotifyCallback(Request $request)
     {
         $code = $request->get('code');
+        $error = $request->get('error');
+
+        if ($error) {
+            \Log::error('Spotify callback error: ' . $error);
+            return redirect()->route('dashboard')->with('error', 'Error al conectar con Spotify: ' . $error);
+        }
 
         if (!$code) {
-            return redirect()->route('dashboard')->with('error', 'Error al conectar con Spotify');
+            \Log::error('Spotify callback sin código');
+            return redirect()->route('dashboard')->with('error', 'Error al conectar con Spotify: No se recibió código de autorización');
         }
+
+        // Asegurar que el redirect URI esté configurado correctamente
+        if (empty($this->redirectUri)) {
+            $this->redirectUri = config('app.url') . '/spotify/callback';
+        }
+
+        \Log::info('Spotify callback recibido con código');
+        \Log::info('Redirect URI usado: ' . $this->redirectUri);
 
         try {
             $response = Http::asForm()->post('https://accounts.spotify.com/api/token', [
@@ -94,12 +121,17 @@ class SpotifyController extends Controller
                 }
 
                 return redirect()->route('dashboard')->with('success', '¡Spotify conectado exitosamente!');
+            } else {
+                // Log del error de respuesta
+                \Log::error('Spotify token error: ' . $response->body());
+                \Log::error('Spotify token status: ' . $response->status());
+                return redirect()->route('dashboard')->with('error', 'Error al obtener token de Spotify: ' . $response->body());
             }
         } catch (\Exception $e) {
-            return redirect()->route('dashboard')->with('error', 'Error al conectar con Spotify');
+            \Log::error('Spotify connection exception: ' . $e->getMessage());
+            \Log::error('Spotify connection trace: ' . $e->getTraceAsString());
+            return redirect()->route('dashboard')->with('error', 'Error al conectar con Spotify: ' . $e->getMessage());
         }
-
-        return redirect()->route('dashboard')->with('error', 'Error al conectar con Spotify');
     }
 
     /**
