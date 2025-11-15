@@ -3,6 +3,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { Apple, Camera, Clock, Heart, Loader2, Plus, Scan, Sparkles, Star, Trash2, Upload } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
+import { NutritionSkeleton } from '@/components/skeletons/nutrition-skeleton';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -105,6 +106,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = useState(false);
@@ -150,6 +152,25 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
     
     const [mealType, setMealType] = useState(() => getMealTypeByTime());
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        setIsLoading(true);
+        const timer = setTimeout(() => setIsLoading(false), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        const handleStart = () => setIsLoading(true);
+        const handleFinish = () => setIsLoading(false);
+
+        document.addEventListener('inertia:start', handleStart);
+        document.addEventListener('inertia:finish', handleFinish);
+
+        return () => {
+            document.removeEventListener('inertia:start', handleStart);
+            document.removeEventListener('inertia:finish', handleFinish);
+        };
+    }, []);
 
     // Actualizar hora cada minuto
     useEffect(() => {
@@ -324,6 +345,9 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Nutrición" />
 
+            {isLoading ? (
+                <NutritionSkeleton />
+            ) : (
             <div className="flex flex-col gap-6 p-6">
                 {/* Header con título y botón de escáner */}
                 <div className="flex items-start justify-between">
@@ -881,6 +905,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                     </CardContent>
                 </Card>
             </div>
+            )}
         </AppLayout>
     );
 }
