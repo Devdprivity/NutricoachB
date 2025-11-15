@@ -32,6 +32,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
+import { useHiddenRouting } from './hooks/use-hidden-routing';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -45,7 +46,13 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        // Componente wrapper que aplica el hook de routing oculto
+        const AppWithHiddenRouting = () => {
+            useHiddenRouting();
+            return <App {...props} />;
+        };
+
+        root.render(<AppWithHiddenRouting />);
     },
     progress: {
         color: '#4B5563',

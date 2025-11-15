@@ -281,190 +281,182 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                 />
             )}
             
-            {/* Mini Player */}
+            {/* Mini Player - Horizontal Bar for Header */}
             {currentTrack?.item && !showSearch && (
-                <Card className="p-3">
-                    <div className="flex flex-col items-center gap-3">
-                        {/* Top section: Album Art and Track Info */}
-                        <div className="flex items-center gap-3 w-full">
-                            {/* Album Art */}
-                            {currentTrack.item.album?.images?.[0]?.url && (
-                                <img
-                                    src={currentTrack.item.album.images[0].url}
-                                    alt={currentTrack.item.name}
-                                    className="w-16 h-16 rounded-lg flex-shrink-0"
-                                />
-                            )}
+                <div className="flex items-center gap-3 h-16 px-4 bg-background/50 backdrop-blur-sm rounded-lg border border-border/50">
+                    {/* Album Art */}
+                    {currentTrack.item.album?.images?.[0]?.url && (
+                        <img
+                            src={currentTrack.item.album.images[0].url}
+                            alt={currentTrack.item.name}
+                            className="w-12 h-12 rounded flex-shrink-0"
+                        />
+                    )}
 
-                            {/* Track Info */}
-                            <div className="flex-1 min-w-0 text-center">
-                                <div className="flex items-center justify-center gap-2 mb-1">
-                                    <Badge className={`${config.color} text-white`}>
-                                        {config.icon} {config.name}
-                                    </Badge>
-                                </div>
-                                <p className="font-medium truncate text-sm">
-                                    {currentTrack.item.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                    {currentTrack.item.artists
-                                        ?.map((a) => a.name)
-                                        .join(', ')}
-                                </p>
-                            </div>
+                    {/* Track Info */}
+                    <div className="flex-1 min-w-0 max-w-xs">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <Badge className={`${config.color} text-white text-xs px-1.5 py-0`}>
+                                {config.icon} {config.name}
+                            </Badge>
                         </div>
+                        <p className="font-medium truncate text-sm leading-tight">
+                            {currentTrack.item.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate leading-tight">
+                            {currentTrack.item.artists
+                                ?.map((a) => a.name)
+                                .join(', ')}
+                        </p>
+                    </div>
 
-                        {/* Controls - Centered */}
-                        <div className="flex items-center justify-center gap-2 w-full">
-                            {config.endpoints.previous && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handlePrevious}
-                                    className="h-9 w-9"
-                                >
-                                    <SkipBack className="w-4 h-4" />
-                                </Button>
+                    {/* Controls - Horizontal */}
+                    <div className="flex items-center gap-1">
+                        {config.endpoints.previous && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handlePrevious}
+                                className="h-8 w-8"
+                            >
+                                <SkipBack className="w-4 h-4" />
+                            </Button>
+                        )}
+
+                        {config.endpoints.play && config.endpoints.pause && (
+                            <Button
+                                variant="default"
+                                size="icon"
+                                onClick={handlePlayPause}
+                                className="h-8 w-8"
+                            >
+                                {isPlaying ? (
+                                    <Pause className="w-4 h-4" />
+                                ) : (
+                                    <Play className="w-4 h-4" />
+                                )}
+                            </Button>
+                        )}
+
+                        {config.endpoints.next && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleNext}
+                                className="h-8 w-8"
+                            >
+                                <SkipForward className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Volume Control */}
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                const newVolume = volume === 0 ? 100 : 0;
+                                setVolume(newVolume);
+                                localStorage.setItem('musicVolume', newVolume.toString());
+                                if (provider === 'youtube_music' && (window as any).youtubePlayer) {
+                                    (window as any).youtubePlayer.setVolume(newVolume);
+                                }
+                            }}
+                            className="h-8 w-8"
+                        >
+                            {volume === 0 ? (
+                                <VolumeX className="w-4 h-4" />
+                            ) : (
+                                <Volume2 className="w-4 h-4" />
                             )}
-
-                            {config.endpoints.play && config.endpoints.pause && (
-                                <Button
-                                    variant="default"
-                                    size="icon"
-                                    onClick={handlePlayPause}
-                                    className="h-10 w-10"
-                                >
-                                    {isPlaying ? (
-                                        <Pause className="w-5 h-5" />
-                                    ) : (
-                                        <Play className="w-5 h-5" />
-                                    )}
-                                </Button>
-                            )}
-
-                            {config.endpoints.next && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleNext}
-                                    className="h-9 w-9"
-                                >
-                                    <SkipForward className="w-4 h-4" />
-                                </Button>
-                            )}
-
-                            {/* Volume Control */}
-                            <div className="flex items-center gap-2 ml-2">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => {
-                                        const newVolume = volume === 0 ? 100 : 0;
-                                        setVolume(newVolume);
-                                        localStorage.setItem('musicVolume', newVolume.toString());
-                                        // Actualizar volumen en el reproductor si es YouTube Music
-                                        if (provider === 'youtube_music' && (window as any).youtubePlayer) {
-                                            (window as any).youtubePlayer.setVolume(newVolume);
-                                        }
-                                    }}
-                                    className="h-8 w-8"
-                                >
-                                    {volume === 0 ? (
-                                        <VolumeX className="w-4 h-4" />
-                                    ) : (
-                                        <Volume2 className="w-4 h-4" />
-                                    )}
-                                </Button>
-                                <div className="w-20 hidden md:block">
-                                    <Slider
-                                        value={[volume]}
-                                        onValueChange={(value) => {
-                                            const newVolume = value[0];
-                                            setVolume(newVolume);
-                                            localStorage.setItem('musicVolume', newVolume.toString());
-                                            // Actualizar volumen en el reproductor si es YouTube Music
-                                            if (provider === 'youtube_music' && (window as any).youtubePlayer) {
-                                                (window as any).youtubePlayer.setVolume(newVolume);
-                                            }
-                                        }}
-                                        min={0}
-                                        max={100}
-                                        step={1}
-                                        className="w-full"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Bottom actions - Centered */}
-                        <div className="flex items-center justify-center gap-2 w-full">
-                            {config.endpoints.search && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setShowSearch(true)}
-                                >
-                                    <Search className="w-4 h-4 mr-2" />
-                                    Buscar
-                                </Button>
-                            )}
-
-                            {onDisconnect && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={onDisconnect}
-                                >
-                                    <Settings className="w-4 h-4 mr-2" />
-                                    Configuración
-                                </Button>
-                            )}
+                        </Button>
+                        <div className="w-24 hidden lg:block">
+                            <Slider
+                                value={[volume]}
+                                onValueChange={(value) => {
+                                    const newVolume = value[0];
+                                    setVolume(newVolume);
+                                    localStorage.setItem('musicVolume', newVolume.toString());
+                                    if (provider === 'youtube_music' && (window as any).youtubePlayer) {
+                                        (window as any).youtubePlayer.setVolume(newVolume);
+                                    }
+                                }}
+                                min={0}
+                                max={100}
+                                step={1}
+                                className="w-full"
+                            />
                         </div>
                     </div>
-                </Card>
+
+                    {/* Search and Settings */}
+                    <div className="flex items-center gap-1 border-l border-border/50 pl-2">
+                        {config.endpoints.search && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowSearch(true)}
+                                className="h-8 px-2"
+                            >
+                                <Search className="w-4 h-4 mr-1.5" />
+                                Buscar
+                            </Button>
+                        )}
+
+                        {onDisconnect && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onDisconnect}
+                                className="h-8 px-2"
+                            >
+                                <Settings className="w-4 h-4 mr-1.5" />
+                                Configuración
+                            </Button>
+                        )}
+                    </div>
+                </div>
             )}
 
-            {/* No track playing */}
+            {/* No track playing - Horizontal Bar for Header */}
             {!currentTrack?.item && !showSearch && (
-                <Card className="p-4">
-                    <div className="flex flex-col items-center justify-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <div
-                                className={`w-12 h-12 rounded-full ${config.color} flex items-center justify-center text-xl`}
-                            >
-                                {config.icon}
-                            </div>
-                            <div className="text-center">
-                                <p className="font-medium text-sm">{config.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    No hay música reproduciéndose
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-center gap-2">
-                            {config.endpoints.search && (
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={() => setShowSearch(true)}
-                                >
-                                    <Search className="w-4 h-4 mr-2" />
-                                    Buscar música
-                                </Button>
-                            )}
-                            {onDisconnect && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={onDisconnect}
-                                >
-                                    <Settings className="w-4 h-4" />
-                                </Button>
-                            )}
-                        </div>
+                <div className="flex items-center gap-3 h-16 px-4 bg-background/50 backdrop-blur-sm rounded-lg border border-border/50">
+                    <div
+                        className={`w-10 h-10 rounded-full ${config.color} flex items-center justify-center text-lg flex-shrink-0`}
+                    >
+                        {config.icon}
                     </div>
-                </Card>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{config.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                            No hay música reproduciéndose
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {config.endpoints.search && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => setShowSearch(true)}
+                                className="h-8 px-3"
+                            >
+                                <Search className="w-4 h-4 mr-1.5" />
+                                Buscar música
+                            </Button>
+                        )}
+                        {onDisconnect && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={onDisconnect}
+                                className="h-8 w-8"
+                            >
+                                <Settings className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
             )}
 
             {/* Search Panel - Modal Centered */}

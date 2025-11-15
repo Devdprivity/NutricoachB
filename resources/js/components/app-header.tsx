@@ -110,8 +110,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
     return (
         <>
-            <div className="border-b border-sidebar-border/80 bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
-                <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
+            <div className="border-b border-sidebar-border/80 bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 relative">
+                <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl relative">
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
@@ -239,6 +239,13 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         </NavigationMenu>
                     </div>
 
+                    {/* Reproductor de Música - Centro del Header */}
+                    {hasAnyMusicService && (
+                        <div className="absolute left-1/2 top-0 -translate-x-1/2 h-full flex items-center hidden lg:flex">
+                            <MusicPlayerContainer />
+                        </div>
+                    )}
+
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
                             <Button
@@ -249,9 +256,6 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 <Search className="!size-5 text-neutral-600 dark:text-neutral-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors" />
                             </Button>
                             <NotificationsDropdown initialUnreadCount={auth.user?.unread_notifications_count || 0} />
-
-                            {/* Reproductor de Música (Spotify, YouTube Music, Apple Music) */}
-                            {hasAnyMusicService && <MusicPlayerContainer />}
 
                             <div className="hidden lg:flex">
                                 {rightNavItems.map((item) => (

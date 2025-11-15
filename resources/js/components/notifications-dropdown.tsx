@@ -50,22 +50,23 @@ export function NotificationsDropdown({ initialUnreadCount = 0 }: NotificationsD
     const fetchNotifications = async () => {
         setIsLoading(true);
         try {
-            // Obtener CSRF token
+            // Obtener CSRF token primero
             await fetch('/sanctum/csrf-cookie', {
                 method: 'GET',
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
-            const csrfToken = getCsrfToken();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || getCsrfToken();
 
             const response = await fetch('/api/notifications/unread', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),
+                    ...(csrfToken && { 'X-CSRF-TOKEN': csrfToken }),
                 },
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -95,19 +96,20 @@ export function NotificationsDropdown({ initialUnreadCount = 0 }: NotificationsD
         try {
             await fetch('/sanctum/csrf-cookie', {
                 method: 'GET',
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
-            const csrfToken = getCsrfToken();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || getCsrfToken();
 
             const response = await fetch(`/api/notifications/${id}/read`, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),
+                    ...(csrfToken && { 'X-CSRF-TOKEN': csrfToken }),
                 },
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -125,19 +127,20 @@ export function NotificationsDropdown({ initialUnreadCount = 0 }: NotificationsD
         try {
             await fetch('/sanctum/csrf-cookie', {
                 method: 'GET',
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
-            const csrfToken = getCsrfToken();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || getCsrfToken();
 
             const response = await fetch('/api/notifications/read-all', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),
+                    ...(csrfToken && { 'X-CSRF-TOKEN': csrfToken }),
                 },
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -153,19 +156,20 @@ export function NotificationsDropdown({ initialUnreadCount = 0 }: NotificationsD
         try {
             await fetch('/sanctum/csrf-cookie', {
                 method: 'GET',
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
-            const csrfToken = getCsrfToken();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || getCsrfToken();
 
             const response = await fetch(`/api/notifications/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),
+                    ...(csrfToken && { 'X-CSRF-TOKEN': csrfToken }),
                 },
-                credentials: 'same-origin',
+                credentials: 'include',
             });
 
             if (response.ok) {
