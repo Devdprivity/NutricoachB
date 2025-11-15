@@ -12,7 +12,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Apple, Award, Calendar, Droplet, Dumbbell, LayoutGrid, MessageSquare, TrendingUp, Users } from 'lucide-react';
+import { Apple, Award, Calendar, CalendarDays, Droplet, Dumbbell, LayoutGrid, MessageSquare, TrendingUp, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -35,6 +35,11 @@ const mainNavItems: NavItem[] = [
         title: 'Ejercicios',
         href: '/exercises',
         icon: Dumbbell,
+    },
+    {
+        title: 'Planes de Entrenamiento',
+        href: '/workout-plans',
+        icon: CalendarDays,
     },
     {
         title: 'Logros',

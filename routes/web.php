@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
 use App\Http\Controllers\Web\ProgressPhotoController;
 use App\Http\Controllers\Web\SocialController;
+use App\Http\Controllers\Web\WorkoutPlanController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -76,6 +77,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('social/activities/{activityId}/like', [SocialController::class, 'unlikeActivity'])->name('social.activity.unlike');
     Route::get('social/search', [SocialController::class, 'searchUsers'])->name('social.search');
     Route::get('social/leaderboard', [SocialController::class, 'leaderboard'])->name('social.leaderboard');
+
+    // Planes de Entrenamiento
+    Route::get('workout-plans', [WorkoutPlanController::class, 'index'])->name('workout-plans');
+    Route::post('workout-plans', [WorkoutPlanController::class, 'store'])->name('workout-plans.store');
+    Route::get('workout-plans/{id}', [WorkoutPlanController::class, 'show'])->name('workout-plans.show');
+    Route::put('workout-plans/{id}', [WorkoutPlanController::class, 'update'])->name('workout-plans.update');
+    Route::delete('workout-plans/{id}', [WorkoutPlanController::class, 'destroy'])->name('workout-plans.destroy');
+    Route::post('workout-plans/log', [WorkoutPlanController::class, 'logWorkout'])->name('workout-plans.log');
+    Route::get('workout-plans/today/workout', [WorkoutPlanController::class, 'getTodayWorkout'])->name('workout-plans.today');
 
     Route::get('context', [\App\Http\Controllers\Web\ContextController::class, 'index'])->name('context');
 });
