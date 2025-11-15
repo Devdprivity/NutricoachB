@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\SocialController;
+use App\Http\Controllers\Web\BarcodeController;
 use App\Http\Controllers\Web\CoachingController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ExercisesController;
@@ -37,6 +38,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('favorite-meals/{id}/use', [FavoriteMealController::class, 'use'])->name('favorite-meals.use');
     Route::put('favorite-meals/{id}', [FavoriteMealController::class, 'update'])->name('favorite-meals.update');
     Route::delete('favorite-meals/{id}', [FavoriteMealController::class, 'destroy'])->name('favorite-meals.destroy');
+
+    // Códigos de Barras
+    Route::post('barcode/search', [BarcodeController::class, 'searchByBarcode'])->name('barcode.search');
+    Route::post('barcode/search-text', [BarcodeController::class, 'searchByText'])->name('barcode.search-text');
 
     // Ejercicios
     Route::get('exercises', [ExercisesController::class, 'index'])->name('exercises');

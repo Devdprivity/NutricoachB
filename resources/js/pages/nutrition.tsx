@@ -1,7 +1,8 @@
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Apple, Camera, Clock, Heart, Plus, Sparkles, Star, Trash2, Upload } from 'lucide-react';
+import { Apple, Camera, Clock, Heart, Loader2, Plus, Scan, Sparkles, Star, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
+import axios from 'axios';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,27 @@ interface FavoriteMeal {
     times_used: number;
 }
 
+interface BarcodeProduct {
+    barcode: string;
+    name: string;
+    brand?: string;
+    image_url?: string;
+    quantity?: string;
+    serving_size: string;
+    nutritional_data: {
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        fiber?: number;
+        sodium?: number;
+        sugars?: number;
+        saturated_fat?: number;
+    };
+    ingredients_text?: string;
+    categories?: string;
+}
+
 interface NutritionData {
     today_records: MealRecord[];
     today_totals: {
@@ -81,6 +103,13 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
     const [mealType, setMealType] = useState('breakfast');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Barcode scanner state
+    const [barcodeInput, setBarcodeInput] = useState('');
+    const [isSearchingBarcode, setIsSearchingBarcode] = useState(false);
+    const [barcodeProduct, setBarcodeProduct] = useState<BarcodeProduct | null>(null);
+    const [barcodeError, setBarcodeError] = useState<string | null>(null);
+    const [servingAmount, setServingAmount] = useState('100');
+
     const totals = nutritionData?.today_totals;
     const goals = nutritionData?.goals;
     const percentages = nutritionData?.percentages;
@@ -102,6 +131,59 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         router.post(`/favorite-meals/from-meal/${mealId}`, {}, {
             onSuccess: () => {
                 alert('Comida guardada como favorita');
+            },
+        });
+    };
+
+    const handleBarcodeSearch = async () => {
+        if (!barcodeInput.trim()) return;
+
+        setIsSearchingBarcode(true);
+        setBarcodeError(null);
+        setBarcodeProduct(null);
+
+        try {
+            const response = await axios.post('/barcode/search', {
+                barcode: barcodeInput.trim(),
+            });
+
+            if (response.data.found) {
+                setBarcodeProduct(response.data.product);
+            } else {
+                setBarcodeError(response.data.message || 'Producto no encontrado');
+            }
+        } catch (error: any) {
+            setBarcodeError(error.response?.data?.message || 'Error al buscar el producto');
+        } finally {
+            setIsSearchingBarcode(false);
+        }
+    };
+
+    const handleAddBarcodeProduct = () => {
+        if (!barcodeProduct) return;
+
+        const servingMultiplier = parseFloat(servingAmount) / 100;
+        const nutritional = barcodeProduct.nutritional_data;
+
+        const formData = new FormData();
+        formData.append('meal_type', mealType);
+        formData.append('time', new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
+        formData.append('date', new Date().toISOString().split('T')[0]);
+        formData.append('calories', String(Math.round(nutritional.calories * servingMultiplier)));
+        formData.append('protein', String(Math.round(nutritional.protein * servingMultiplier)));
+        formData.append('carbs', String(Math.round(nutritional.carbs * servingMultiplier)));
+        formData.append('fat', String(Math.round(nutritional.fat * servingMultiplier)));
+        if (nutritional.fiber) {
+            formData.append('fiber', String(Math.round(nutritional.fiber * servingMultiplier)));
+        }
+        formData.append('notes', `${barcodeProduct.name}${barcodeProduct.brand ? ' - ' + barcodeProduct.brand : ''} (${servingAmount}g)`);
+
+        router.post('/nutrition', formData, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setBarcodeInput('');
+                setBarcodeProduct(null);
+                setServingAmount('100');
             },
         });
     };
@@ -334,6 +416,131 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Escáner de Códigos de Barras */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Scan className="h-5 w-5" />
+                            Escanear Código de Barras
+                        </CardTitle>
+                        <CardDescription>
+                            Busca productos por código de barras y registra su información nutricional
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <Input
+                                    type="text"
+                                    placeholder="Ingresa el código de barras (8-13 dígitos)"
+                                    value={barcodeInput}
+                                    onChange={(e) => setBarcodeInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleBarcodeSearch()}
+                                    disabled={isSearchingBarcode}
+                                />
+                            </div>
+                            <Button
+                                onClick={handleBarcodeSearch}
+                                disabled={isSearchingBarcode || !barcodeInput.trim()}
+                            >
+                                {isSearchingBarcode ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <Scan className="mr-2 h-4 w-4" />
+                                        Buscar
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        {barcodeError && (
+                            <div className="p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
+                                {barcodeError}
+                            </div>
+                        )}
+
+                        {barcodeProduct && (
+                            <div className="border rounded-lg p-4 space-y-4">
+                                <div className="flex gap-4">
+                                    {barcodeProduct.image_url && (
+                                        <div className="flex-shrink-0 w-24 h-24 rounded overflow-hidden border">
+                                            <img
+                                                src={barcodeProduct.image_url}
+                                                alt={barcodeProduct.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-lg">{barcodeProduct.name}</h3>
+                                        {barcodeProduct.brand && (
+                                            <p className="text-sm text-muted-foreground">{barcodeProduct.brand}</p>
+                                        )}
+                                        {barcodeProduct.quantity && (
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Cantidad: {barcodeProduct.quantity}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted/50 rounded">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Calorías</p>
+                                        <p className="text-lg font-semibold">
+                                            {Math.round(barcodeProduct.nutritional_data.calories)}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">kcal</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Proteína</p>
+                                        <p className="text-lg font-semibold">
+                                            {Math.round(barcodeProduct.nutritional_data.protein)}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">g</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Carbohidratos</p>
+                                        <p className="text-lg font-semibold">
+                                            {Math.round(barcodeProduct.nutritional_data.carbs)}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">g</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Grasas</p>
+                                        <p className="text-lg font-semibold">
+                                            {Math.round(barcodeProduct.nutritional_data.fat)}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">g</p>
+                                    </div>
+                                </div>
+
+                                <div className="text-xs text-muted-foreground">
+                                    Valores nutricionales por {barcodeProduct.serving_size}
+                                </div>
+
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <Label htmlFor="serving-amount">Cantidad consumida (g)</Label>
+                                        <Input
+                                            id="serving-amount"
+                                            type="number"
+                                            min="1"
+                                            value={servingAmount}
+                                            onChange={(e) => setServingAmount(e.target.value)}
+                                        />
+                                    </div>
+                                    <Button onClick={handleAddBarcodeProduct} className="flex-shrink-0">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Agregar a {mealTypeLabels[mealType]}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 {/* Registrar Comida */}
                 <Card>
