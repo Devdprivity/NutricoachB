@@ -41,6 +41,9 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Momo+Trust+Display&family=TASA+Explorer:wght@400..800&display=swap" rel="stylesheet">
 
+        {{-- YouTube IFrame API --}}
+        <script src="https://www.youtube.com/iframe_api"></script>
+
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead

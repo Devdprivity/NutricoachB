@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     Play,
     Pause,
     SkipForward,
@@ -16,6 +22,7 @@ import {
     Music,
     Settings,
 } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import type { MusicProvider, CurrentlyPlaying, Track } from '@/types/music';
 
 interface MusicPlayerProps {
@@ -30,7 +37,12 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
     const [searchResults, setSearchResults] = useState<Track[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
+    const [volume, setVolume] = useState(() => {
+        const saved = localStorage.getItem('musicVolume');
+        return saved ? parseInt(saved) : 100;
+    });
     const searchTimeoutRef = useRef<NodeJS.Timeout>();
+    const youtubeIframeRef = useRef<HTMLIFrameElement | null>(null);
 
     // Provider-specific configurations
     const providerConfig = {
@@ -88,6 +100,18 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
     };
 
     const handlePlayPause = async () => {
+        // Para YouTube Music, usar el iframe
+        if (provider === 'youtube_music' && (window as any).youtubePlayer) {
+            if (isPlaying) {
+                (window as any).youtubePlayer.pauseVideo();
+                setIsPlaying(false);
+            } else {
+                (window as any).youtubePlayer.playVideo();
+                setIsPlaying(true);
+            }
+            return;
+        }
+
         if (!config.endpoints.play || !config.endpoints.pause) {
             return; // Some providers don't support direct playback control
         }
@@ -188,6 +212,51 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                     artist: track.artists[0]?.name || 'Unknown',
                     thumbnail: track.album.images[0]?.url,
                 });
+                
+                // Crear o actualizar iframe de YouTube para reproducir
+                let iframe = document.getElementById('youtube-music-player') as HTMLIFrameElement;
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'youtube-music-player';
+                    iframe.style.display = 'none';
+                    iframe.allow = 'autoplay';
+                    document.body.appendChild(iframe);
+                }
+                
+                // Cargar el video de YouTube
+                const videoUrl = `https://www.youtube.com/embed/${track.id}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`;
+                iframe.src = videoUrl;
+                
+                // Guardar referencia al iframe para controlar volumen
+                (window as any).youtubePlayer = {
+                    setVolume: (vol: number) => {
+                        if (iframe && iframe.contentWindow) {
+                            iframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'setVolume',
+                                args: [vol]
+                            }), '*');
+                        }
+                    },
+                    playVideo: () => {
+                        if (iframe && iframe.contentWindow) {
+                            iframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'playVideo'
+                            }), '*');
+                        }
+                    },
+                    pauseVideo: () => {
+                        if (iframe && iframe.contentWindow) {
+                            iframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'pauseVideo'
+                            }), '*');
+                        }
+                    }
+                };
+                
+                setIsPlaying(true);
             }
 
             setShowSearch(false);
@@ -201,43 +270,58 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
 
     return (
         <div className="relative">
+            {/* Hidden YouTube iframe for YouTube Music playback */}
+            {provider === 'youtube_music' && currentTrack?.item && (
+                <iframe
+                    id="youtube-music-player"
+                    ref={youtubeIframeRef}
+                    style={{ display: 'none' }}
+                    allow="autoplay"
+                    src={`https://www.youtube.com/embed/${currentTrack.item.id}?autoplay=${isPlaying ? 1 : 0}&enablejsapi=1&origin=${window.location.origin}`}
+                />
+            )}
+            
             {/* Mini Player */}
             {currentTrack?.item && !showSearch && (
                 <Card className="p-3">
-                    <div className="flex items-center gap-3">
-                        {/* Album Art */}
-                        {currentTrack.item.album?.images?.[0]?.url && (
-                            <img
-                                src={currentTrack.item.album.images[0].url}
-                                alt={currentTrack.item.name}
-                                className="w-12 h-12 rounded"
-                            />
-                        )}
+                    <div className="flex flex-col items-center gap-3">
+                        {/* Top section: Album Art and Track Info */}
+                        <div className="flex items-center gap-3 w-full">
+                            {/* Album Art */}
+                            {currentTrack.item.album?.images?.[0]?.url && (
+                                <img
+                                    src={currentTrack.item.album.images[0].url}
+                                    alt={currentTrack.item.name}
+                                    className="w-16 h-16 rounded-lg flex-shrink-0"
+                                />
+                            )}
 
-                        {/* Track Info */}
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <Badge className={`${config.color} text-white`}>
-                                    {config.icon} {config.name}
-                                </Badge>
+                            {/* Track Info */}
+                            <div className="flex-1 min-w-0 text-center">
+                                <div className="flex items-center justify-center gap-2 mb-1">
+                                    <Badge className={`${config.color} text-white`}>
+                                        {config.icon} {config.name}
+                                    </Badge>
+                                </div>
+                                <p className="font-medium truncate text-sm">
+                                    {currentTrack.item.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                    {currentTrack.item.artists
+                                        ?.map((a) => a.name)
+                                        .join(', ')}
+                                </p>
                             </div>
-                            <p className="font-medium truncate text-sm">
-                                {currentTrack.item.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                                {currentTrack.item.artists
-                                    ?.map((a) => a.name)
-                                    .join(', ')}
-                            </p>
                         </div>
 
-                        {/* Controls */}
-                        <div className="flex items-center gap-1">
+                        {/* Controls - Centered */}
+                        <div className="flex items-center justify-center gap-2 w-full">
                             {config.endpoints.previous && (
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={handlePrevious}
+                                    className="h-9 w-9"
                                 >
                                     <SkipBack className="w-4 h-4" />
                                 </Button>
@@ -245,14 +329,15 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
 
                             {config.endpoints.play && config.endpoints.pause && (
                                 <Button
-                                    variant="ghost"
+                                    variant="default"
                                     size="icon"
                                     onClick={handlePlayPause}
+                                    className="h-10 w-10"
                                 >
                                     {isPlaying ? (
-                                        <Pause className="w-4 h-4" />
+                                        <Pause className="w-5 h-5" />
                                     ) : (
-                                        <Play className="w-4 h-4" />
+                                        <Play className="w-5 h-5" />
                                     )}
                                 </Button>
                             )}
@@ -262,28 +347,76 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                                     variant="ghost"
                                     size="icon"
                                     onClick={handleNext}
+                                    className="h-9 w-9"
                                 >
                                     <SkipForward className="w-4 h-4" />
                                 </Button>
                             )}
 
-                            {config.endpoints.search && (
+                            {/* Volume Control */}
+                            <div className="flex items-center gap-2 ml-2">
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    onClick={() => {
+                                        const newVolume = volume === 0 ? 100 : 0;
+                                        setVolume(newVolume);
+                                        localStorage.setItem('musicVolume', newVolume.toString());
+                                        // Actualizar volumen en el reproductor si es YouTube Music
+                                        if (provider === 'youtube_music' && (window as any).youtubePlayer) {
+                                            (window as any).youtubePlayer.setVolume(newVolume);
+                                        }
+                                    }}
+                                    className="h-8 w-8"
+                                >
+                                    {volume === 0 ? (
+                                        <VolumeX className="w-4 h-4" />
+                                    ) : (
+                                        <Volume2 className="w-4 h-4" />
+                                    )}
+                                </Button>
+                                <div className="w-20 hidden md:block">
+                                    <Slider
+                                        value={[volume]}
+                                        onValueChange={(value) => {
+                                            const newVolume = value[0];
+                                            setVolume(newVolume);
+                                            localStorage.setItem('musicVolume', newVolume.toString());
+                                            // Actualizar volumen en el reproductor si es YouTube Music
+                                            if (provider === 'youtube_music' && (window as any).youtubePlayer) {
+                                                (window as any).youtubePlayer.setVolume(newVolume);
+                                            }
+                                        }}
+                                        min={0}
+                                        max={100}
+                                        step={1}
+                                        className="w-full"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom actions - Centered */}
+                        <div className="flex items-center justify-center gap-2 w-full">
+                            {config.endpoints.search && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => setShowSearch(true)}
                                 >
-                                    <Search className="w-4 h-4" />
+                                    <Search className="w-4 h-4 mr-2" />
+                                    Buscar
                                 </Button>
                             )}
 
                             {onDisconnect && (
                                 <Button
                                     variant="ghost"
-                                    size="icon"
+                                    size="sm"
                                     onClick={onDisconnect}
                                 >
-                                    <Settings className="w-4 h-4" />
+                                    <Settings className="w-4 h-4 mr-2" />
+                                    Configuración
                                 </Button>
                             )}
                         </div>
@@ -294,14 +427,14 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
             {/* No track playing */}
             {!currentTrack?.item && !showSearch && (
                 <Card className="p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col items-center justify-center gap-4">
                         <div className="flex items-center gap-3">
                             <div
-                                className={`w-10 h-10 rounded-full ${config.color} flex items-center justify-center text-xl`}
+                                className={`w-12 h-12 rounded-full ${config.color} flex items-center justify-center text-xl`}
                             >
                                 {config.icon}
                             </div>
-                            <div>
+                            <div className="text-center">
                                 <p className="font-medium text-sm">{config.name}</p>
                                 <p className="text-xs text-muted-foreground">
                                     No hay música reproduciéndose
@@ -309,10 +442,10 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                             </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex items-center justify-center gap-2">
                             {config.endpoints.search && (
                                 <Button
-                                    variant="outline"
+                                    variant="default"
                                     size="sm"
                                     onClick={() => setShowSearch(true)}
                                 >
@@ -334,31 +467,19 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                 </Card>
             )}
 
-            {/* Search Panel */}
-            {showSearch && (
-                <Card className="p-4">
-                    <div className="space-y-4">
-                        {/* Search Header */}
-                        <div className="flex items-center justify-between">
-                            <h3 className="font-semibold flex items-center gap-2">
-                                <Music className="w-5 h-5" />
-                                Buscar en {config.name}
-                            </h3>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                    setShowSearch(false);
-                                    setSearchQuery('');
-                                    setSearchResults([]);
-                                }}
-                            >
-                                <X className="w-4 h-4" />
-                            </Button>
-                        </div>
+            {/* Search Panel - Modal Centered */}
+            <Dialog open={showSearch} onOpenChange={setShowSearch}>
+                <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col items-center justify-center">
+                    <DialogHeader className="w-full">
+                        <DialogTitle className="flex items-center justify-center gap-2">
+                            <Music className="w-5 h-5" />
+                            Buscar en {config.name}
+                        </DialogTitle>
+                    </DialogHeader>
 
+                    <div className="space-y-4 w-full flex flex-col items-center">
                         {/* Search Input */}
-                        <div className="relative">
+                        <div className="relative w-full max-w-md">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 type="text"
@@ -374,13 +495,13 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
 
                         {/* Search Results */}
                         {isSearching && (
-                            <div className="text-center py-8 text-muted-foreground">
+                            <div className="text-center py-8 text-muted-foreground w-full">
                                 Buscando...
                             </div>
                         )}
 
                         {!isSearching && searchResults.length > 0 && (
-                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                            <div className="space-y-2 max-h-96 overflow-y-auto w-full">
                                 {searchResults.map((track) => (
                                     <div
                                         key={track.id}
@@ -415,13 +536,13 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                         {!isSearching &&
                             searchQuery &&
                             searchResults.length === 0 && (
-                                <div className="text-center py-8 text-muted-foreground">
+                                <div className="text-center py-8 text-muted-foreground w-full">
                                     No se encontraron resultados
                                 </div>
                             )}
                     </div>
-                </Card>
-            )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

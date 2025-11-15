@@ -183,12 +183,24 @@ class YouTubeMusicController extends Controller
                 ]);
 
             if ($userResponse->failed()) {
+                $errorResponse = $userResponse->json();
+                $errorReason = $errorResponse['error']['errors'][0]['reason'] ?? null;
+                
                 Log::error('YouTube Music user info failed', [
                     'status' => $userResponse->status(),
-                    'response' => $userResponse->json(),
+                    'response' => $errorResponse,
+                    'reason' => $errorReason,
                 ]);
+                
+                // Manejar errores específicos de YouTube
+                $errorMessage = match($errorReason) {
+                    'authenticatedUserAccountSuspended' => 'Tu cuenta de YouTube está suspendida. Por favor, revisa tu cuenta de YouTube o usa otra cuenta de Google.',
+                    'forbidden' => 'No tienes permiso para acceder a YouTube Music con esta cuenta.',
+                    default => 'Error al obtener el perfil de YouTube Music. Verifica que tu cuenta de YouTube esté activa.',
+                };
+                
                 return redirect()->route('integrations.index')
-                    ->with('error', 'Error al obtener el perfil de YouTube Music');
+                    ->with('error', $errorMessage);
             }
 
             $userData = $userResponse->json();
