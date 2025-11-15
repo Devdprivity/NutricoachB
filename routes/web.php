@@ -15,6 +15,7 @@ use App\Http\Controllers\Web\WorkoutPlanController;
 use App\Http\Controllers\Web\RecipeController;
 use App\Http\Controllers\Web\WeeklyMealPlanController;
 use App\Http\Controllers\Web\SubscriptionController;
+use App\Http\Controllers\Web\StripeWebhookController;
 use App\Http\Controllers\Web\SpotifyController;
 use App\Http\Controllers\Web\YouTubeMusicController;
 use App\Http\Controllers\Web\AppleMusicController;
@@ -25,6 +26,9 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
+
+// Webhook de Stripe (sin autenticación)
+Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])->name('stripe.webhook');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -113,8 +117,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('weekly-meal-plans/today/plan', [WeeklyMealPlanController::class, 'getTodayPlan'])->name('weekly-meal-plans.today');
 
     // Suscripciones
-    Route::get('subscription', [SubscriptionController::class, 'index'])->name('subscription');
+    Route::get('subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
     Route::post('subscription/subscribe', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::get('subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
     Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
     Route::post('subscription/change-cycle', [SubscriptionController::class, 'changeBillingCycle'])->name('subscription.change-cycle');
     Route::post('subscription/reactivate', [SubscriptionController::class, 'reactivateAutoRenew'])->name('subscription.reactivate');

@@ -56,6 +56,12 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
     'cloudinary' => [
         'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
         'api_key' => env('CLOUDINARY_API_KEY'),

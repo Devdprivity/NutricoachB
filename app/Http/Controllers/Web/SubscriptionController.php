@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\PaymentHistory;
+use App\Services\StripeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -49,9 +50,9 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Suscribirse a un plan (demo - sin pago real)
+     * Suscribirse a un plan con Stripe
      */
-    public function subscribe(Request $request)
+    public function subscribe(Request $request, StripeService $stripeService)
     {
         $validated = $request->validate([
             'plan_id' => 'required|exists:subscription_plans,id',
@@ -61,52 +62,77 @@ class SubscriptionController extends Controller
         $user = $request->user();
         $plan = SubscriptionPlan::findOrFail($validated['plan_id']);
 
+        // Si es plan gratuito, no usar Stripe
+        if ($plan->slug === 'free' || $plan->getPrice($validated['billing_cycle']) == 0) {
+            $this->subscribeFree($user, $plan, $validated['billing_cycle']);
+            return response()->json(['success' => true]);
+        }
+
+        try {
+            // Crear sesión de Stripe Checkout
+            $session = $stripeService->createCheckoutSession($user, $plan, $validated['billing_cycle']);
+
+            // Devolver la URL de Stripe Checkout
+            return response()->json([
+                'success' => true,
+                'checkout_url' => $session->url,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error creating Stripe checkout session', [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el pago. Por favor, intenta nuevamente.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Suscribirse al plan gratuito (sin Stripe)
+     */
+    protected function subscribeFree($user, $plan, $billingCycle)
+    {
         // Cancelar suscripción activa si existe
         $activeSubscription = $user->activeSubscription()->first();
         if ($activeSubscription) {
-            $activeSubscription->cancel('Upgrade/Downgrade a nuevo plan');
+            $activeSubscription->cancel('Cambio a plan gratuito');
         }
 
-        // Calcular fechas
-        $months = $validated['billing_cycle'] === 'yearly' ? 12 : 1;
-        $amount = $plan->getPrice($validated['billing_cycle']);
-
-        // Crear nueva suscripción
-        $subscription = Subscription::create([
+        // Crear nueva suscripción gratuita
+        Subscription::create([
             'user_id' => $user->id,
             'subscription_plan_id' => $plan->id,
             'status' => 'active',
-            'billing_cycle' => $validated['billing_cycle'],
+            'billing_cycle' => $billingCycle,
             'start_date' => now(),
-            'end_date' => now()->addMonths($months),
-            'next_billing_date' => now()->addMonths($months),
-            'amount' => $amount,
-            'payment_method' => 'demo',
-            'payment_id' => 'DEMO-' . time(),
-            'auto_renew' => true,
+            'end_date' => now()->addYears(100), // Plan gratuito no expira
+            'next_billing_date' => null,
+            'amount' => 0,
+            'payment_method' => 'free',
+            'payment_id' => null,
+            'auto_renew' => false,
         ]);
 
         // Actualizar usuario
         $user->update([
             'current_subscription_plan_id' => $plan->id,
-            'is_premium' => !$plan->isFree(),
+            'is_premium' => false,
         ]);
 
-        // Crear registro de pago (demo)
-        PaymentHistory::create([
-            'user_id' => $user->id,
-            'subscription_id' => $subscription->id,
-            'amount' => $amount,
-            'currency' => 'USD',
-            'status' => 'completed',
-            'payment_method' => 'demo',
-            'transaction_id' => 'TXN-' . time(),
-            'payment_gateway' => 'demo',
-            'description' => "Suscripción a {$plan->name} ({$validated['billing_cycle']})",
-            'paid_at' => now(),
-        ]);
+        return redirect()->back()->with('success', '¡Ahora estás en el plan gratuito!');
+    }
 
-        return redirect()->back()->with('success', '¡Suscripción activada exitosamente!');
+    /**
+     * Página de éxito después del pago
+     */
+    public function success(Request $request)
+    {
+        // El webhook ya habrá procesado la suscripción
+        return redirect()->route('subscription.index')->with('success', '¡Suscripción activada exitosamente!');
     }
 
     /**

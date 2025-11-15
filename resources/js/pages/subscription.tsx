@@ -47,17 +47,24 @@ export default function Subscription({ plans, activeSubscription, currentPlan, i
 
         setLoading(true);
         try {
-            await axios.post('/subscription/subscribe', {
+            const response = await axios.post('/subscription/subscribe', {
                 plan_id: planId,
                 billing_cycle: billingCycle,
             });
-            router.reload();
+            
+            // Si el backend devuelve una URL de Stripe, redirigir
+            if (response.data.checkout_url) {
+                window.location.href = response.data.checkout_url;
+            } else {
+                // Si es plan gratuito, recargar la página
+                router.reload();
+            }
         } catch (error) {
             console.error('Error subscribing:', error);
             alert('Error al suscribirse');
-        } finally {
             setLoading(false);
         }
+        // No quitamos el loading aquí porque vamos a redirigir
     };
 
     const handleCancel = async () => {
