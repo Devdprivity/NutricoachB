@@ -96,12 +96,12 @@ export default function Dashboard() {
         const handleStart = () => setIsLoading(true);
         const handleFinish = () => setIsLoading(false);
 
-        router.on('start', handleStart);
-        router.on('finish', handleFinish);
+        document.addEventListener('inertia:start', handleStart);
+        document.addEventListener('inertia:finish', handleFinish);
 
         return () => {
-            router.off('start', handleStart);
-            router.off('finish', handleFinish);
+            document.removeEventListener('inertia:start', handleStart);
+            document.removeEventListener('inertia:finish', handleFinish);
         };
     }, []);
 
