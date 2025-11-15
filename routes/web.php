@@ -123,6 +123,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Spotify
     Route::get('spotify/redirect', [SpotifyController::class, 'redirectToSpotify'])->name('spotify.redirect');
     Route::get('spotify/callback', [SpotifyController::class, 'handleSpotifyCallback'])->name('spotify.callback');
+    // Ruta de compatibilidad para callback de Spotify (si está configurado como /callback en Spotify Dashboard)
+    Route::get('callback', [SpotifyController::class, 'handleSpotifyCallback'])->name('spotify.callback.alias');
     Route::post('spotify/disconnect', [SpotifyController::class, 'disconnect'])->name('spotify.disconnect');
     Route::get('spotify/currently-playing', [SpotifyController::class, 'getCurrentlyPlaying'])->name('spotify.currently-playing');
     Route::get('spotify/friends-listening', [SpotifyController::class, 'getFriendsListening'])->name('spotify.friends-listening');
