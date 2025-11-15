@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\Web\CoachingController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ExercisesController;
+use App\Http\Controllers\Web\FavoriteMealController;
 use App\Http\Controllers\Web\GamificationController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
@@ -28,6 +29,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('nutrition', [NutritionController::class, 'index'])->name('nutrition');
     Route::post('nutrition', [NutritionController::class, 'store'])->name('nutrition.store');
     Route::delete('nutrition/{id}', [NutritionController::class, 'destroy'])->name('nutrition.destroy');
+
+    // Comidas Favoritas
+    Route::get('favorite-meals', [FavoriteMealController::class, 'index'])->name('favorite-meals.index');
+    Route::post('favorite-meals', [FavoriteMealController::class, 'store'])->name('favorite-meals.store');
+    Route::post('favorite-meals/from-meal/{mealId}', [FavoriteMealController::class, 'createFromMeal'])->name('favorite-meals.from-meal');
+    Route::post('favorite-meals/{id}/use', [FavoriteMealController::class, 'use'])->name('favorite-meals.use');
+    Route::put('favorite-meals/{id}', [FavoriteMealController::class, 'update'])->name('favorite-meals.update');
+    Route::delete('favorite-meals/{id}', [FavoriteMealController::class, 'destroy'])->name('favorite-meals.destroy');
 
     // Ejercicios
     Route::get('exercises', [ExercisesController::class, 'index'])->name('exercises');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\FavoriteMeal;
 use App\Models\MealRecord;
 use App\Services\GamificationService;
 use Illuminate\Http\Request;
@@ -68,12 +69,35 @@ class NutritionController extends Controller
         $currentHour = now()->hour;
         $nextMeal = $this->getNextMealSuggestion($currentHour, $todayRecords);
 
+        // Obtener comidas favoritas del usuario
+        $favoriteMeals = FavoriteMeal::where('user_id', $user->id)
+            ->mostUsed()
+            ->limit(10)
+            ->get()
+            ->map(function ($meal) {
+                return [
+                    'id' => $meal->id,
+                    'name' => $meal->name,
+                    'description' => $meal->description,
+                    'calories' => (float) $meal->calories,
+                    'protein' => (float) $meal->protein,
+                    'carbs' => (float) $meal->carbs,
+                    'fat' => (float) $meal->fat,
+                    'fiber' => $meal->fiber ? (float) $meal->fiber : null,
+                    'portion_size' => $meal->portion_size,
+                    'meal_type' => $meal->meal_type,
+                    'image_url' => $meal->image_url,
+                    'times_used' => $meal->times_used,
+                ];
+            });
+
         $nutritionData = [
             'today_records' => $todayRecords,
             'today_totals' => $todayTotals,
             'goals' => $goals,
             'percentages' => $percentages,
             'next_meal' => $nextMeal,
+            'favorite_meals' => $favoriteMeals,
         ];
 
         return Inertia::render('nutrition', [

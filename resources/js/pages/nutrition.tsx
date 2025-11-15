@@ -1,6 +1,6 @@
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Apple, Camera, Clock, Sparkles, Trash2, Upload } from 'lucide-react';
+import { Apple, Camera, Clock, Heart, Plus, Sparkles, Star, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,21 @@ interface MealRecord {
     ai_analyzed: boolean;
 }
 
+interface FavoriteMeal {
+    id: number;
+    name: string;
+    description?: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber?: number;
+    portion_size?: string;
+    meal_type?: string;
+    image_url?: string;
+    times_used: number;
+}
+
 interface NutritionData {
     today_records: MealRecord[];
     today_totals: {
@@ -57,6 +72,7 @@ interface NutritionData {
         label: string;
         hour: number;
     };
+    favorite_meals?: FavoriteMeal[];
 }
 
 export default function Nutrition({ nutritionData }: { nutritionData?: NutritionData }) {
@@ -70,6 +86,31 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
     const percentages = nutritionData?.percentages;
     const records = nutritionData?.today_records || [];
     const nextMeal = nutritionData?.next_meal;
+    const favoriteMeals = nutritionData?.favorite_meals || [];
+
+    const handleUseFavorite = (favorite: FavoriteMeal) => {
+        router.post(`/favorite-meals/${favorite.id}/use`, {
+            meal_type: mealType,
+        }, {
+            onSuccess: () => {
+                // Se recargará la página automáticamente
+            },
+        });
+    };
+
+    const handleSaveAsFavorite = (mealId: number) => {
+        router.post(`/favorite-meals/from-meal/${mealId}`, {}, {
+            onSuccess: () => {
+                alert('Comida guardada como favorita');
+            },
+        });
+    };
+
+    const handleDeleteRecord = (id: number) => {
+        if (confirm('¿Estás seguro de que deseas eliminar este registro?')) {
+            router.delete(`/nutrition/${id}`);
+        }
+    };
 
     const mealTypeLabels: Record<string, string> = {
         breakfast: 'Desayuno',
@@ -112,12 +153,6 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                 setImagePreview(null);
             },
         });
-    };
-
-    const handleDelete = (id: number) => {
-        if (confirm('¿Eliminar este registro de comida?')) {
-            router.delete(`/nutrition/${id}`, { preserveScroll: true });
-        }
     };
 
     return (
@@ -226,6 +261,76 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                     Te faltan {Math.round(goals.calories - totals.calories)} kcal para tu meta
                                 </p>
                             )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Comidas Favoritas */}
+                {favoriteMeals.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Star className="h-5 w-5 text-yellow-500" />
+                                Comidas Favoritas
+                            </CardTitle>
+                            <CardDescription>
+                                Registro rápido de tus comidas más frecuentes
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                {favoriteMeals.map((favorite) => (
+                                    <div
+                                        key={favorite.id}
+                                        className="flex gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                                        onClick={() => handleUseFavorite(favorite)}
+                                    >
+                                        {favorite.image_url && (
+                                            <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden border">
+                                                <img
+                                                    src={favorite.image_url}
+                                                    alt={favorite.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold truncate">{favorite.name}</h4>
+                                                    {favorite.description && (
+                                                        <p className="text-xs text-muted-foreground truncate">
+                                                            {favorite.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="ml-2"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleUseFavorite(favorite);
+                                                    }}
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                            <div className="flex gap-4 mt-2 text-xs">
+                                                <span><strong>{Math.round(favorite.calories)}</strong> kcal</span>
+                                                <span><strong>{Math.round(favorite.protein)}</strong>g P</span>
+                                                <span><strong>{Math.round(favorite.carbs)}</strong>g C</span>
+                                                <span><strong>{Math.round(favorite.fat)}</strong>g G</span>
+                                            </div>
+                                            {favorite.times_used > 0 && (
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Usado {favorite.times_used} {favorite.times_used === 1 ? 'vez' : 'veces'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </CardContent>
                     </Card>
                 )}
@@ -362,13 +467,23 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                                         </p>
                                                     )}
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(record.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleSaveAsFavorite(record.id)}
+                                                        title="Guardar como favorito"
+                                                    >
+                                                        <Heart className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDeleteRecord(record.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                             <div className="grid grid-cols-4 gap-2 mt-3 text-sm">
                                                 <div>
