@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, Dumbbell, TrendingUp, Calendar, Star, CheckCircle2, Clock, Target } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { WorkoutPlansSkeleton } from '@/components/skeletons/workout-plans-skeleton';
 import axios from 'axios';
 
 interface Exercise {
@@ -60,7 +61,29 @@ interface WorkoutPlansProps {
 }
 
 export default function WorkoutPlans({ plans, publicPlans, stats }: WorkoutPlansProps) {
+    const [isLoading, setIsLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+    // Initial load
+    useEffect(() => {
+        setIsLoading(true);
+        const timer = setTimeout(() => setIsLoading(false), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Navigation events
+    useEffect(() => {
+        const handleStart = () => setIsLoading(true);
+        const handleFinish = () => setIsLoading(false);
+
+        document.addEventListener('inertia:start', handleStart);
+        document.addEventListener('inertia:finish', handleFinish);
+
+        return () => {
+            document.removeEventListener('inertia:start', handleStart);
+            document.removeEventListener('inertia:finish', handleFinish);
+        };
+    }, []);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -186,7 +209,10 @@ export default function WorkoutPlans({ plans, publicPlans, stats }: WorkoutPlans
         <AppLayout>
             <Head title="Planes de Entrenamiento" />
 
-            <div className="space-y-6">
+            {isLoading ? (
+                <WorkoutPlansSkeleton />
+            ) : (
+                <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
@@ -578,6 +604,7 @@ export default function WorkoutPlans({ plans, publicPlans, stats }: WorkoutPlans
                     </TabsContent>
                 </Tabs>
             </div>
+            )}
         </AppLayout>
     );
 }
