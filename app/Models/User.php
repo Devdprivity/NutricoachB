@@ -31,6 +31,11 @@ class User extends Authenticatable
         'avatar',
         'current_subscription_plan_id',
         'is_premium',
+        'spotify_id',
+        'spotify_access_token',
+        'spotify_refresh_token',
+        'spotify_token_expires_at',
+        'spotify_share_listening',
     ];
 
     /**
@@ -43,6 +48,8 @@ class User extends Authenticatable
         'two_factor_secret',
         'two_factory_recovery_codes',
         'remember_token',
+        'spotify_access_token',
+        'spotify_refresh_token',
     ];
 
     /**
@@ -56,6 +63,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_premium' => 'boolean',
+            'spotify_token_expires_at' => 'datetime',
+            'spotify_share_listening' => 'boolean',
         ];
     }
 
@@ -81,6 +90,14 @@ class User extends Authenticatable
     public function hydrationRecords(): HasMany
     {
         return $this->hasMany(HydrationRecord::class);
+    }
+
+    /**
+     * Relación con los registros de comidas
+     */
+    public function mealRecords(): HasMany
+    {
+        return $this->hasMany(MealRecord::class);
     }
 
     /**
@@ -294,11 +311,66 @@ class User extends Authenticatable
         return $this->currentSubscriptionPlan->$feature ?? false;
     }
 
+    // ========== RELACIONES DE SPOTIFY ==========
+
+    /**
+     * Actividad musical del usuario
+     */
+    public function musicActivity(): HasMany
+    {
+        return $this->hasMany(MusicActivity::class);
+    }
+
+    /**
+     * Actividad musical actual (reproduciéndose ahora)
+     */
+    public function currentlyPlaying(): HasOne
+    {
+        return $this->hasOne(MusicActivity::class)
+            ->where('is_playing', true)
+            ->whereNull('ended_at')
+            ->latest('started_at');
+    }
+
+    /**
+     * Verificar si tiene Spotify conectado
+     */
+    public function hasSpotifyConnected(): bool
+    {
+        return !is_null($this->spotify_id) && !is_null($this->spotify_access_token);
+    }
+
     /**
      * Obtener contador de usuarios que sigue
      */
     public function getFollowingCountAttribute(): int
     {
         return $this->following()->count();
+    }
+
+    // ========== RELACIONES DE NOTIFICACIONES ==========
+
+    /**
+     * Notificaciones del usuario
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Notificaciones no leídas
+     */
+    public function unreadNotifications(): HasMany
+    {
+        return $this->hasMany(Notification::class)->where('is_read', false);
+    }
+
+    /**
+     * Contar notificaciones no leídas
+     */
+    public function getUnreadNotificationsCountAttribute(): int
+    {
+        return $this->unreadNotifications()->count();
     }
 }

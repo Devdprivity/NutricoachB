@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\ExerciseController;
 use App\Http\Controllers\Api\FoodItemController;
 use App\Http\Controllers\Api\HydrationController;
 use App\Http\Controllers\Api\MealPlanController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NutritionalDataController;
+use App\Http\Controllers\Api\SpotifyController;
 use App\Http\Controllers\Api\UserContextController;
 use App\Http\Controllers\Api\UserProfileController;
 use Illuminate\Http\Request;
@@ -182,6 +184,42 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Detalles de ejercicio específico
         Route::get('/{exercise}', [ExerciseController::class, 'show']);
+    });
+
+    // Rutas de notificaciones
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread', [NotificationController::class, 'unread']);
+        Route::get('/count', [NotificationController::class, 'count']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    // Rutas de Spotify
+    Route::prefix('spotify')->group(function () {
+        // Estado y autenticación
+        Route::get('/status', [SpotifyController::class, 'status']);
+        Route::get('/auth-url', [SpotifyController::class, 'getAuthUrl']);
+        Route::post('/connect', [SpotifyController::class, 'connect']);
+        Route::post('/disconnect', [SpotifyController::class, 'disconnect']);
+
+        // Reproducción actual
+        Route::get('/currently-playing', [SpotifyController::class, 'getCurrentlyPlaying']);
+        Route::get('/recently-played', [SpotifyController::class, 'getRecentlyPlayed']);
+
+        // Controles de reproducción
+        Route::post('/play', [SpotifyController::class, 'play']);
+        Route::post('/pause', [SpotifyController::class, 'pause']);
+        Route::post('/next', [SpotifyController::class, 'next']);
+        Route::post('/previous', [SpotifyController::class, 'previous']);
+
+        // Actividad musical
+        Route::get('/activity/history', [SpotifyController::class, 'getActivityHistory']);
+        Route::get('/activity/friends', [SpotifyController::class, 'getFriendsListening']);
+
+        // Configuración
+        Route::post('/toggle-share', [SpotifyController::class, 'toggleShareListening']);
     });
 
     // Rutas de administración (solo para administradores)

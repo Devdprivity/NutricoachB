@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\FavoriteMeal;
 use App\Models\MealRecord;
+use App\Services\CloudinaryService;
 use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -28,10 +29,17 @@ class NutritionController extends Controller
             ->orderBy('time', 'desc')
             ->get()
             ->map(function ($record) {
-                // Convertir image_path a URL completa
+                // Si tiene image_path de Cloudinary, usar directamente
+                // Si es una ruta local antigua, mantener compatibilidad
                 if ($record->image_path) {
-                    $filename = basename($record->image_path);
-                    $record->image_url = route('meal.image', ['filename' => $filename]);
+                    if (str_starts_with($record->image_path, 'http')) {
+                        // Es una URL de Cloudinary
+                        $record->image_url = $record->image_path;
+                    } else {
+                        // Es una ruta local antigua
+                        $filename = basename($record->image_path);
+                        $record->image_url = route('meal.image', ['filename' => $filename]);
+                    }
                 }
 
                 return $record;
@@ -123,20 +131,36 @@ class NutritionController extends Controller
         ]);
 
         $user = $request->user();
-        $imagePath = null;
+        $imageUrl = null;
+        $imagePublicId = null;
         $aiAnalysis = null;
 
-        // Si hay imagen, subirla y analizarla
+        // Si hay imagen, subirla a Cloudinary y analizarla
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('meals', 'public');
+            try {
+                $cloudinaryService = app(CloudinaryService::class);
+                $date = $validated['date'] ?? now()->toDateString();
+                $uploadResult = $cloudinaryService->uploadNutritionImage(
+                    $request->file('image'),
+                    $user->id,
+                    $date
+                );
+                
+                $imageUrl = $uploadResult['secure_url'];
+                $imagePublicId = $uploadResult['public_id'];
 
-            // Analizar imagen con OpenAI si está configurado
-            if (config('services.openai.api_key')) {
-                try {
-                    $aiAnalysis = $this->analyzeImageWithAI($imagePath);
-                } catch (\Exception $e) {
-                    logger()->error('Error analyzing image with AI: '.$e->getMessage());
+                // Analizar imagen con OpenAI si está configurado
+                if (config('services.openai.api_key')) {
+                    try {
+                        $aiAnalysis = $this->analyzeImageWithAI($imageUrl);
+                    } catch (\Exception $e) {
+                        \Log::error('Error analyzing image with AI: '.$e->getMessage());
+                    }
                 }
+            } catch (\Exception $e) {
+                \Log::error('Error uploading image to Cloudinary: '.$e->getMessage());
+                return redirect()->route('nutrition')
+                    ->withErrors(['image' => 'Error al subir la imagen. Por favor intenta nuevamente.']);
             }
         }
 
@@ -146,7 +170,8 @@ class NutritionController extends Controller
             'date' => $validated['date'] ?? now()->toDateString(),
             'meal_type' => $validated['meal_type'],
             'time' => $validated['time'] ?? now()->format('H:i'),
-            'image_path' => $imagePath,
+            'image_path' => $imageUrl, // Guardar URL de Cloudinary
+            'image_public_id' => $imagePublicId, // Guardar public_id para poder eliminar después
             'notes' => $validated['notes'] ?? null,
         ];
 
@@ -184,8 +209,16 @@ class NutritionController extends Controller
         $record = MealRecord::where('user_id', $request->user()->id)
             ->findOrFail($id);
 
-        // Eliminar imagen si existe
-        if ($record->image_path) {
+        // Eliminar imagen de Cloudinary si existe
+        if ($record->image_public_id) {
+            try {
+                $cloudinaryService = app(CloudinaryService::class);
+                $cloudinaryService->deleteImage($record->image_public_id);
+            } catch (\Exception $e) {
+                \Log::error('Error deleting image from Cloudinary: '.$e->getMessage());
+            }
+        } elseif ($record->image_path && !str_starts_with($record->image_path, 'http')) {
+            // Eliminar imagen local antigua si existe
             Storage::disk('public')->delete($record->image_path);
         }
 
@@ -197,14 +230,22 @@ class NutritionController extends Controller
     /**
      * Analizar imagen con OpenAI Vision API
      */
-    private function analyzeImageWithAI(string $imagePath): array
+    private function analyzeImageWithAI(string $imageUrl): array
     {
         $client = OpenAI::client(config('services.openai.api_key'));
 
-        // Convertir imagen a base64
-        $imageContent = Storage::disk('public')->get($imagePath);
-        $base64Image = base64_encode($imageContent);
-        $mimeType = Storage::disk('public')->mimeType($imagePath);
+        // Si es una URL de Cloudinary, usarla directamente
+        // Si es una ruta local, convertir a base64
+        if (str_starts_with($imageUrl, 'http')) {
+            // Es una URL de Cloudinary, usar directamente
+            $imageUrlForAI = $imageUrl;
+        } else {
+            // Es una ruta local antigua, convertir a base64
+            $imageContent = Storage::disk('public')->get($imageUrl);
+            $base64Image = base64_encode($imageContent);
+            $mimeType = Storage::disk('public')->mimeType($imageUrl);
+            $imageUrlForAI = "data:{$mimeType};base64,{$base64Image}";
+        }
 
         $response = $client->chat()->create([
             'model' => 'gpt-4o-mini',
@@ -229,7 +270,7 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
                         [
                             'type' => 'image_url',
                             'image_url' => [
-                                'url' => "data:{$mimeType};base64,{$base64Image}",
+                                'url' => $imageUrlForAI,
                             ],
                         ],
                     ],

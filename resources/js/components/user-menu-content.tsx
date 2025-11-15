@@ -35,14 +35,13 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
                     <Link
-                        className="block w-full"
-                        href={edit()}
-                        as="button"
+                        href="/settings"
                         prefetch
                         onClick={cleanup}
+                        className="flex items-center w-full cursor-pointer"
                     >
-                        <Settings className="mr-2" />
-                        Settings
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>

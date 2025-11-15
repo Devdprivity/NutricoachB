@@ -15,6 +15,7 @@ use App\Http\Controllers\Web\WorkoutPlanController;
 use App\Http\Controllers\Web\RecipeController;
 use App\Http\Controllers\Web\WeeklyMealPlanController;
 use App\Http\Controllers\Web\SubscriptionController;
+use App\Http\Controllers\Web\SpotifyController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -118,6 +119,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('subscription/invoice/{paymentId}', [SubscriptionController::class, 'showInvoice'])->name('subscription.invoice');
 
     Route::get('context', [\App\Http\Controllers\Web\ContextController::class, 'index'])->name('context');
+
+    // Spotify
+    Route::get('spotify/redirect', [SpotifyController::class, 'redirectToSpotify'])->name('spotify.redirect');
+    Route::get('spotify/callback', [SpotifyController::class, 'handleSpotifyCallback'])->name('spotify.callback');
+    Route::post('spotify/disconnect', [SpotifyController::class, 'disconnect'])->name('spotify.disconnect');
+    Route::get('spotify/currently-playing', [SpotifyController::class, 'getCurrentlyPlaying'])->name('spotify.currently-playing');
+    Route::get('spotify/friends-listening', [SpotifyController::class, 'getFriendsListening'])->name('spotify.friends-listening');
+    Route::post('spotify/toggle-share', [SpotifyController::class, 'toggleShareListening'])->name('spotify.toggle-share');
+    Route::post('spotify/play', [SpotifyController::class, 'play'])->name('spotify.play');
+    Route::post('spotify/pause', [SpotifyController::class, 'pause'])->name('spotify.pause');
+    Route::post('spotify/next', [SpotifyController::class, 'next'])->name('spotify.next');
+    Route::post('spotify/previous', [SpotifyController::class, 'previous'])->name('spotify.previous');
 });
 
 // Rutas para autenticación con Google

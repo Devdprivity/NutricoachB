@@ -13,6 +13,7 @@ class MealRecord extends Model
         'meal_type',
         'time',
         'image_path',
+        'image_public_id',
         'calories',
         'protein',
         'carbs',

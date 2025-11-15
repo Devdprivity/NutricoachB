@@ -392,4 +392,46 @@
     [data-page="nutricouch"] .nutricouch-progress-bar {
         background-color: var(--nutricouch-button);
     }
+
+    /* Estilos modernos para el Sidebar */
+    [data-sidebar="sidebar"] {
+        backdrop-filter: blur(10px);
+    }
+
+    /* Botones del menú más suaves */
+    [data-sidebar="menu-button"] {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-sidebar="menu-button"]:hover {
+        transform: translateX(2px);
+    }
+
+    [data-sidebar="menu-button"][data-active="true"] {
+        position: relative;
+    }
+
+    [data-sidebar="menu-button"][data-active="true"]::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 60%;
+        background: var(--nutricouch-button, #5ddc8a);
+        border-radius: 0 4px 4px 0;
+    }
+
+    /* Separadores más suaves */
+    [data-sidebar="separator"] {
+        opacity: 0.3;
+        margin: 0.5rem 0;
+    }
+
+    /* Header y Footer con mejor espaciado */
+    [data-sidebar="header"],
+    [data-sidebar="footer"] {
+        border-radius: 0.75rem;
+    }
 }

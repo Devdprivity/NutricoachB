@@ -1,9 +1,8 @@
 import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import { SidebarSearch } from '@/components/sidebar-search';
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -15,71 +14,106 @@ import { Link } from '@inertiajs/react';
 import { Apple, Award, Calendar, CalendarDays, ChefHat, Crown, Droplet, Dumbbell, LayoutGrid, MessageSquare, TrendingUp, UtensilsCrossed, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+interface NavSection {
+    title: string;
+    items: NavItem[];
+}
+
+const navSections: NavSection[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Hidratación',
-        href: '/hydration',
-        icon: Droplet,
+        title: 'Principal',
+        items: [
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+        ],
     },
     {
         title: 'Nutrición',
-        href: '/nutrition',
-        icon: Apple,
-    },
-    {
-        title: 'Recetas',
-        href: '/recipes',
-        icon: ChefHat,
-    },
-    {
-        title: 'Planes de Comidas',
-        href: '/weekly-meal-plans',
-        icon: UtensilsCrossed,
+        items: [
+            {
+                title: 'Hidratación',
+                href: '/hydration',
+                icon: Droplet,
+            },
+            {
+                title: 'Nutrición',
+                href: '/nutrition',
+                icon: Apple,
+            },
+            {
+                title: 'Recetas',
+                href: '/recipes',
+                icon: ChefHat,
+            },
+            {
+                title: 'Planes de Comidas',
+                href: '/weekly-meal-plans',
+                icon: UtensilsCrossed,
+            },
+        ],
     },
     {
         title: 'Ejercicios',
-        href: '/exercises',
-        icon: Dumbbell,
+        items: [
+            {
+                title: 'Ejercicios',
+                href: '/exercises',
+                icon: Dumbbell,
+            },
+            {
+                title: 'Planes de Entrenamiento',
+                href: '/workout-plans',
+                icon: CalendarDays,
+            },
+        ],
     },
     {
-        title: 'Planes de Entrenamiento',
-        href: '/workout-plans',
-        icon: CalendarDays,
-    },
-    {
-        title: 'Logros',
-        href: '/achievements',
-        icon: Award,
+        title: 'Análisis',
+        items: [
+            {
+                title: 'Progreso',
+                href: '/progress',
+                icon: TrendingUp,
+            },
+            {
+                title: 'Contexto',
+                href: '/context',
+                icon: Calendar,
+            },
+            {
+                title: 'Coaching',
+                href: '/coaching',
+                icon: MessageSquare,
+            },
+        ],
     },
     {
         title: 'Social',
-        href: '/social',
-        icon: Users,
-    },
-    {
-        title: 'Coaching',
-        href: '/coaching',
-        icon: MessageSquare,
-    },
-    {
-        title: 'Progreso',
-        href: '/progress',
-        icon: TrendingUp,
-    },
-    {
-        title: 'Contexto',
-        href: '/context',
-        icon: Calendar,
+        items: [
+            {
+                title: 'Logros',
+                href: '/achievements',
+                icon: Award,
+            },
+            {
+                title: 'Social',
+                href: '/social',
+                icon: Users,
+            },
+        ],
     },
     {
         title: 'Suscripción',
-        href: '/subscription',
-        icon: Crown,
+        items: [
+            {
+                title: 'Suscripción',
+                href: '/subscription',
+                icon: Crown,
+            },
+        ],
     },
 ];
 
@@ -99,12 +133,9 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <SidebarSearch sections={navSections} />
+                <NavMain sections={navSections} />
             </SidebarContent>
-
-            <SidebarFooter>
-                <NavUser />
-            </SidebarFooter>
         </Sidebar>
     );
 }

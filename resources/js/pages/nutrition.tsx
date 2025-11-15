@@ -1,7 +1,7 @@
-import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { type BreadcrumbItem, type SharedData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Apple, Camera, Clock, Heart, Loader2, Plus, Scan, Sparkles, Star, Trash2, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useInitials } from '@/hooks/use-initials';
 import AppLayout from '@/layouts/app-layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -98,10 +101,48 @@ interface NutritionData {
 }
 
 export default function Nutrition({ nutritionData }: { nutritionData?: NutritionData }) {
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
+    const getInitials = useInitials();
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [mealType, setMealType] = useState('breakfast');
+    const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    
+    // Determinar automáticamente el tipo de comida basándose en la hora actual
+    const getMealTypeByTime = (): string => {
+        const now = new Date();
+        const currentHour = now.getHours();
+        
+        // Rangos de horas para cada tipo de comida
+        if (currentHour >= 5 && currentHour < 10) {
+            return 'breakfast'; // 5:00 - 9:59
+        } else if (currentHour >= 10 && currentHour < 12) {
+            return 'morning_snack'; // 10:00 - 11:59
+        } else if (currentHour >= 12 && currentHour < 15) {
+            return 'lunch'; // 12:00 - 14:59
+        } else if (currentHour >= 15 && currentHour < 18) {
+            return 'afternoon_snack'; // 15:00 - 17:59
+        } else if (currentHour >= 18 && currentHour < 21) {
+            return 'dinner'; // 18:00 - 20:59
+        } else if (currentHour >= 21 || currentHour < 5) {
+            return 'evening_snack'; // 21:00 - 4:59
+        }
+        
+        return 'breakfast'; // Default
+    };
+    
+    const [mealType, setMealType] = useState(() => getMealTypeByTime());
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Actualizar hora cada minuto
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 60000); // Actualizar cada minuto
+
+        return () => clearInterval(interval);
+    }, []);
 
     // Barcode scanner state
     const [barcodeInput, setBarcodeInput] = useState('');
@@ -242,33 +283,205 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
             <Head title="Nutrición" />
 
             <div className="flex flex-col gap-6 p-6">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Nutrición</h1>
-                    <p className="text-muted-foreground">
-                        Registra tus comidas con fotos y sigue tu progreso nutricional con IA
-                    </p>
+                {/* Header con título y botón de escáner */}
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                        <h1 className="text-3xl font-bold tracking-tight">Nutrición</h1>
+                        <p className="text-muted-foreground">
+                            Registra tus comidas con fotos y sigue tu progreso nutricional con IA
+                        </p>
+                    </div>
+                    <Dialog open={isBarcodeDialogOpen} onOpenChange={setIsBarcodeDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-10 w-10">
+                                <Scan className="h-5 w-5" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <Scan className="h-5 w-5" />
+                                    Escanear Código de Barras
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Busca productos por código de barras y registra su información nutricional
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <Input
+                                            type="text"
+                                            placeholder="Ingresa el código de barras (8-13 dígitos)"
+                                            value={barcodeInput}
+                                            onChange={(e) => setBarcodeInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleBarcodeSearch()}
+                                            disabled={isSearchingBarcode}
+                                        />
+                                    </div>
+                                    <Button
+                                        onClick={handleBarcodeSearch}
+                                        disabled={isSearchingBarcode || !barcodeInput.trim()}
+                                    >
+                                        {isSearchingBarcode ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Scan className="mr-2 h-4 w-4" />
+                                                Buscar
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+
+                                {barcodeError && (
+                                    <div className="p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
+                                        {barcodeError}
+                                    </div>
+                                )}
+
+                                {barcodeProduct && (
+                                    <div className="border rounded-lg p-4 space-y-4">
+                                        <div className="flex gap-4">
+                                            {barcodeProduct.image_url && (
+                                                <div className="flex-shrink-0 w-24 h-24 rounded overflow-hidden border">
+                                                    <img
+                                                        src={barcodeProduct.image_url}
+                                                        alt={barcodeProduct.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-lg">{barcodeProduct.name}</h3>
+                                                {barcodeProduct.brand && (
+                                                    <p className="text-sm text-muted-foreground">{barcodeProduct.brand}</p>
+                                                )}
+                                                {barcodeProduct.quantity && (
+                                                    <p className="text-sm text-muted-foreground mt-1">
+                                                        Cantidad: {barcodeProduct.quantity}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted/50 rounded">
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Calorías</p>
+                                                <p className="text-lg font-semibold">
+                                                    {Math.round(barcodeProduct.nutritional_data.calories)}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">kcal</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Proteína</p>
+                                                <p className="text-lg font-semibold">
+                                                    {Math.round(barcodeProduct.nutritional_data.protein)}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">g</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Carbohidratos</p>
+                                                <p className="text-lg font-semibold">
+                                                    {Math.round(barcodeProduct.nutritional_data.carbs)}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">g</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Grasas</p>
+                                                <p className="text-lg font-semibold">
+                                                    {Math.round(barcodeProduct.nutritional_data.fat)}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">g</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-xs text-muted-foreground">
+                                            Valores nutricionales por {barcodeProduct.serving_size}
+                                        </div>
+
+                                        <div className="flex items-end gap-2">
+                                            <div className="flex-1">
+                                                <Label htmlFor="serving-amount">Cantidad consumida (g)</Label>
+                                                <Input
+                                                    id="serving-amount"
+                                                    type="number"
+                                                    min="1"
+                                                    value={servingAmount}
+                                                    onChange={(e) => setServingAmount(e.target.value)}
+                                                />
+                                            </div>
+                                            <Button onClick={() => {
+                                                handleAddBarcodeProduct();
+                                                setIsBarcodeDialogOpen(false);
+                                            }} className="flex-shrink-0">
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Agregar
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
-                {/* Alerta de próxima comida */}
-                {nextMeal && (
-                    <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950">
-                        <CardContent className="flex items-center gap-3 pt-6">
-                            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            <div>
-                                <p className="font-medium text-blue-900 dark:text-blue-100">
-                                    Próxima comida sugerida: {nextMeal.label}
-                                </p>
-                                <p className="text-sm text-blue-700 dark:text-blue-300">
-                                    Horario recomendado: {nextMeal.hour}:00
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                {/* Primera fila: Próxima comida pequeña y Grid principal */}
+                <div className="flex gap-4 items-start">
+                    {/* Columna izquierda: Cards pequeñas */}
+                    <div className="flex flex-col gap-4 w-[180px] flex-shrink-0">
+                        {/* Card de usuario con avatar, nombre y hora */}
+                        {auth?.user && (
+                            <Card>
+                                <CardContent className="p-3">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Avatar className="h-12 w-12">
+                                            <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
+                                            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+                                                {getInitials(auth.user.name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="text-center">
+                                            <p className="text-xs font-semibold truncate w-full" title={auth.user.name}>
+                                                {auth.user.name}
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                                {currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
-                {/* Resumen del Día */}
-                {totals && goals && percentages && (
-                    <Card>
+                        {/* Tarjeta pequeña de próxima comida */}
+                        {nextMeal && (
+                            <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                                <CardContent className="p-3">
+                                    <div className="flex flex-col items-center gap-1.5">
+                                        <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        <div className="text-center">
+                                            <p className="text-[10px] font-medium text-blue-900 dark:text-blue-100 uppercase tracking-wide">
+                                                Próxima
+                                            </p>
+                                            <p className="text-xs font-bold text-blue-700 dark:text-blue-300 mt-0.5">
+                                                {nextMeal.label}
+                                            </p>
+                                            <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
+                                                {nextMeal.hour}:00
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    {/* Grid principal: Resumen Nutricional y Registrar Comida */}
+                    <div className="grid gap-6 md:grid-cols-2 flex-1">
+                        {/* Resumen del Día */}
+                        {totals && goals && percentages && (
+                            <Card>
                         <CardHeader>
                             <CardTitle>Resumen Nutricional de Hoy</CardTitle>
                             <CardDescription>Comparación con tus objetivos diarios</CardDescription>
@@ -344,279 +557,95 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                 </p>
                             )}
                         </CardContent>
-                    </Card>
-                )}
-
-                {/* Comidas Favoritas */}
-                {favoriteMeals.length > 0 && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Star className="h-5 w-5 text-yellow-500" />
-                                Comidas Favoritas
-                            </CardTitle>
-                            <CardDescription>
-                                Registro rápido de tus comidas más frecuentes
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid gap-3 md:grid-cols-2">
-                                {favoriteMeals.map((favorite) => (
-                                    <div
-                                        key={favorite.id}
-                                        className="flex gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                                        onClick={() => handleUseFavorite(favorite)}
-                                    >
-                                        {favorite.image_url && (
-                                            <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden border">
-                                                <img
-                                                    src={favorite.image_url}
-                                                    alt={favorite.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="font-semibold truncate">{favorite.name}</h4>
-                                                    {favorite.description && (
-                                                        <p className="text-xs text-muted-foreground truncate">
-                                                            {favorite.description}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="ml-2"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleUseFavorite(favorite);
-                                                    }}
-                                                >
-                                                    <Plus className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                            <div className="flex gap-4 mt-2 text-xs">
-                                                <span><strong>{Math.round(favorite.calories)}</strong> kcal</span>
-                                                <span><strong>{Math.round(favorite.protein)}</strong>g P</span>
-                                                <span><strong>{Math.round(favorite.carbs)}</strong>g C</span>
-                                                <span><strong>{Math.round(favorite.fat)}</strong>g G</span>
-                                            </div>
-                                            {favorite.times_used > 0 && (
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Usado {favorite.times_used} {favorite.times_used === 1 ? 'vez' : 'veces'}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Escáner de Códigos de Barras */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Scan className="h-5 w-5" />
-                            Escanear Código de Barras
-                        </CardTitle>
-                        <CardDescription>
-                            Busca productos por código de barras y registra su información nutricional
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex gap-2">
-                            <div className="flex-1">
-                                <Input
-                                    type="text"
-                                    placeholder="Ingresa el código de barras (8-13 dígitos)"
-                                    value={barcodeInput}
-                                    onChange={(e) => setBarcodeInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleBarcodeSearch()}
-                                    disabled={isSearchingBarcode}
-                                />
-                            </div>
-                            <Button
-                                onClick={handleBarcodeSearch}
-                                disabled={isSearchingBarcode || !barcodeInput.trim()}
-                            >
-                                {isSearchingBarcode ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <>
-                                        <Scan className="mr-2 h-4 w-4" />
-                                        Buscar
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-
-                        {barcodeError && (
-                            <div className="p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
-                                {barcodeError}
-                            </div>
+                        </Card>
                         )}
 
-                        {barcodeProduct && (
-                            <div className="border rounded-lg p-4 space-y-4">
-                                <div className="flex gap-4">
-                                    {barcodeProduct.image_url && (
-                                        <div className="flex-shrink-0 w-24 h-24 rounded overflow-hidden border">
-                                            <img
-                                                src={barcodeProduct.image_url}
-                                                alt={barcodeProduct.name}
-                                                className="w-full h-full object-cover"
+                        {/* Registrar Comida con IA */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Camera className="h-5 w-5" />
+                                    Registrar Comida con IA
+                                </CardTitle>
+                                <CardDescription>
+                                    Sube una foto de tu comida y la IA analizará sus valores nutricionales
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label>Tipo de Comida</Label>
+                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" />
+                                                    Auto
+                                                </span>
+                                            </div>
+                                            <Select value={mealType} onValueChange={setMealType}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Object.entries(mealTypeLabels).map(([key, label]) => (
+                                                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="image">Foto de la Comida</Label>
+                                            <Input
+                                                id="image"
+                                                type="file"
+                                                accept="image/*"
+                                                disabled={isSubmitting}
+                                                onChange={handleImageChange}
                                             />
                                         </div>
+                                    </div>
+
+                                    {imagePreview && (
+                                        <div className="space-y-2">
+                                            <Label>Vista Previa</Label>
+                                            <div className="flex justify-center">
+                                                <div className="relative h-[100px] w-[100px] overflow-hidden rounded-lg border">
+                                                    <img
+                                                        src={imagePreview}
+                                                        alt="Preview"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     )}
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-lg">{barcodeProduct.name}</h3>
-                                        {barcodeProduct.brand && (
-                                            <p className="text-sm text-muted-foreground">{barcodeProduct.brand}</p>
-                                        )}
-                                        {barcodeProduct.quantity && (
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Cantidad: {barcodeProduct.quantity}
-                                            </p>
-                                        )}
+
+                                    <div className="flex justify-center">
+                                        <Button
+                                            type="submit"
+                                            disabled={!selectedImage || isSubmitting}
+                                        >
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                                                    Analizando con IA...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Upload className="mr-2 h-4 w-4" />
+                                                    Subir y Analizar
+                                                </>
+                                            )}
+                                        </Button>
                                     </div>
-                                </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted/50 rounded">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Calorías</p>
-                                        <p className="text-lg font-semibold">
-                                            {Math.round(barcodeProduct.nutritional_data.calories)}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">kcal</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Proteína</p>
-                                        <p className="text-lg font-semibold">
-                                            {Math.round(barcodeProduct.nutritional_data.protein)}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">g</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Carbohidratos</p>
-                                        <p className="text-lg font-semibold">
-                                            {Math.round(barcodeProduct.nutritional_data.carbs)}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">g</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Grasas</p>
-                                        <p className="text-lg font-semibold">
-                                            {Math.round(barcodeProduct.nutritional_data.fat)}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">g</p>
-                                    </div>
-                                </div>
-
-                                <div className="text-xs text-muted-foreground">
-                                    Valores nutricionales por {barcodeProduct.serving_size}
-                                </div>
-
-                                <div className="flex items-end gap-2">
-                                    <div className="flex-1">
-                                        <Label htmlFor="serving-amount">Cantidad consumida (g)</Label>
-                                        <Input
-                                            id="serving-amount"
-                                            type="number"
-                                            min="1"
-                                            value={servingAmount}
-                                            onChange={(e) => setServingAmount(e.target.value)}
-                                        />
-                                    </div>
-                                    <Button onClick={handleAddBarcodeProduct} className="flex-shrink-0">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Agregar a {mealTypeLabels[mealType]}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Registrar Comida */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Camera className="h-5 w-5" />
-                            Registrar Comida con IA
-                        </CardTitle>
-                        <CardDescription>
-                            Sube una foto de tu comida y la IA analizará sus valores nutricionales
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label>Tipo de Comida</Label>
-                                    <Select value={mealType} onValueChange={setMealType}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(mealTypeLabels).map(([key, label]) => (
-                                                <SelectItem key={key} value={key}>{label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="image">Foto de la Comida</Label>
-                                    <Input
-                                        id="image"
-                                        type="file"
-                                        accept="image/*"
-                                        disabled={isSubmitting}
-                                        onChange={handleImageChange}
-                                    />
-                                </div>
-                            </div>
-
-                            {imagePreview && (
-                                <div className="space-y-2">
-                                    <Label>Vista Previa</Label>
-                                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            <Button
-                                type="submit"
-                                disabled={!selectedImage || isSubmitting}
-                                className="w-full"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                                        Analizando con IA...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Subir y Analizar
-                                    </>
-                                )}
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                {/* Registros de Hoy */}
+                {/* Registros de Hoy - Tabla Moderna */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Comidas de Hoy</CardTitle>
@@ -631,88 +660,111 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-4">
-                                {records.map((record) => (
-                                    <div
-                                        key={record.id}
-                                        className="flex gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                                    >
-                                        {record.image_path && (
-                                            <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden border">
-                                                <img
-                                                    src={record.image_url || `/storage/${record.image_path}`}
-                                                    alt="Meal"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="flex-1">
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <h3 className="font-semibold">
-                                                            {mealTypeLabels[record.meal_type]}
-                                                        </h3>
-                                                        {record.ai_analyzed && (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                                                                <Sparkles className="h-3 w-3" />
-                                                                IA
-                                                            </span>
+                            <div className="rounded-lg border overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-muted/50 border-b">
+                                            <tr>
+                                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Imagen</th>
+                                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Tipo</th>
+                                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Descripción</th>
+                                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Calorías</th>
+                                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Proteína</th>
+                                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Carbos</th>
+                                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Grasas</th>
+                                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Hora</th>
+                                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground text-xs uppercase tracking-wider">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {records.map((record) => (
+                                                <tr key={record.id} className="border-b transition-colors hover:bg-muted/30">
+                                                    <td className="p-3">
+                                                        {record.image_path ? (
+                                                            <div className="w-12 h-12 rounded-md overflow-hidden border">
+                                                                <img
+                                                                    src={record.image_url || (record.image_path.startsWith('http') ? record.image_path : `/storage/${record.image_path}`)}
+                                                                    alt="Meal"
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center">
+                                                                <Apple className="h-5 w-5 text-muted-foreground" />
+                                                            </div>
                                                         )}
-                                                    </div>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {record.time}
-                                                    </p>
-                                                    {record.ai_description && (
-                                                        <p className="text-sm mt-1">
-                                                            {record.ai_description}
-                                                        </p>
-                                                    )}
-                                                    {record.food_items && (
-                                                        <p className="text-sm text-muted-foreground mt-1">
-                                                            {record.food_items}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <div className="flex gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleSaveAsFavorite(record.id)}
-                                                        title="Guardar como favorito"
-                                                    >
-                                                        <Heart className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDeleteRecord(record.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-4 gap-2 mt-3 text-sm">
-                                                <div>
-                                                    <p className="text-muted-foreground">Calorías</p>
-                                                    <p className="font-semibold">{Math.round(record.calories)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-muted-foreground">Proteína</p>
-                                                    <p className="font-semibold">{Math.round(record.protein)}g</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-muted-foreground">Carbos</p>
-                                                    <p className="font-semibold">{Math.round(record.carbs)}g</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-muted-foreground">Grasas</p>
-                                                    <p className="font-semibold">{Math.round(record.fat)}g</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-medium">{mealTypeLabels[record.meal_type]}</span>
+                                                            {record.ai_analyzed && (
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                                                    <Sparkles className="h-2.5 w-2.5" />
+                                                                    IA
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="max-w-xs">
+                                                            {record.ai_description && (
+                                                                <p className="text-sm font-medium truncate" title={record.ai_description}>
+                                                                    {record.ai_description}
+                                                                </p>
+                                                            )}
+                                                            {record.food_items && (
+                                                                <p className="text-xs text-muted-foreground truncate" title={record.food_items}>
+                                                                    {record.food_items}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className="text-sm font-semibold">{Math.round(record.calories)}</span>
+                                                        <span className="text-xs text-muted-foreground ml-1">kcal</span>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className="text-sm font-semibold">{Math.round(record.protein)}</span>
+                                                        <span className="text-xs text-muted-foreground ml-1">g</span>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className="text-sm font-semibold">{Math.round(record.carbs)}</span>
+                                                        <span className="text-xs text-muted-foreground ml-1">g</span>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className="text-sm font-semibold">{Math.round(record.fat)}</span>
+                                                        <span className="text-xs text-muted-foreground ml-1">g</span>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className="text-xs text-muted-foreground">{record.time}</span>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7"
+                                                                onClick={() => handleSaveAsFavorite(record.id)}
+                                                                title="Guardar como favorito"
+                                                            >
+                                                                <Heart className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7"
+                                                                onClick={() => handleDeleteRecord(record.id)}
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
                     </CardContent>

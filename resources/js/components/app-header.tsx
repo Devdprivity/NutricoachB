@@ -27,11 +27,13 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
+import { NotificationsDropdown } from '@/components/notifications-dropdown';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import {
     Dumbbell,
     TrendingUp,
@@ -41,7 +43,9 @@ import {
     Search,
     Zap,
     Award,
-    Activity
+    Activity,
+    Music,
+    Music2
 } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
@@ -93,6 +97,44 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    const [spotifyConnected, setSpotifyConnected] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        // Verificar estado de Spotify
+        if (auth?.user) {
+            const hasSpotify = !!(auth.user as any).spotify_id;
+            setSpotifyConnected(hasSpotify);
+        }
+    }, [auth?.user]);
+
+    const handleSpotifyConnect = async () => {
+        if (spotifyConnected) {
+            // Desconectar
+            setIsLoading(true);
+            try {
+                const response = await fetch('/spotify/disconnect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                });
+                if (response.ok) {
+                    setSpotifyConnected(false);
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error desconectando Spotify:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            // Conectar - redirigir a Spotify
+            window.location.href = '/spotify/redirect';
+        }
+    };
+
     return (
         <>
             <div className="border-b border-sidebar-border/80 bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
@@ -233,6 +275,40 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             >
                                 <Search className="!size-5 text-neutral-600 dark:text-neutral-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors" />
                             </Button>
+                            <NotificationsDropdown initialUnreadCount={auth.user?.unread_notifications_count || 0} />
+                            
+                            {/* Botón de Spotify */}
+                            <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={handleSpotifyConnect}
+                                            disabled={isLoading}
+                                            className={cn(
+                                                "group h-9 w-9 cursor-pointer transition-colors",
+                                                spotifyConnected 
+                                                    ? "hover:bg-green-50 dark:hover:bg-green-950/20" 
+                                                    : "hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                                            )}
+                                        >
+                                            {spotifyConnected ? (
+                                                <Music className={cn(
+                                                    "!size-5 transition-colors",
+                                                    "text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300"
+                                                )} />
+                                            ) : (
+                                                <Music2 className="!size-5 text-neutral-600 dark:text-neutral-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors opacity-50" />
+                                            )}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>{spotifyConnected ? 'Desconectar Spotify' : 'Conectar Spotify'}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+
                             <div className="hidden lg:flex">
                                 {rightNavItems.map((item) => (
                                     <TooltipProvider

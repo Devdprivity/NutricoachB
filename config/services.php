@@ -56,4 +56,17 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+        'secure' => env('CLOUDINARY_SECURE', true),
+    ],
+
+    'spotify' => [
+        'client_id' => env('SPOTIFY_CLIENT_ID'),
+        'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
+        'redirect_uri' => env('SPOTIFY_REDIRECT_URI'),
+    ],
+
 ];

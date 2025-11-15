@@ -1,8 +1,7 @@
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { send } from '@/routes/verification';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, Link, useForm, usePage } from '@inertiajs/react';
 
 import DeleteUser from '@/components/delete-user';
 import HeadingSmall from '@/components/heading-small';
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
-import { edit } from '@/routes/profile';
+import { edit, update } from '@/routes/profile';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -29,6 +28,18 @@ export default function Profile({
     status?: string;
 }) {
     const { auth } = usePage<SharedData>().props;
+    
+    const { data, setData, patch, processing, recentlySuccessful, errors } = useForm({
+        name: auth.user.name,
+        email: auth.user.email,
+    });
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        patch(update().url, {
+            preserveScroll: true,
+        });
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -41,22 +52,15 @@ export default function Profile({
                         description="Update your name and email address"
                     />
 
-                    <Form
-                        {...ProfileController.update.form()}
-                        options={{
-                            preserveScroll: true,
-                        }}
-                        className="space-y-6"
-                    >
-                        {({ processing, recentlySuccessful, errors }) => (
-                            <>
+                    <form onSubmit={submit} className="space-y-6">
                                 <div className="grid gap-2">
                                     <Label htmlFor="name">Name</Label>
 
                                     <Input
                                         id="name"
                                         className="mt-1 block w-full"
-                                        defaultValue={auth.user.name}
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
                                         name="name"
                                         required
                                         autoComplete="name"
@@ -76,7 +80,8 @@ export default function Profile({
                                         id="email"
                                         type="email"
                                         className="mt-1 block w-full"
-                                        defaultValue={auth.user.email}
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
                                         name="email"
                                         required
                                         autoComplete="username"
@@ -118,6 +123,7 @@ export default function Profile({
 
                                 <div className="flex items-center gap-4">
                                     <Button
+                                        type="submit"
                                         disabled={processing}
                                         data-test="update-profile-button"
                                     >
@@ -136,9 +142,7 @@ export default function Profile({
                                         </p>
                                     </Transition>
                                 </div>
-                            </>
-                        )}
-                    </Form>
+                    </form>
                 </div>
 
                 <DeleteUser />
