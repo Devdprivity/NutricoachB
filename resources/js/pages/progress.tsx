@@ -18,7 +18,8 @@ import {
     Trash2,
     Flag
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ProgressSkeleton } from '@/components/skeletons/progress-skeleton';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress as ProgressBar } from '@/components/ui/progress';
@@ -159,11 +160,33 @@ export default function ProgressPage() {
     const { progressData } = usePage<{ progressData: ProgressData }>().props;
     const data = progressData || {};
 
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [compareMode, setCompareMode] = useState(false);
+
+    // Initial load
+    useEffect(() => {
+        setIsLoading(true);
+        const timer = setTimeout(() => setIsLoading(false), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Navigation events
+    useEffect(() => {
+        const handleStart = () => setIsLoading(true);
+        const handleFinish = () => setIsLoading(false);
+
+        document.addEventListener('inertia:start', handleStart);
+        document.addEventListener('inertia:finish', handleFinish);
+
+        return () => {
+            document.removeEventListener('inertia:start', handleStart);
+            document.removeEventListener('inertia:finish', handleFinish);
+        };
+    }, []);
 
     if (data.error) {
         return (
@@ -246,7 +269,10 @@ export default function ProgressPage() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Progreso" />
 
-            <div className="flex flex-col gap-6 p-6">
+            {isLoading ? (
+                <ProgressSkeleton />
+            ) : (
+                <div className="flex flex-col gap-6 p-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Progreso</h1>
@@ -828,6 +854,7 @@ export default function ProgressPage() {
                     </Card>
                 )}
             </div>
+            )}
         </AppLayout>
     );
 }
