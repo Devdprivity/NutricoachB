@@ -158,7 +158,7 @@ export default function Context() {
 
     const getStatusBadge = (status: string) => {
         const badges = {
-            good: { label: 'Bueno', variant: 'default' as const, className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+            good: { label: 'Bueno', variant: 'default' as const, className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-white' },
             fair: { label: 'Regular', variant: 'secondary' as const, className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
             poor: { label: 'Bajo', variant: 'destructive' as const, className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
         };
@@ -316,7 +316,7 @@ export default function Context() {
                                     <>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-muted-foreground">Estado</span>
-                                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-white">
                                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                                 Completado
                                             </Badge>

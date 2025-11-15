@@ -133,7 +133,7 @@ export default function Integrations({ integrations }: Props) {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     {integrations.youtube_music.connected ? (
-                                        <Play className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                        <Play className="h-6 w-6 text-green-600 dark:text-white" />
                                     ) : (
                                         <Play className="h-6 w-6 text-primary" />
                                     )}
@@ -244,7 +244,7 @@ export default function Integrations({ integrations }: Props) {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     {integrations.spotify.connected ? (
-                                        <Music className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                        <Music className="h-6 w-6 text-green-600 dark:text-white" />
                                     ) : (
                                         <Music2 className="h-6 w-6 text-muted-foreground" />
                                     )}
@@ -354,7 +354,7 @@ export default function Integrations({ integrations }: Props) {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     {integrations.apple_music.connected ? (
-                                        <Music className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                        <Music className="h-6 w-6 text-green-600 dark:text-white" />
                                     ) : (
                                         <Music2 className="h-6 w-6 text-muted-foreground" />
                                     )}

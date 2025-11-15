@@ -9,7 +9,7 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'TASA Explorer', 'Momo Trust Display', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
@@ -90,28 +90,28 @@
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-primary-foreground: oklch(0.145 0 0);
     --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-accent-foreground: oklch(0.145 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.87 0 0);
 }
 
 .dark {
     --background: #000000;
-    --foreground: #00FFD1;
+    --foreground: #ffffff;
     --card: #1f1f1f;
     --card-foreground: #ffffff;
     --popover: #1f1f1f;
     --popover-foreground: #ffffff;
     --primary: #000000;
-    --primary-foreground: #00FFD1;
+    --primary-foreground: #ffffff;
     --secondary: #121212;
     --secondary-foreground: #ffffff;
     --muted: #121212;
     --muted-foreground: #ffffff;
     --accent: #0E8388;
-    --accent-foreground: #00FFD1;
+    --accent-foreground: #ffffff;
     --destructive: oklch(0.396 0.141 25.723);
     --destructive-foreground: oklch(0.637 0.237 25.331);
     --border: #1f1f1f;
@@ -123,11 +123,11 @@
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
     --sidebar: #000000;
-    --sidebar-foreground: #00FFD1;
+    --sidebar-foreground: #ffffff;
     --sidebar-primary: #000000;
-    --sidebar-primary-foreground: #00FFD1;
+    --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #2E4F4F;
-    --sidebar-accent-foreground: #00FFD1;
+    --sidebar-accent-foreground: #ffffff;
     --sidebar-border: #2E4F4F;
     --sidebar-ring: #0E8388;
 }
@@ -143,7 +143,7 @@
 
     /* Aplicar color de texto global en modo oscuro */
     .dark {
-        color: #00FFD1;
+        color: #ffffff;
     }
 
     /* Cards en todas las vistas con fondo #1f1f1f y texto blanco */
@@ -176,7 +176,7 @@
     .dark td,
     .dark th,
     .dark label {
-        color: #00FFD1;
+        color: #ffffff;
     }
 
     /* Texto dentro de cards debe ser blanco */
@@ -203,7 +203,7 @@
 
     /* Mantener colores específicos de utilidades de Tailwind */
     .dark .text-muted-foreground {
-        color: #00FFD1;
+        color: #ffffff;
         opacity: 0.7;
     }
 

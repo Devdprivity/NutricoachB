@@ -207,14 +207,14 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
                     className={cn(
                         "h-9 px-3 gap-2 transition-colors",
                         currentlyPlaying 
-                            ? "hover:bg-green-50 dark:hover:bg-green-950/20" 
+                            ? "hover:bg-green-50 dark:hover:bg-white/10" 
                             : "hover:bg-orange-50 dark:hover:bg-orange-950/20"
                     )}
                 >
                     <Music className={cn(
                         "h-4 w-4",
                         currentlyPlaying 
-                            ? "text-green-600 dark:text-green-400" 
+                            ? "text-green-600 dark:text-white" 
                             : "text-neutral-600 dark:text-neutral-400"
                     )} />
                     {currentlyPlaying && (
@@ -232,7 +232,7 @@ export function SpotifyPlayer({ isConnected }: SpotifyPlayerProps) {
             <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Music className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <Music className="h-5 w-5 text-green-600 dark:text-white" />
                         Reproductor de Spotify
                     </DialogTitle>
                     <DialogDescription>

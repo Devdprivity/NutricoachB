@@ -49,8 +49,8 @@ class YouTubeMusicController extends Controller
             'https://www.googleapis.com/auth/youtubepartner',
         ];
 
-        // Si el usuario ya está autenticado con Google, no usar 'prompt' para intentar usar la sesión activa
-        // Solo pedirá permisos adicionales de YouTube sin pedir credenciales
+        // Si el usuario ya está autenticado con Google, usar prompt: 'none' para evitar pantalla de selección
+        // Esto intentará usar la sesión activa sin mostrar ninguna pantalla
         $user = $request->user();
         $hasGoogleAuth = $user && $user->google_id;
         
@@ -62,12 +62,11 @@ class YouTubeMusicController extends Controller
             'access_type' => 'offline',
         ];
 
-        // Si el usuario ya está autenticado con Google, usar login_hint y no forzar prompt
-        // Esto permite que Google use la sesión activa y solo pida permisos de YouTube
+        // Si el usuario ya está autenticado con Google, usar prompt: 'none' para usar sesión activa
+        // Si falla, Google redirigirá con error y podremos manejar el fallback
         if ($hasGoogleAuth) {
             $queryParams['login_hint'] = $user->email;
-            // No incluir 'prompt' para que use la sesión activa si está disponible
-            // Si necesita permisos adicionales, Google los pedirá automáticamente
+            $queryParams['prompt'] = 'none'; // Intenta usar sesión activa sin mostrar pantallas
         } else {
             // Si no está autenticado con Google, pedir consentimiento
             $queryParams['prompt'] = 'consent';
@@ -94,9 +93,49 @@ class YouTubeMusicController extends Controller
         $error = $request->get('error');
 
         if ($error) {
+            // Si el error es 'access_denied' o 'interaction_required', significa que necesitamos mostrar la pantalla
+            // En ese caso, redirigir de nuevo pero con prompt: 'consent' para forzar la pantalla
+            if (in_array($error, ['access_denied', 'interaction_required', 'login_required'])) {
+                Log::info('YouTube Music callback requiere interacción, reintentando con consent', [
+                    'error' => $error,
+                    'user_id' => $request->user()?->id,
+                ]);
+                
+                // Reintentar con prompt: 'consent' para mostrar la pantalla de permisos
+                $queryParams = [
+                    'client_id' => $this->clientId,
+                    'redirect_uri' => $this->redirectUri,
+                    'response_type' => 'code',
+                    'scope' => implode(' ', [
+                        'https://www.googleapis.com/auth/youtube',
+                        'https://www.googleapis.com/auth/youtube.readonly',
+                        'https://www.googleapis.com/auth/youtubepartner',
+                    ]),
+                    'access_type' => 'offline',
+                    'prompt' => 'consent', // Forzar pantalla de permisos
+                ];
+                
+                $user = $request->user();
+                if ($user && $user->google_id) {
+                    $queryParams['login_hint'] = $user->email;
+                }
+                
+                $query = http_build_query($queryParams);
+                return redirect('https://accounts.google.com/o/oauth2/v2/auth?' . $query);
+            }
+            
             Log::error('YouTube Music callback error', ['error' => $error]);
+            
+            // Mensaje más claro para errores comunes
+            $errorMessage = match($error) {
+                'access_denied' => 'La aplicación está en modo de prueba. Por favor, contacta al administrador para agregar tu cuenta como tester.',
+                'interaction_required' => 'Se requiere interacción adicional. Por favor, intenta nuevamente.',
+                'login_required' => 'Por favor, inicia sesión con Google primero.',
+                default => 'Error al conectar con YouTube Music: ' . $error,
+            };
+            
             return redirect()->route('integrations.index')
-                ->with('error', 'Error al conectar con YouTube Music: ' . $error);
+                ->with('error', $errorMessage);
         }
 
         if (!$code) {
