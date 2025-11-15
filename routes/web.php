@@ -16,6 +16,8 @@ use App\Http\Controllers\Web\RecipeController;
 use App\Http\Controllers\Web\WeeklyMealPlanController;
 use App\Http\Controllers\Web\SubscriptionController;
 use App\Http\Controllers\Web\SpotifyController;
+use App\Http\Controllers\Web\YouTubeMusicController;
+use App\Http\Controllers\Web\AppleMusicController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -136,6 +138,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('spotify/search', [SpotifyController::class, 'search'])->name('spotify.search');
     Route::post('spotify/play-track', [SpotifyController::class, 'playTrack'])->name('spotify.play-track');
     Route::get('spotify/devices', [SpotifyController::class, 'getDevices'])->name('spotify.devices');
+
+    // YouTube Music
+    Route::get('youtube-music/redirect', [YouTubeMusicController::class, 'redirectToYouTubeMusic'])->name('youtube-music.redirect');
+    Route::get('youtube-music/callback', [YouTubeMusicController::class, 'handleYouTubeMusicCallback'])->name('youtube-music.callback');
+    Route::post('youtube-music/disconnect', [YouTubeMusicController::class, 'disconnect'])->name('youtube-music.disconnect');
+    Route::get('youtube-music/currently-playing', [YouTubeMusicController::class, 'getCurrentlyPlaying'])->name('youtube-music.currently-playing');
+    Route::get('youtube-music/friends-listening', [YouTubeMusicController::class, 'getFriendsListening'])->name('youtube-music.friends-listening');
+    Route::post('youtube-music/toggle-share', [YouTubeMusicController::class, 'toggleShareListening'])->name('youtube-music.toggle-share');
+    Route::get('youtube-music/search', [YouTubeMusicController::class, 'search'])->name('youtube-music.search');
+    Route::post('youtube-music/play-video', [YouTubeMusicController::class, 'playVideo'])->name('youtube-music.play-video');
+
+    // Apple Music
+    Route::post('apple-music/connect', [AppleMusicController::class, 'connect'])->name('apple-music.connect');
+    Route::post('apple-music/disconnect', [AppleMusicController::class, 'disconnect'])->name('apple-music.disconnect');
+    Route::get('apple-music/developer-token', [AppleMusicController::class, 'getDeveloperToken'])->name('apple-music.developer-token');
+    Route::post('apple-music/save-currently-playing', [AppleMusicController::class, 'saveCurrentlyPlaying'])->name('apple-music.save-currently-playing');
+    Route::get('apple-music/currently-playing', [AppleMusicController::class, 'getCurrentlyPlaying'])->name('apple-music.currently-playing');
+    Route::get('apple-music/friends-listening', [AppleMusicController::class, 'getFriendsListening'])->name('apple-music.friends-listening');
+    Route::post('apple-music/toggle-share', [AppleMusicController::class, 'toggleShareListening'])->name('apple-music.toggle-share');
+    Route::get('apple-music/recently-played', [AppleMusicController::class, 'getRecentlyPlayed'])->name('apple-music.recently-played');
 });
 
 // Rutas para autenticación con Google

@@ -1,7 +1,12 @@
-Version: Force Database Session Driver in Production
-Deployed: 2025-11-15 16:00:00
-Changes:
-- Force SESSION_DRIVER to 'database' in production environment
-- Bypasses Laravel Cloud injectable SESSION_DRIVER=cookie variable
-- Cookie domain configured for .laravel.cloud
-- This should fix all cookie rejection issues
+Version: Multi-Service Music Integration (Spotify, YouTube Music, Apple Music)
+Deployed: 2025-11-15 17:00:00
+Backend Changes:
+- Added YouTube Music integration with OAuth2 flow
+- Added Apple Music integration with MusicKit support
+- Created YouTubeMusicController and AppleMusicController
+- Added music_provider field to music_activity table
+- Updated User model with YouTube Music and Apple Music support
+- Added routes for all music services
+- Updated config/services.php with new credentials
+- Updated CSRF exceptions for all music services
+- Users can now connect multiple music services and choose their preferred one

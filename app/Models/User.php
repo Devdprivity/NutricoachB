@@ -33,11 +33,24 @@ class User extends Authenticatable
         'avatar_public_id',
         'current_subscription_plan_id',
         'is_premium',
+        // Spotify
         'spotify_id',
         'spotify_access_token',
         'spotify_refresh_token',
         'spotify_token_expires_at',
         'spotify_share_listening',
+        // YouTube Music
+        'youtube_music_id',
+        'youtube_music_access_token',
+        'youtube_music_refresh_token',
+        'youtube_music_token_expires_at',
+        // Apple Music
+        'apple_music_id',
+        'apple_music_user_token',
+        'apple_music_developer_token',
+        'apple_music_token_expires_at',
+        // Preferred music service
+        'preferred_music_service',
     ];
 
     /**
@@ -52,6 +65,10 @@ class User extends Authenticatable
         'remember_token',
         'spotify_access_token',
         'spotify_refresh_token',
+        'youtube_music_access_token',
+        'youtube_music_refresh_token',
+        'apple_music_user_token',
+        'apple_music_developer_token',
     ];
 
     /**
@@ -67,6 +84,8 @@ class User extends Authenticatable
             'is_premium' => 'boolean',
             'spotify_token_expires_at' => 'datetime',
             'spotify_share_listening' => 'boolean',
+            'youtube_music_token_expires_at' => 'datetime',
+            'apple_music_token_expires_at' => 'datetime',
         ];
     }
 
@@ -340,6 +359,55 @@ class User extends Authenticatable
     public function hasSpotifyConnected(): bool
     {
         return !is_null($this->spotify_id) && !is_null($this->spotify_access_token);
+    }
+
+    /**
+     * Verificar si tiene YouTube Music conectado
+     */
+    public function hasYouTubeMusicConnected(): bool
+    {
+        return !is_null($this->youtube_music_id) && !is_null($this->youtube_music_access_token);
+    }
+
+    /**
+     * Verificar si tiene Apple Music conectado
+     */
+    public function hasAppleMusicConnected(): bool
+    {
+        return !is_null($this->apple_music_id) && !is_null($this->apple_music_user_token);
+    }
+
+    /**
+     * Verificar si tiene algún servicio de música conectado
+     */
+    public function hasAnyMusicServiceConnected(): bool
+    {
+        return $this->hasSpotifyConnected() ||
+               $this->hasYouTubeMusicConnected() ||
+               $this->hasAppleMusicConnected();
+    }
+
+    /**
+     * Obtener el servicio de música activo basado en la preferencia
+     */
+    public function getActiveMusicService(): ?string
+    {
+        if ($this->preferred_music_service) {
+            return $this->preferred_music_service;
+        }
+
+        // Fallback: retornar el primer servicio conectado
+        if ($this->hasSpotifyConnected()) {
+            return 'spotify';
+        }
+        if ($this->hasYouTubeMusicConnected()) {
+            return 'youtube_music';
+        }
+        if ($this->hasAppleMusicConnected()) {
+            return 'apple_music';
+        }
+
+        return null;
     }
 
     /**

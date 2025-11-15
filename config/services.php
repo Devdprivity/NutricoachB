@@ -69,4 +69,16 @@ return [
         'redirect_uri' => env('SPOTIFY_REDIRECT_URI'),
     ],
 
+    'youtube_music' => [
+        'client_id' => env('YOUTUBE_MUSIC_CLIENT_ID'),
+        'client_secret' => env('YOUTUBE_MUSIC_CLIENT_SECRET'),
+        'redirect_uri' => env('YOUTUBE_MUSIC_REDIRECT_URI'),
+    ],
+
+    'apple_music' => [
+        'team_id' => env('APPLE_MUSIC_TEAM_ID'),
+        'key_id' => env('APPLE_MUSIC_KEY_ID'),
+        'private_key_path' => env('APPLE_MUSIC_PRIVATE_KEY_PATH'),
+    ],
+
 ];

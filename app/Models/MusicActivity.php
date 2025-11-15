@@ -11,6 +11,7 @@ class MusicActivity extends Model
 
     protected $fillable = [
         'user_id',
+        'music_provider', // 'spotify', 'youtube_music', 'apple_music'
         'track_id',
         'track_name',
         'artist_name',
@@ -52,5 +53,37 @@ class MusicActivity extends Model
     public function scopeRecent($query, int $hours = 24)
     {
         return $query->where('created_at', '>=', now()->subHours($hours));
+    }
+
+    /**
+     * Scope para filtrar por proveedor de música
+     */
+    public function scopeProvider($query, string $provider)
+    {
+        return $query->where('music_provider', $provider);
+    }
+
+    /**
+     * Scope para Spotify
+     */
+    public function scopeSpotify($query)
+    {
+        return $query->where('music_provider', 'spotify');
+    }
+
+    /**
+     * Scope para YouTube Music
+     */
+    public function scopeYouTubeMusic($query)
+    {
+        return $query->where('music_provider', 'youtube_music');
+    }
+
+    /**
+     * Scope para Apple Music
+     */
+    public function scopeAppleMusic($query)
+    {
+        return $query->where('music_provider', 'apple_music');
     }
 }

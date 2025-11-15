@@ -17,9 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        // Use custom CSRF middleware with exceptions for Spotify routes
+        // Use custom CSRF middleware with exceptions for music service routes
         $middleware->validateCsrfTokens(except: [
             'spotify/*',
+            'youtube-music/*',
+            'apple-music/*',
         ]);
 
         $middleware->web(append: [

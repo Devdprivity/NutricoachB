@@ -255,6 +255,7 @@ class SpotifyController extends Controller
 
         // Verificar si ya existe una actividad reciente para este track
         $existingActivity = MusicActivity::where('user_id', $user->id)
+            ->where('music_provider', 'spotify')
             ->where('track_id', $trackId)
             ->where('is_playing', true)
             ->whereNull('ended_at')
@@ -269,6 +270,7 @@ class SpotifyController extends Controller
         } else {
             // Marcar actividad anterior como terminada
             MusicActivity::where('user_id', $user->id)
+                ->where('music_provider', 'spotify')
                 ->where('is_playing', true)
                 ->whereNull('ended_at')
                 ->update([
@@ -279,6 +281,7 @@ class SpotifyController extends Controller
             // Crear nueva actividad
             MusicActivity::create([
                 'user_id' => $user->id,
+                'music_provider' => 'spotify',
                 'track_id' => $trackId,
                 'track_name' => $track['name'],
                 'artist_name' => $track['artists'][0]['name'] ?? 'Unknown',
@@ -303,8 +306,9 @@ class SpotifyController extends Controller
         // Obtener IDs de amigos (usuarios que sigue)
         $friendIds = $user->following()->pluck('users.id');
 
-        // Obtener actividad musical actual de amigos
+        // Obtener actividad musical actual de amigos (solo Spotify)
         $friendsListening = MusicActivity::whereIn('user_id', $friendIds)
+            ->where('music_provider', 'spotify')
             ->where('is_playing', true)
             ->whereNull('ended_at')
             ->with('user:id,name,avatar')
