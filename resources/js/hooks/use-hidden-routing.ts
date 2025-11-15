@@ -3,31 +3,35 @@ import { router } from '@inertiajs/react';
 
 /**
  * Hook que oculta las rutas de la URL, manteniendo siempre solo el dominio
- * La navegación funciona internamente pero la URL siempre muestra solo el dominio base
+ * La navegación funciona internamente pero la URL NUNCA cambia del dominio base
  */
 export function useHiddenRouting() {
     useEffect(() => {
-        // Flag para indicar si la página acaba de cargar
+        let isNavigating = false;
         let isInitialLoad = true;
 
-        // Guardar la ruta inicial
-        const saveRoute = (path: string) => {
-            if (path && path !== '/') {
+        // Guardar la ruta actual en sessionStorage
+        const saveCurrentRoute = (path: string) => {
+            if (path && path !== '/' && path !== window.location.origin) {
                 sessionStorage.setItem('_currentRoute', path);
             }
         };
 
-        // Función para reemplazar la URL mostrando solo el dominio
-        const replaceUrl = (path?: string) => {
-            if (window.history.replaceState) {
-                const currentPath = path || window.location.pathname;
-                saveRoute(currentPath);
+        // Obtener la ruta guardada
+        const getSavedRoute = (): string | null => {
+            return sessionStorage.getItem('_currentRoute');
+        };
 
-                window.history.replaceState(
-                    { ...window.history.state, path: currentPath },
-                    '',
-                    window.location.origin
-                );
+        // Forzar la URL a mostrar solo el dominio
+        const enforceCleanUrl = () => {
+            if (window.location.pathname !== '/' || window.location.hash || window.location.search) {
+                if (window.history.replaceState) {
+                    window.history.replaceState(
+                        window.history.state,
+                        '',
+                        window.location.origin
+                    );
+                }
             }
         };
 
@@ -36,18 +40,31 @@ export function useHiddenRouting() {
         router.visit = function(url: any, options: any = {}) {
             const path = typeof url === 'string' ? url : (url?.url || url);
 
-            // Marcar que ya no es la carga inicial
+            isNavigating = true;
             isInitialLoad = false;
 
-            // Guardar la ruta antes de navegar
+            // Guardar la ruta actual
             if (path) {
-                saveRoute(path);
-                // Reemplazar URL inmediatamente
-                replaceUrl(path);
+                saveCurrentRoute(path);
             }
 
-            // Llamar al método original
-            return originalVisit(url, options);
+            // Asegurar que la URL permanezca limpia
+            enforceCleanUrl();
+
+            // Llamar al método original con las opciones modificadas
+            const result = originalVisit(url, {
+                ...options,
+                onFinish: () => {
+                    enforceCleanUrl();
+                    isNavigating = false;
+                    options?.onFinish?.();
+                },
+            });
+
+            // Forzar URL limpia inmediatamente
+            setTimeout(enforceCleanUrl, 0);
+
+            return result;
         };
 
         // Interceptar router.get, router.post, etc.
@@ -57,140 +74,147 @@ export function useHiddenRouting() {
             (router as any)[method] = function(url: any, data?: any, options?: any) {
                 const path = typeof url === 'string' ? url : (url?.url || url);
 
-                // Marcar que ya no es la carga inicial
+                isNavigating = true;
                 isInitialLoad = false;
 
                 if (path) {
-                    saveRoute(path);
-                    replaceUrl(path);
+                    saveCurrentRoute(path);
                 }
-                return originalMethod(url, data, options);
+
+                enforceCleanUrl();
+
+                const result = originalMethod(url, data, {
+                    ...options,
+                    onFinish: () => {
+                        enforceCleanUrl();
+                        isNavigating = false;
+                        options?.onFinish?.();
+                    },
+                });
+
+                setTimeout(enforceCleanUrl, 0);
+
+                return result;
             };
         });
 
-        // Interceptar clicks en enlaces
-        const handleLinkClick = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            const link = target.closest('a[href]') as HTMLAnchorElement;
-
-            if (link && link.href) {
-                try {
-                    const url = new URL(link.href);
-                    // Solo interceptar enlaces del mismo origen
-                    if (url.origin === window.location.origin && url.pathname !== '/') {
-                        // Marcar que ya no es la carga inicial
-                        isInitialLoad = false;
-
-                        const path = url.pathname + url.search + url.hash;
-                        saveRoute(path);
-                        // Reemplazar URL antes de que Inertia navegue
-                        setTimeout(() => replaceUrl(path), 0);
-                    }
-                } catch (e) {
-                    // Ignorar errores de URL inválida
-                }
+        // Monitoreo constante de la URL para forzarla a estar limpia
+        const urlMonitor = setInterval(() => {
+            if (!isNavigating) {
+                enforceCleanUrl();
             }
-        };
+        }, 50);
 
         // Manejar botón atrás/adelante
         const handlePopState = (e: PopStateEvent) => {
-            // Marcar que ya no es la carga inicial
+            e.preventDefault();
             isInitialLoad = false;
 
-            const savedPath = sessionStorage.getItem('_currentRoute') || '/';
-            const statePath = e.state?.path;
-
-            if (statePath && statePath !== savedPath) {
-                saveRoute(statePath);
-            } else if (savedPath !== '/') {
-                // Navegar a la ruta guardada
-                router.visit(savedPath, { preserveState: true, preserveScroll: true });
-            }
-
-            // Mantener URL limpia
-            replaceUrl();
-        };
-
-        // Interceptar refresh/recarga de página
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            // Restaurar la URL real antes del refresh para que el navegador
-            // haga la petición a la ruta correcta
-            const savedPath = sessionStorage.getItem('_currentRoute');
+            const savedPath = getSavedRoute();
             if (savedPath && savedPath !== '/') {
-                // Restaurar la URL real sin agregar al historial
-                window.history.replaceState(
-                    window.history.state,
-                    '',
-                    savedPath
-                );
+                // Navegar a la ruta guardada sin cambiar la URL
+                router.visit(savedPath, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true
+                });
             }
+
+            // Forzar URL limpia
+            enforceCleanUrl();
         };
 
-        // Observar cambios en la URL usando un intervalo (más confiable)
-        let lastPath = window.location.pathname;
-        const urlCheckInterval = setInterval(() => {
-            // Solo monitorear cambios después de la carga inicial
-            if (!isInitialLoad) {
-                const currentPath = window.location.pathname;
-                if (currentPath !== lastPath) {
-                    lastPath = currentPath;
-                    if (currentPath !== '/') {
-                        saveRoute(currentPath);
-                        replaceUrl(currentPath);
-                    }
-                }
+        // Manejar visibilidad de la pestaña
+        const handleVisibilityChange = () => {
+            // Siempre forzar URL limpia cuando la pestaña se vuelve visible
+            if (!document.hidden) {
+                enforceCleanUrl();
             }
-        }, 100);
+        };
 
         // Manejar la carga inicial de la página
         const initializePage = () => {
             const currentPath = window.location.pathname;
+            const savedPath = getSavedRoute();
 
-            // Si estamos en una página específica después de refresh, guardarla
+            // SIEMPRE forzar la URL limpia primero
+            enforceCleanUrl();
+
+            // Si la página actual no es la raíz (viene de refresh directo a una ruta)
             if (currentPath !== '/' && currentPath !== '') {
-                saveRoute(currentPath);
-                // Esperar un momento antes de ocultar la URL para asegurar que Inertia cargó
+                // Guardar esta ruta y luego navegar internamente
+                saveCurrentRoute(currentPath);
+                isInitialLoad = false;
+
+                // Navegar internamente a esta ruta sin cambiar la URL
                 setTimeout(() => {
-                    replaceUrl(currentPath);
-                    isInitialLoad = false;
-                }, 100);
+                    router.visit(currentPath, {
+                        preserveState: false,
+                        preserveScroll: false,
+                        replace: true,
+                        onFinish: () => {
+                            enforceCleanUrl();
+                        }
+                    });
+                }, 10);
+            } else if (savedPath && savedPath !== '/' && savedPath !== currentPath) {
+                // Si estamos en la raíz pero hay una ruta guardada, restaurarla
+                isInitialLoad = false;
+
+                setTimeout(() => {
+                    router.visit(savedPath, {
+                        preserveState: false,
+                        preserveScroll: false,
+                        replace: true,
+                        onFinish: () => {
+                            enforceCleanUrl();
+                        }
+                    });
+                }, 10);
             } else {
-                // Si estamos en la raíz, ocultar inmediatamente
                 isInitialLoad = false;
             }
         };
 
         // Ejecutar inicialización
-        initializePage();
+        setTimeout(initializePage, 0);
 
         // Event listeners
-        document.addEventListener('click', handleLinkClick, true);
         window.addEventListener('popstate', handlePopState);
-        window.addEventListener('beforeunload', handleBeforeUnload);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // También interceptar después de que Inertia complete la navegación
-        const handleInertiaComplete = () => {
-            // Solo reemplazar URL si no es la carga inicial
-            if (!isInitialLoad) {
-                const currentPath = window.location.pathname;
-                if (currentPath !== '/') {
-                    replaceUrl();
-                }
-            }
+        // Interceptar eventos de Inertia
+        const handleInertiaStart = () => {
+            isNavigating = true;
+            enforceCleanUrl();
         };
 
-        // Escuchar eventos de Inertia si están disponibles
-        if (typeof window !== 'undefined' && (window as any).Inertia) {
-            document.addEventListener('inertia:complete', handleInertiaComplete);
-        }
+        const handleInertiaFinish = () => {
+            isNavigating = false;
+            enforceCleanUrl();
+        };
+
+        const handleInertiaNavigate = (event: any) => {
+            const url = event.detail?.page?.url;
+            if (url) {
+                saveCurrentRoute(url);
+            }
+            enforceCleanUrl();
+        };
+
+        // Escuchar eventos de Inertia
+        document.addEventListener('inertia:start', handleInertiaStart);
+        document.addEventListener('inertia:finish', handleInertiaFinish);
+        document.addEventListener('inertia:navigate', handleInertiaNavigate);
 
         // Cleanup
         return () => {
-            document.removeEventListener('click', handleLinkClick, true);
             window.removeEventListener('popstate', handlePopState);
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            document.removeEventListener('inertia:complete', handleInertiaComplete);
-            clearInterval(urlCheckInterval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('inertia:start', handleInertiaStart);
+            document.removeEventListener('inertia:finish', handleInertiaFinish);
+            document.removeEventListener('inertia:navigate', handleInertiaNavigate);
+            clearInterval(urlMonitor);
         };
     }, []);
 }
