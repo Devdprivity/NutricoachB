@@ -14,6 +14,7 @@ use App\Http\Controllers\Web\SocialController;
 use App\Http\Controllers\Web\WorkoutPlanController;
 use App\Http\Controllers\Web\RecipeController;
 use App\Http\Controllers\Web\WeeklyMealPlanController;
+use App\Http\Controllers\Web\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -107,6 +108,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('weekly-meal-plans/{id}/recipes', [WeeklyMealPlanController::class, 'addRecipe'])->name('weekly-meal-plans.add-recipe');
     Route::delete('weekly-meal-plans/{planId}/recipes/{recipeId}', [WeeklyMealPlanController::class, 'removeRecipe'])->name('weekly-meal-plans.remove-recipe');
     Route::get('weekly-meal-plans/today/plan', [WeeklyMealPlanController::class, 'getTodayPlan'])->name('weekly-meal-plans.today');
+
+    // Suscripciones
+    Route::get('subscription', [SubscriptionController::class, 'index'])->name('subscription');
+    Route::post('subscription/subscribe', [SubscriptionController::class, 'subscribe'])->name('subscription.subscribe');
+    Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    Route::post('subscription/change-cycle', [SubscriptionController::class, 'changeBillingCycle'])->name('subscription.change-cycle');
+    Route::post('subscription/reactivate', [SubscriptionController::class, 'reactivateAutoRenew'])->name('subscription.reactivate');
+    Route::get('subscription/invoice/{paymentId}', [SubscriptionController::class, 'showInvoice'])->name('subscription.invoice');
 
     Route::get('context', [\App\Http\Controllers\Web\ContextController::class, 'index'])->name('context');
 });

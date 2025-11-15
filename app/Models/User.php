@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -28,6 +29,8 @@ class User extends Authenticatable
         'password',
         'google_id',
         'avatar',
+        'current_subscription_plan_id',
+        'is_premium',
     ];
 
     /**
@@ -52,6 +55,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_premium' => 'boolean',
         ];
     }
 
@@ -223,6 +227,71 @@ class User extends Authenticatable
     public function getFollowersCountAttribute(): int
     {
         return $this->followers()->count();
+    }
+
+    // ========== RELACIONES DE SUSCRIPCIÓN ==========
+
+    /**
+     * Plan de suscripción actual
+     */
+    public function currentSubscriptionPlan(): BelongsTo
+    {
+        return $this->belongsTo(SubscriptionPlan::class, 'current_subscription_plan_id');
+    }
+
+    /**
+     * Todas las suscripciones del usuario
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Suscripción activa actual
+     */
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)
+            ->where('status', 'active')
+            ->where('end_date', '>=', now())
+            ->latest();
+    }
+
+    /**
+     * Historial de pagos
+     */
+    public function paymentHistory(): HasMany
+    {
+        return $this->hasMany(PaymentHistory::class);
+    }
+
+    /**
+     * Verificar si el usuario tiene una suscripción activa
+     */
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription()->exists();
+    }
+
+    /**
+     * Verificar si el usuario es premium
+     */
+    public function isPremium(): bool
+    {
+        return $this->is_premium && $this->hasActiveSubscription();
+    }
+
+    /**
+     * Verificar si puede acceder a una característica
+     */
+    public function canAccess(string $feature): bool
+    {
+        if (!$this->currentSubscriptionPlan) {
+            return false;
+        }
+
+        return $this->currentSubscriptionPlan->$feature ?? false;
     }
 
     /**

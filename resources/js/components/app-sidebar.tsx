@@ -12,7 +12,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Apple, Award, Calendar, CalendarDays, ChefHat, Droplet, Dumbbell, LayoutGrid, MessageSquare, TrendingUp, UtensilsCrossed, Users } from 'lucide-react';
+import { Apple, Award, Calendar, CalendarDays, ChefHat, Crown, Droplet, Dumbbell, LayoutGrid, MessageSquare, TrendingUp, UtensilsCrossed, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -75,6 +75,11 @@ const mainNavItems: NavItem[] = [
         title: 'Contexto',
         href: '/context',
         icon: Calendar,
+    },
+    {
+        title: 'Suscripción',
+        href: '/subscription',
+        icon: Crown,
     },
 ];
 
