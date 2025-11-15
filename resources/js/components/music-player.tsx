@@ -234,6 +234,54 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
         }, 500);
     };
 
+    // Función para buscar y reproducir la siguiente canción automáticamente
+    const playNextSimilarTrack = async () => {
+        try {
+            // Obtener el artista actual desde la referencia global
+            const currentArtist = (window as any).currentMusicArtist;
+            const currentVideoId = (window as any).currentMusicVideoId;
+            
+            if (!currentArtist) {
+                console.log('No hay artista actual para buscar siguiente canción');
+                return;
+            }
+            
+            console.log('Buscando siguiente canción de:', currentArtist);
+            
+            // Buscar canciones del mismo artista
+            const response = await axios.get(config.endpoints.search, {
+                params: { q: currentArtist, limit: 10 },
+            });
+
+            let tracks: Track[] = [];
+            if (provider === 'youtube_music') {
+                const videos = response.data.videos?.items || [];
+                tracks = videos.map((video: any) => ({
+                    id: video.id.videoId,
+                    name: video.snippet.title,
+                    artists: [{ name: video.snippet.channelTitle }],
+                    album: {
+                        name: '',
+                        images: [{ url: video.snippet.thumbnails.high.url }],
+                    },
+                }));
+            }
+
+            // Filtrar para evitar repetir la canción actual
+            const availableTracks = tracks.filter(t => t.id !== currentVideoId);
+
+            if (availableTracks.length > 0) {
+                // Seleccionar una canción aleatoria de las disponibles
+                const randomIndex = Math.floor(Math.random() * Math.min(5, availableTracks.length));
+                const nextTrack = availableTracks[randomIndex];
+                console.log('Reproduciendo siguiente:', nextTrack.name);
+                await handlePlayTrack(nextTrack);
+            }
+        } catch (error) {
+            console.error('Error buscando siguiente canción:', error);
+        }
+    };
+
     const handlePlayTrack = async (track: Track) => {
         try {
             if (provider === 'spotify' && config.endpoints.playTrack) {
@@ -241,6 +289,10 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                     track_uri: `spotify:track:${track.id}`,
                 });
             } else if (provider === 'youtube_music' && config.endpoints.playVideo) {
+                // Guardar información del track actual globalmente para autoplay
+                (window as any).currentMusicArtist = track.artists[0]?.name || 'Unknown';
+                (window as any).currentMusicVideoId = track.id;
+                
                 await axios.post(config.endpoints.playVideo, {
                     video_id: track.id,
                     title: track.name,
@@ -251,6 +303,8 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                 // Crear o actualizar iframe de YouTube para reproducir
                 // Asegurarse de que el iframe esté en el body del documento, no dentro del componente
                 let iframe = document.getElementById('youtube-music-player') as HTMLIFrameElement;
+                const isNewIframe = !iframe;
+                
                 if (!iframe) {
                     iframe = document.createElement('iframe');
                     iframe.id = 'youtube-music-player';
@@ -262,6 +316,32 @@ export function MusicPlayer({ provider, onDisconnect }: MusicPlayerProps) {
                     iframe.setAttribute('data-persist', 'true'); // Marcar para persistencia
                     document.body.appendChild(iframe);
                 }
+                
+                // Configurar listener solo una vez
+                if (isNewIframe && !(window as any).youtubeMessageListenerSet) {
+                    (window as any).youtubeMessageListenerSet = true;
+                    
+                    window.addEventListener('message', (event) => {
+                        if (event.origin === 'https://www.youtube.com') {
+                            try {
+                                const data = JSON.parse(event.data);
+                                // Estado 0 = video terminado
+                                if (data.event === 'onStateChange' && data.info === 0) {
+                                    console.log('Video terminado, buscando siguiente...');
+                                    // Usar la función global guardada
+                                    if ((window as any).playNextSimilarTrack) {
+                                        (window as any).playNextSimilarTrack();
+                                    }
+                                }
+                            } catch (e) {
+                                // Ignorar mensajes que no son JSON
+                            }
+                        }
+                    });
+                }
+                
+                // Guardar función de autoplay globalmente para que sea accesible desde el listener
+                (window as any).playNextSimilarTrack = playNextSimilarTrack;
                 
                 // Cargar el video de YouTube
                 const videoUrl = `https://www.youtube.com/embed/${track.id}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`;

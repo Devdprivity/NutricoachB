@@ -95,6 +95,21 @@ export function useHiddenRouting() {
             replaceUrl();
         };
 
+        // Interceptar refresh/recarga de página
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            // Restaurar la URL real antes del refresh para que el navegador
+            // haga la petición a la ruta correcta
+            const savedPath = sessionStorage.getItem('_currentRoute');
+            if (savedPath && savedPath !== '/') {
+                // Restaurar la URL real sin agregar al historial
+                window.history.replaceState(
+                    window.history.state,
+                    '',
+                    savedPath
+                );
+            }
+        };
+
         // Observar cambios en la URL usando un intervalo (más confiable)
         let lastPath = window.location.pathname;
         const urlCheckInterval = setInterval(() => {
@@ -116,6 +131,7 @@ export function useHiddenRouting() {
         // Event listeners
         document.addEventListener('click', handleLinkClick, true);
         window.addEventListener('popstate', handlePopState);
+        window.addEventListener('beforeunload', handleBeforeUnload);
 
         // También interceptar después de que Inertia complete la navegación
         const handleInertiaComplete = () => {
@@ -134,6 +150,7 @@ export function useHiddenRouting() {
         return () => {
             document.removeEventListener('click', handleLinkClick, true);
             window.removeEventListener('popstate', handlePopState);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
             document.removeEventListener('inertia:complete', handleInertiaComplete);
             clearInterval(urlCheckInterval);
         };

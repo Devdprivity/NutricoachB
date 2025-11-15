@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
 
         // Ejecutar seeders en orden
         $this->call([
+            SubscriptionPlansSeeder::class,
             FoodItemSeeder::class,
             UserContextSeeder::class,
             MealPlanSeeder::class,
