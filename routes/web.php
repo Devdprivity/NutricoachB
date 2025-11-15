@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\Web\CoachingController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ExercisesController;
+use App\Http\Controllers\Web\GamificationController;
 use App\Http\Controllers\Web\HydrationController;
 use App\Http\Controllers\Web\NutritionController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('coaching', [CoachingController::class, 'index'])->name('coaching');
     Route::post('coaching/message', [CoachingController::class, 'sendMessage'])->name('coaching.message');
     Route::delete('coaching/clear', [CoachingController::class, 'clearHistory'])->name('coaching.clear');
+
+    // Gamificación
+    Route::get('achievements', [GamificationController::class, 'index'])->name('achievements');
+    Route::get('gamification/stats', [GamificationController::class, 'getStats'])->name('gamification.stats');
 
     Route::get('progress', [\App\Http\Controllers\Web\ProgressController::class, 'index'])->name('progress');
 

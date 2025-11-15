@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\HydrationRecord;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -80,6 +81,9 @@ class HydrationController extends Controller
             'type' => $validated['type'],
             'time' => $validated['time'] ?? now()->format('H:i'),
         ]);
+
+        // Registrar actividad en gamificación
+        app(GamificationService::class)->logHydrationActivity($user, $validated['amount_ml']);
 
         return redirect()->route('hydration');
     }

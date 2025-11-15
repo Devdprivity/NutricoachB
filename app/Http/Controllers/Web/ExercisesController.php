@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Exercise;
 use App\Models\ExerciseLog;
 use App\Models\MealRecord;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -195,6 +196,9 @@ class ExercisesController extends Controller
             'notes' => $validated['notes'] ?? null,
             'status' => 'completed',
         ]);
+
+        // Registrar actividad en gamificación
+        app(GamificationService::class)->logExerciseActivity($user);
 
         return redirect()->route('exercises');
     }

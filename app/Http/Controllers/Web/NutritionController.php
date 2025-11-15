@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\MealRecord;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -144,6 +145,9 @@ class NutritionController extends Controller
         }
 
         MealRecord::create($mealData);
+
+        // Registrar actividad en gamificación
+        app(GamificationService::class)->logMealActivity($user);
 
         return redirect()->route('nutrition');
     }

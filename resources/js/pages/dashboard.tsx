@@ -1,9 +1,10 @@
 import { type BreadcrumbItem, type ProfileData, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Activity, Apple, Droplet, Heart, Scale, TrendingUp, User } from 'lucide-react';
+import { Activity, Apple, Droplet, Heart, Scale, Star, TrendingUp, User, Zap } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -65,6 +66,14 @@ interface DashboardData {
         count: number;
     }>;
     hasProfile: boolean;
+    gamification?: {
+        level: number;
+        total_xp: number;
+        xp_to_next_level: number;
+        progress_percent: number;
+        total_achievements: number;
+        unlocked_achievements: number;
+    };
 }
 
 export default function Dashboard() {
@@ -78,6 +87,7 @@ export default function Dashboard() {
     const nutrition = dashboardData?.todayNutrition;
     const hydrationChart = dashboardData?.hydrationChart;
     const nutritionChart = dashboardData?.nutritionChart;
+    const gamification = dashboardData?.gamification;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -123,6 +133,54 @@ export default function Dashboard() {
                             </Link>
                         </AlertDescription>
                     </Alert>
+                )}
+
+                {/* Widget de Gamificación */}
+                {gamification && (
+                    <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                    <div>
+                                        <CardTitle className="text-2xl">Nivel {gamification.level}</CardTitle>
+                                        <CardDescription>
+                                            {gamification.total_xp} XP Total
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                                <Link href="/achievements">
+                                    <Button variant="outline" size="sm">
+                                        <Star className="h-4 w-4 mr-2" />
+                                        Ver Logros
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <div>
+                                <div className="flex justify-between mb-2">
+                                    <span className="text-sm font-medium">Progreso al Nivel {gamification.level + 1}</span>
+                                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                        {gamification.progress_percent}%
+                                    </Badge>
+                                </div>
+                                <Progress value={gamification.progress_percent} className="h-3" />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {gamification.xp_to_next_level - (gamification.total_xp % gamification.xp_to_next_level)} XP restantes
+                                </p>
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t">
+                                <div className="flex items-center gap-2">
+                                    <Star className="h-4 w-4 text-yellow-500" />
+                                    <span className="text-sm font-medium">Logros Desbloqueados</span>
+                                </div>
+                                <span className="text-sm font-bold">
+                                    {gamification.unlocked_achievements} / {gamification.total_achievements}
+                                </span>
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Resumen del Perfil */}

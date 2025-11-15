@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\HydrationRecord;
 use App\Models\MealRecord;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,6 +13,13 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    protected GamificationService $gamificationService;
+
+    public function __construct(GamificationService $gamificationService)
+    {
+        $this->gamificationService = $gamificationService;
+    }
+
     /**
      * Mostrar el dashboard
      */
@@ -149,6 +157,9 @@ class DashboardController extends Controller
             $nutritionChart = $mealTypeData->toArray();
         }
 
+        // Gamificación
+        $gamification = $this->gamificationService->getUserProgress($user);
+
         return Inertia::render('dashboard', [
             'dashboardData' => [
                 'profileData' => $profileData,
@@ -157,6 +168,7 @@ class DashboardController extends Controller
                 'hydrationChart' => $hydrationChart,
                 'nutritionChart' => $nutritionChart,
                 'hasProfile' => $profile !== null,
+                'gamification' => $gamification,
             ],
         ]);
     }
