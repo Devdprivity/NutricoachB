@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\WelcomeMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -68,6 +70,14 @@ class SocialController extends Controller
                     'user_id' => $user->id,
                     'avatar' => $user->avatar,
                     'google_id' => $user->google_id,
+                ]);
+
+                // Enviar email de bienvenida (en cola)
+                Mail::to($user->email)->send(new WelcomeMail($user));
+                
+                \Log::info('OAuth Google - Email de bienvenida enviado a cola', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
                 ]);
             }
 
