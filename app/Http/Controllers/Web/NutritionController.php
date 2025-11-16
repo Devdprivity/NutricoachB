@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Mail\GoalAchievedMail;
 use App\Models\FavoriteMeal;
 use App\Models\MealRecord;
 use App\Services\CloudinaryService;
 use App\Services\GamificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -199,6 +201,9 @@ class NutritionController extends Controller
         // Registrar actividad en gamificación
         app(GamificationService::class)->logMealActivity($user);
 
+        // Verificar si el usuario alcanzó sus objetivos del día
+        $this->checkAndNotifyGoalAchievement($user, $mealData['date']);
+
         return redirect()->route('nutrition', ['date' => $mealData['date']]);
     }
 
@@ -327,5 +332,100 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
         }
 
         return null;
+    }
+
+    /**
+     * Verificar si el usuario alcanzó sus objetivos nutricionales del día y enviar email
+     */
+    private function checkAndNotifyGoalAchievement($user, $date)
+    {
+        // Obtener registros del día
+        $todayRecords = MealRecord::where('user_id', $user->id)
+            ->whereDate('date', $date)
+            ->get();
+
+        // Calcular totales del día
+        $totals = [
+            'calories' => $todayRecords->sum('calories'),
+            'protein' => $todayRecords->sum('protein'),
+            'carbs' => $todayRecords->sum('carbs'),
+            'fat' => $todayRecords->sum('fat'),
+        ];
+
+        // Obtener metas del perfil
+        $profile = $user->profile;
+        $goals = [
+            'calories' => $profile?->daily_calorie_goal ?? 2000,
+            'protein' => $profile?->protein_goal ?? 150,
+            'carbs' => $profile?->carbs_goal ?? 200,
+            'fat' => $profile?->fat_goal ?? 65,
+        ];
+
+        // Calcular porcentajes alcanzados
+        $percentages = [
+            'calories' => $goals['calories'] > 0 ? round(($totals['calories'] / $goals['calories']) * 100, 1) : 0,
+            'protein' => $goals['protein'] > 0 ? round(($totals['protein'] / $goals['protein']) * 100, 1) : 0,
+            'carbs' => $goals['carbs'] > 0 ? round(($totals['carbs'] / $goals['carbs']) * 100, 1) : 0,
+            'fat' => $goals['fat'] > 0 ? round(($totals['fat'] / $goals['fat']) * 100, 1) : 0,
+        ];
+
+        // Verificar si se alcanzó el objetivo de calorías (entre 90% y 110%)
+        $caloriesAchieved = $percentages['calories'] >= 90 && $percentages['calories'] <= 110;
+
+        // Verificar si se alcanzaron al menos 2 de los 3 macronutrientes (entre 80% y 120%)
+        $macrosAchieved = 0;
+        if ($percentages['protein'] >= 80 && $percentages['protein'] <= 120) $macrosAchieved++;
+        if ($percentages['carbs'] >= 80 && $percentages['carbs'] <= 120) $macrosAchieved++;
+        if ($percentages['fat'] >= 80 && $percentages['fat'] <= 120) $macrosAchieved++;
+
+        // Si alcanzó el objetivo de calorías Y al menos 2 macros, enviar email
+        if ($caloriesAchieved && $macrosAchieved >= 2) {
+            // Verificar si ya se envió un email de objetivo alcanzado hoy para evitar spam
+            $cacheKey = "goal_achieved_email_sent_{$user->id}_{$date}";
+            if (!\Cache::has($cacheKey)) {
+                // Preparar datos del objetivo para el email
+                $goalData = [
+                    'type' => 'Objetivo Nutricional Diario',
+                    'description' => 'Meta diaria de calorías y macronutrientes alcanzada',
+                    'achieved_at' => now()->format('Y-m-d H:i:s'),
+                ];
+
+                $stats = [
+                    'calories' => $totals['calories'],
+                    'calories_goal' => $goals['calories'],
+                    'calories_percentage' => $percentages['calories'],
+                    'protein' => $totals['protein'],
+                    'protein_goal' => $goals['protein'],
+                    'carbs' => $totals['carbs'],
+                    'carbs_goal' => $goals['carbs'],
+                    'fat' => $totals['fat'],
+                    'fat_goal' => $goals['fat'],
+                ];
+
+                $achievements = [
+                    '✓ Meta de calorías alcanzada',
+                    '✓ Balance de macronutrientes óptimo',
+                    '✓ ' . $todayRecords->count() . ' comidas registradas',
+                ];
+
+                // Enviar email
+                try {
+                    Mail::to($user->email)->send(new GoalAchievedMail($user, $goalData, $stats, $achievements));
+                    \Log::info('GoalAchievedMail sent for nutrition', [
+                        'user_id' => $user->id,
+                        'date' => $date,
+                        'calories_percentage' => $percentages['calories'],
+                    ]);
+
+                    // Guardar en caché por 24 horas para evitar enviar múltiples veces
+                    \Cache::put($cacheKey, true, now()->addDay());
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send GoalAchievedMail: ' . $e->getMessage(), [
+                        'user_id' => $user->id,
+                        'date' => $date,
+                    ]);
+                }
+            }
+        }
     }
 }

@@ -22,3 +22,11 @@ Schedule::command('inactivity:detect --cleanup')
     ->timezone('America/Mexico_City')
     ->name('Limpieza de alertas antiguas')
     ->onOneServer();
+
+// Enviar emails de progreso semanal (cada lunes a las 10:00 AM)
+Schedule::command('mail:send-weekly-progress')
+    ->weeklyOn(1, '10:00')
+    ->timezone('America/Mexico_City')
+    ->name('Envío semanal de emails de progreso')
+    ->withoutOverlapping()
+    ->onOneServer();

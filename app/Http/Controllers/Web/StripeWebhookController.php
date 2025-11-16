@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PaymentFailedMail;
+use App\Mail\PaymentUpcomingMail;
+use App\Mail\RefundProcessedMail;
 use App\Models\Subscription;
 use App\Models\PaymentHistory;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
 
@@ -51,6 +55,14 @@ class StripeWebhookController extends Controller
 
             case 'invoice.payment_failed':
                 $this->handleInvoicePaymentFailed($event->data->object);
+                break;
+
+            case 'invoice.upcoming':
+                $this->handleInvoiceUpcoming($event->data->object);
+                break;
+
+            case 'charge.refunded':
+                $this->handleChargeRefunded($event->data->object);
                 break;
 
             default:
@@ -244,6 +256,12 @@ class StripeWebhookController extends Controller
             return;
         }
 
+        $user = $subscription->user;
+        if (!$user) {
+            \Log::warning('User not found for subscription', ['subscription_id' => $subscription->id]);
+            return;
+        }
+
         // Actualizar estado de suscripción
         $subscription->update([
             'status' => 'past_due',
@@ -264,11 +282,139 @@ class StripeWebhookController extends Controller
             'paid_at' => null,
         ]);
 
+        // Preparar datos del pago fallido para el email
+        $subscriptionData = [
+            'plan_name' => $subscription->subscriptionPlan->name ?? 'Premium',
+            'billing_cycle' => $subscription->billing_cycle,
+            'end_date' => $subscription->end_date?->format('Y-m-d'),
+            'amount' => $subscription->amount,
+        ];
+
+        $paymentData = [
+            'amount' => $invoice->amount_due / 100,
+            'currency' => strtoupper($invoice->currency),
+            'invoice_id' => $invoice->id,
+            'failed_at' => now()->format('Y-m-d H:i:s'),
+            'next_attempt' => $invoice->next_payment_attempt ?
+                \Carbon\Carbon::createFromTimestamp($invoice->next_payment_attempt)->format('Y-m-d') :
+                null,
+        ];
+
+        // Enviar email de notificación sobre pago fallido
+        try {
+            Mail::to($user->email)->send(new PaymentFailedMail($user, $subscriptionData, $paymentData));
+            \Log::info('PaymentFailedMail sent', [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'amount' => $invoice->amount_due / 100,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send PaymentFailedMail: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+            ]);
+        }
+
         \Log::warning('Invoice payment failed', [
             'subscription_id' => $subscription->id,
             'amount' => $invoice->amount_due / 100,
         ]);
+    }
 
-        // TODO: Enviar notificación al usuario sobre el pago fallido
+    /**
+     * Manejar factura próxima (3-7 días antes del cobro)
+     */
+    protected function handleInvoiceUpcoming($invoice)
+    {
+        if (!$invoice->subscription) {
+            return;
+        }
+
+        $subscription = Subscription::where('stripe_subscription_id', $invoice->subscription)->first();
+
+        if (!$subscription) {
+            \Log::warning('Subscription not found for upcoming invoice', ['stripe_subscription_id' => $invoice->subscription]);
+            return;
+        }
+
+        $user = $subscription->user;
+        if (!$user) {
+            \Log::warning('User not found for subscription', ['subscription_id' => $subscription->id]);
+            return;
+        }
+
+        // Preparar datos de la suscripción para el email
+        $subscriptionData = [
+            'plan_name' => $subscription->subscriptionPlan->name ?? 'Premium',
+            'billing_cycle' => $subscription->billing_cycle,
+            'next_billing_date' => \Carbon\Carbon::createFromTimestamp($invoice->period_end)->format('Y-m-d'),
+            'amount' => $invoice->amount_due / 100,
+            'currency' => strtoupper($invoice->currency),
+        ];
+
+        // Enviar email recordatorio
+        try {
+            Mail::to($user->email)->send(new PaymentUpcomingMail($user, $subscriptionData));
+            \Log::info('PaymentUpcomingMail sent', [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'billing_date' => $subscriptionData['next_billing_date'],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send PaymentUpcomingMail: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+            ]);
+        }
+    }
+
+    /**
+     * Manejar reembolso procesado
+     */
+    protected function handleChargeRefunded($charge)
+    {
+        // Buscar el pago asociado
+        $payment = PaymentHistory::where('stripe_charge_id', $charge->id)->first();
+
+        if (!$payment) {
+            \Log::warning('Payment not found for refunded charge', ['charge_id' => $charge->id]);
+            return;
+        }
+
+        $user = User::find($payment->user_id);
+        if (!$user) {
+            \Log::warning('User not found for payment', ['payment_id' => $payment->id]);
+            return;
+        }
+
+        // Preparar datos del reembolso para el email
+        $refundData = [
+            'amount' => $charge->amount_refunded / 100,
+            'currency' => strtoupper($charge->currency),
+            'refund_date' => now()->format('Y-m-d'),
+            'original_charge_date' => $payment->paid_at ? $payment->paid_at->format('Y-m-d') : 'N/A',
+            'refund_reason' => $charge->refunds->data[0]->reason ?? 'requested_by_customer',
+            'transaction_id' => $charge->id,
+        ];
+
+        // Enviar email de confirmación de reembolso
+        try {
+            Mail::to($user->email)->send(new RefundProcessedMail($user, $refundData));
+            \Log::info('RefundProcessedMail sent', [
+                'user_id' => $user->id,
+                'payment_id' => $payment->id,
+                'refund_amount' => $refundData['amount'],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send RefundProcessedMail: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'payment_id' => $payment->id,
+            ]);
+        }
+
+        \Log::info('Charge refunded', [
+            'charge_id' => $charge->id,
+            'refund_amount' => $charge->amount_refunded / 100,
+        ]);
     }
 }

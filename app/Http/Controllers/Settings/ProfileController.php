@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Mail\AccountDeletedMail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,6 +52,26 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Guardar datos necesarios ANTES de eliminar el usuario
+        $userEmail = $user->email;
+        $userName = $user->name;
+        $deletionDate = now()->format('Y-m-d H:i:s');
+
+        // Enviar email de confirmación ANTES de eliminar la cuenta
+        try {
+            Mail::to($userEmail)->send(new AccountDeletedMail($user));
+            \Log::info('AccountDeletedMail sent', [
+                'user_id' => $user->id,
+                'email' => $userEmail,
+                'deletion_date' => $deletionDate
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send AccountDeletedMail: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'email' => $userEmail,
+            ]);
+        }
 
         Auth::logout();
 

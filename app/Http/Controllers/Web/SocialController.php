@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewFollowerMail;
 use App\Models\Activity;
 use App\Models\ActivityLike;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -88,6 +90,21 @@ class SocialController extends Controller
         }
 
         $user->follow($targetUser);
+
+        // Enviar email de notificación al usuario seguido
+        try {
+            Mail::to($targetUser->email)->send(new NewFollowerMail($targetUser, $user));
+            \Log::info('NewFollowerMail sent', [
+                'follower_id' => $user->id,
+                'target_user_id' => $targetUser->id,
+                'target_email' => $targetUser->email
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send NewFollowerMail: ' . $e->getMessage(), [
+                'follower_id' => $user->id,
+                'target_user_id' => $targetUser->id,
+            ]);
+        }
 
         return response()->json([
             'message' => 'Ahora sigues a '.$targetUser->name,
