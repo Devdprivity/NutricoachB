@@ -27,6 +27,15 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
+// Páginas legales
+Route::get('/privacy', function () {
+    return Inertia::render('privacy');
+})->name('privacy');
+
+Route::get('/terms', function () {
+    return Inertia::render('terms');
+})->name('terms');
+
 // Webhook de Stripe (sin autenticación)
 Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])->name('stripe.webhook');
 

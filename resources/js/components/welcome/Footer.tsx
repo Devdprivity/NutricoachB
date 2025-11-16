@@ -1,24 +1,25 @@
 import { Facebook, Twitter, Instagram, Youtube, Mail } from "lucide-react";
+import { Link } from "@inertiajs/react";
 
 export function Footer() {
   const footerLinks = {
     product: [
-      { name: "Características", href: "#features" },
-      { name: "Precios", href: "#pricing" },
-      { name: "Testimonios", href: "#testimonials" },
-      { name: "FAQ", href: "#" }
+      { name: "Características", href: "#features", external: false },
+      { name: "Precios", href: "#pricing", external: false },
+      { name: "Testimonios", href: "#testimonials", external: false },
+      { name: "FAQ", href: "#", external: false }
     ],
     company: [
-      { name: "Sobre Nosotros", href: "#" },
-      { name: "Blog", href: "#" },
-      { name: "Carreras", href: "#" },
-      { name: "Contacto", href: "#" }
+      { name: "Sobre Nosotros", href: "#", external: false },
+      { name: "Blog", href: "#", external: false },
+      { name: "Carreras", href: "#", external: false },
+      { name: "Contacto", href: "#", external: false }
     ],
     legal: [
-      { name: "Privacidad", href: "#" },
-      { name: "Términos", href: "#" },
-      { name: "Cookies", href: "#" },
-      { name: "Licencias", href: "#" }
+      { name: "Privacidad", href: "/privacy", external: true },
+      { name: "Términos", href: "/terms", external: true },
+      { name: "Cookies", href: "#", external: false },
+      { name: "Licencias", href: "#", external: false }
     ]
   };
 
@@ -109,9 +110,15 @@ export function Footer() {
             <ul className="space-y-2">
               {footerLinks.legal.map((link, index) => (
                 <li key={index}>
-                  <a href={link.href} className="text-gray-400 hover:text-[#5ddc8a] transition-colors text-sm">
-                    {link.name}
-                  </a>
+                  {link.external ? (
+                    <Link href={link.href} className="text-gray-400 hover:text-[#5ddc8a] transition-colors text-sm">
+                      {link.name}
+                    </Link>
+                  ) : (
+                    <a href={link.href} className="text-gray-400 hover:text-[#5ddc8a] transition-colors text-sm">
+                      {link.name}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
