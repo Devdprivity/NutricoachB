@@ -408,10 +408,12 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
                     '✓ ' . $todayRecords->count() . ' comidas registradas',
                 ];
 
-                // Enviar email
+                // Enviar email (COLA HIGH - motivacional urgente)
                 try {
-                    Mail::to($user->email)->send(new GoalAchievedMail($user, $goalData, $stats, $achievements));
-                    \Log::info('GoalAchievedMail sent for nutrition', [
+                    Mail::to($user->email)
+                        ->queue(new GoalAchievedMail($user, $goalData, $stats, $achievements))
+                        ->onQueue('high');
+                    \Log::info('GoalAchievedMail queued on HIGH priority', [
                         'user_id' => $user->id,
                         'date' => $date,
                         'calories_percentage' => $percentages['calories'],
@@ -420,7 +422,7 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
                     // Guardar en caché por 24 horas para evitar enviar múltiples veces
                     \Cache::put($cacheKey, true, now()->addDay());
                 } catch (\Exception $e) {
-                    \Log::error('Failed to send GoalAchievedMail: ' . $e->getMessage(), [
+                    \Log::error('Failed to queue GoalAchievedMail: ' . $e->getMessage(), [
                         'user_id' => $user->id,
                         'date' => $date,
                     ]);

@@ -112,12 +112,15 @@ class SendPlatformUpdateEmail extends Command
 
         foreach ($users as $user) {
             try {
-                Mail::to($user->email)->send(new PlatformUpdateMail($user, $updateData));
+                // Enviar a COLA LOW (batch masivo, no urgente)
+                Mail::to($user->email)
+                    ->queue(new PlatformUpdateMail($user, $updateData))
+                    ->onQueue('low');
 
                 $sent++;
                 $bar->advance();
 
-                \Log::info('Platform update email sent', [
+                \Log::info('Platform update email queued on LOW priority', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'update_title' => $title,

@@ -58,16 +58,18 @@ class ProfileController extends Controller
         $userName = $user->name;
         $deletionDate = now()->format('Y-m-d H:i:s');
 
-        // Enviar email de confirmación ANTES de eliminar la cuenta
+        // Enviar email de confirmación ANTES de eliminar la cuenta (COLA HIGH - urgente)
         try {
-            Mail::to($userEmail)->send(new AccountDeletedMail($user));
-            \Log::info('AccountDeletedMail sent', [
+            Mail::to($userEmail)
+                ->queue(new AccountDeletedMail($user))
+                ->onQueue('high');
+            \Log::info('AccountDeletedMail queued on HIGH priority', [
                 'user_id' => $user->id,
                 'email' => $userEmail,
                 'deletion_date' => $deletionDate
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send AccountDeletedMail: ' . $e->getMessage(), [
+            \Log::error('Failed to queue AccountDeletedMail: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'email' => $userEmail,
             ]);

@@ -300,16 +300,18 @@ class StripeWebhookController extends Controller
                 null,
         ];
 
-        // Enviar email de notificación sobre pago fallido
+        // Enviar email de notificación sobre pago fallido (COLA HIGH - urgente)
         try {
-            Mail::to($user->email)->send(new PaymentFailedMail($user, $subscriptionData, $paymentData));
-            \Log::info('PaymentFailedMail sent', [
+            Mail::to($user->email)
+                ->queue(new PaymentFailedMail($user, $subscriptionData, $paymentData))
+                ->onQueue('high');
+            \Log::info('PaymentFailedMail queued on HIGH priority', [
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
                 'amount' => $invoice->amount_due / 100,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send PaymentFailedMail: ' . $e->getMessage(), [
+            \Log::error('Failed to queue PaymentFailedMail: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
             ]);
@@ -352,16 +354,18 @@ class StripeWebhookController extends Controller
             'currency' => strtoupper($invoice->currency),
         ];
 
-        // Enviar email recordatorio
+        // Enviar email recordatorio (COLA LOW - no urgente)
         try {
-            Mail::to($user->email)->send(new PaymentUpcomingMail($user, $subscriptionData));
-            \Log::info('PaymentUpcomingMail sent', [
+            Mail::to($user->email)
+                ->queue(new PaymentUpcomingMail($user, $subscriptionData))
+                ->onQueue('low');
+            \Log::info('PaymentUpcomingMail queued on LOW priority', [
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
                 'billing_date' => $subscriptionData['next_billing_date'],
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send PaymentUpcomingMail: ' . $e->getMessage(), [
+            \Log::error('Failed to queue PaymentUpcomingMail: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
             ]);
@@ -397,16 +401,18 @@ class StripeWebhookController extends Controller
             'transaction_id' => $charge->id,
         ];
 
-        // Enviar email de confirmación de reembolso
+        // Enviar email de confirmación de reembolso (COLA LOW - no urgente)
         try {
-            Mail::to($user->email)->send(new RefundProcessedMail($user, $refundData));
-            \Log::info('RefundProcessedMail sent', [
+            Mail::to($user->email)
+                ->queue(new RefundProcessedMail($user, $refundData))
+                ->onQueue('low');
+            \Log::info('RefundProcessedMail queued on LOW priority', [
                 'user_id' => $user->id,
                 'payment_id' => $payment->id,
                 'refund_amount' => $refundData['amount'],
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send RefundProcessedMail: ' . $e->getMessage(), [
+            \Log::error('Failed to queue RefundProcessedMail: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'payment_id' => $payment->id,
             ]);

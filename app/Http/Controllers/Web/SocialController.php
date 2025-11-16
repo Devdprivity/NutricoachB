@@ -91,16 +91,18 @@ class SocialController extends Controller
 
         $user->follow($targetUser);
 
-        // Enviar email de notificación al usuario seguido
+        // Enviar email de notificación al usuario seguido (COLA HIGH - urgente)
         try {
-            Mail::to($targetUser->email)->send(new NewFollowerMail($targetUser, $user));
-            \Log::info('NewFollowerMail sent', [
+            Mail::to($targetUser->email)
+                ->queue(new NewFollowerMail($targetUser, $user))
+                ->onQueue('high');
+            \Log::info('NewFollowerMail queued on HIGH priority', [
                 'follower_id' => $user->id,
                 'target_user_id' => $targetUser->id,
                 'target_email' => $targetUser->email
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send NewFollowerMail: ' . $e->getMessage(), [
+            \Log::error('Failed to queue NewFollowerMail: ' . $e->getMessage(), [
                 'follower_id' => $user->id,
                 'target_user_id' => $targetUser->id,
             ]);

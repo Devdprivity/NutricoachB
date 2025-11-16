@@ -127,19 +127,21 @@ class SendWeeklyProgressEmails extends Command
                     }
                 }
 
-                // Enviar email
-                Mail::to($user->email)->send(new ProgressUpdateMail(
-                    $user,
-                    $stats,
-                    $achievements,
-                    $comparison,
-                    $recommendations
-                ));
+                // Enviar email a COLA LOW (batch, no urgente)
+                Mail::to($user->email)
+                    ->queue(new ProgressUpdateMail(
+                        $user,
+                        $stats,
+                        $achievements,
+                        $comparison,
+                        $recommendations
+                    ))
+                    ->onQueue('low');
 
                 $sent++;
-                $this->info("✓ Email sent to {$user->email}");
+                $this->info("✓ Email queued on LOW priority for {$user->email}");
 
-                \Log::info('Weekly progress email sent', [
+                \Log::info('Weekly progress email queued on LOW priority', [
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'week_start' => $weekStart->format('Y-m-d'),
