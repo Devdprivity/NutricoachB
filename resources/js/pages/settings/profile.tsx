@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Mail, Camera } from 'lucide-react';
+import { User, Mail, Camera, Lock } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { useForm } from '@inertiajs/react';
 import { HeadingSmall } from '@/components/heading-small';
 import { ProfileSkeleton } from '@/components/skeletons/profile-skeleton';
+import InputError from '@/components/input-error';
+import { Transition } from '@headlessui/react';
 
 interface User {
     id: number;
@@ -68,6 +70,23 @@ export default function Profile({ user, mustVerifyEmail, status }: ProfileProps)
         avatar: null as File | null,
     });
 
+    const passwordInputRef = useRef<HTMLInputElement>(null);
+    const currentPasswordInputRef = useRef<HTMLInputElement>(null);
+
+    const { 
+        data: passwordData, 
+        setData: setPasswordData, 
+        put: putPassword, 
+        processing: passwordProcessing, 
+        errors: passwordErrors, 
+        recentlySuccessful: passwordRecentlySuccessful,
+        reset: resetPassword
+    } = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    });
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         put('/settings/profile', {
@@ -75,6 +94,24 @@ export default function Profile({ user, mustVerifyEmail, status }: ProfileProps)
             onSuccess: () => {
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
+                }
+            },
+        });
+    };
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        putPassword('/settings/password', {
+            preserveScroll: true,
+            onSuccess: () => {
+                resetPassword();
+            },
+            onError: (errors) => {
+                if (errors.password) {
+                    passwordInputRef.current?.focus();
+                }
+                if (errors.current_password) {
+                    currentPasswordInputRef.current?.focus();
                 }
             },
         });
@@ -233,14 +270,110 @@ export default function Profile({ user, mustVerifyEmail, status }: ProfileProps)
                                         {processing ? 'Guardando...' : 'Guardar cambios'}
                                     </Button>
                                     {recentlySuccessful && (
-                                        <p className="text-sm text-green-600 dark:text-green-400">
-                                            Guardado
-                                        </p>
+                                        <Transition
+                                            show={recentlySuccessful}
+                                            enter="transition ease-in-out"
+                                            enterFrom="opacity-0"
+                                            leave="transition ease-in-out"
+                                            leaveTo="opacity-0"
+                                        >
+                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                                Guardado
+                                            </p>
+                                        </Transition>
                                     )}
                                 </div>
                             </CardContent>
                         </Card>
                     </form>
+
+                    {/* Cambio de Contraseña */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Lock className="h-5 w-5" />
+                                Cambiar Contraseña
+                            </CardTitle>
+                            <CardDescription>
+                                Asegúrate de usar una contraseña larga y segura para proteger tu cuenta
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="current_password">
+                                        Contraseña Actual
+                                    </Label>
+                                    <Input
+                                        id="current_password"
+                                        ref={currentPasswordInputRef}
+                                        name="current_password"
+                                        type="password"
+                                        value={passwordData.current_password}
+                                        onChange={(e) => setPasswordData('current_password', e.target.value)}
+                                        autoComplete="current-password"
+                                        placeholder="Tu contraseña actual"
+                                    />
+                                    <InputError message={passwordErrors.current_password} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">
+                                        Nueva Contraseña
+                                    </Label>
+                                    <Input
+                                        id="password"
+                                        ref={passwordInputRef}
+                                        name="password"
+                                        type="password"
+                                        value={passwordData.password}
+                                        onChange={(e) => setPasswordData('password', e.target.value)}
+                                        autoComplete="new-password"
+                                        placeholder="Tu nueva contraseña"
+                                    />
+                                    <InputError message={passwordErrors.password} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="password_confirmation">
+                                        Confirmar Nueva Contraseña
+                                    </Label>
+                                    <Input
+                                        id="password_confirmation"
+                                        name="password_confirmation"
+                                        type="password"
+                                        value={passwordData.password_confirmation}
+                                        onChange={(e) => setPasswordData('password_confirmation', e.target.value)}
+                                        autoComplete="new-password"
+                                        placeholder="Confirma tu nueva contraseña"
+                                    />
+                                    <InputError message={passwordErrors.password_confirmation} />
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <Button
+                                        type="submit"
+                                        disabled={passwordProcessing}
+                                    >
+                                        {passwordProcessing ? 'Actualizando...' : 'Actualizar Contraseña'}
+                                    </Button>
+                                    {passwordRecentlySuccessful && (
+                                        <Transition
+                                            show={passwordRecentlySuccessful}
+                                            enter="transition ease-in-out"
+                                            enterFrom="opacity-0"
+                                            leave="transition ease-in-out"
+                                            leaveTo="opacity-0"
+                                        >
+                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                                Contraseña actualizada
+                                            </p>
+                                        </Transition>
+                                    )}
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
                 </div>
             </SettingsLayout>
         </AppLayout>

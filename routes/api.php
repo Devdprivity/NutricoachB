@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CoachingController;
 use App\Http\Controllers\Api\ExerciseController;
 use App\Http\Controllers\Api\FoodItemController;
 use App\Http\Controllers\Api\HydrationController;
+use App\Http\Controllers\Api\InactivityAlertController;
 use App\Http\Controllers\Api\MealPlanController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NutritionalDataController;
@@ -194,6 +195,27 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    // Rutas de alertas de inactividad
+    Route::prefix('inactivity-alerts')->group(function () {
+        // Obtener alertas del usuario
+        Route::get('/', [InactivityAlertController::class, 'index']);
+        Route::get('/stats', [InactivityAlertController::class, 'stats']);
+        Route::get('/history', [InactivityAlertController::class, 'history']);
+
+        // Filtros
+        Route::get('/type/{type}', [InactivityAlertController::class, 'byType']);
+        Route::get('/severity/{severity}', [InactivityAlertController::class, 'bySeverity']);
+
+        // Acciones
+        Route::post('/check', [InactivityAlertController::class, 'checkInactivity']);
+        Route::post('/resolve-all', [InactivityAlertController::class, 'resolveAll']);
+        Route::post('/resolve-type/{type}', [InactivityAlertController::class, 'resolveByType']);
+
+        // Alerta específica
+        Route::get('/{id}', [InactivityAlertController::class, 'show']);
+        Route::post('/{id}/resolve', [InactivityAlertController::class, 'resolve']);
     });
 
     // Rutas de Spotify

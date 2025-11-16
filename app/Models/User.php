@@ -443,4 +443,22 @@ class User extends Authenticatable
     {
         return $this->unreadNotifications()->count();
     }
+
+    // ========== RELACIONES DE ALERTAS DE INACTIVIDAD ==========
+
+    /**
+     * Alertas de inactividad del usuario
+     */
+    public function inactivityAlerts(): HasMany
+    {
+        return $this->hasMany(InactivityAlert::class);
+    }
+
+    /**
+     * Alertas de inactividad no resueltas
+     */
+    public function unresolvedInactivityAlerts(): HasMany
+    {
+        return $this->hasMany(InactivityAlert::class)->where('is_resolved', false);
+    }
 }

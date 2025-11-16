@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editPassword } from '@/routes/password';
 import { show } from '@/routes/two-factor';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -11,13 +10,13 @@ import { type PropsWithChildren } from 'react';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
-        href: '/settings/nutritional-profile',
+        title: 'Perfil',
+        href: '/settings/profile',
         icon: null,
     },
     {
-        title: 'Password',
-        href: editPassword(),
+        title: 'Datos Nutricionales',
+        href: '/settings/nutritional-profile',
         icon: null,
     },
     {
