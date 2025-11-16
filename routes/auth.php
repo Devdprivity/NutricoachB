@@ -40,6 +40,11 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:6,1')
         ->name('verification.send');
 
+    // Ruta GET para logout - redirige al dashboard
+    Route::get('logout', function () {
+        return redirect('/dashboard');
+    });
+
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });

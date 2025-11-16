@@ -98,7 +98,7 @@ export const Benefits = forwardRef<HTMLDivElement>((props, ref) => {
                     <h2 className="text-4xl lg:text-6xl font-bold text-white mb-6">
                         Beneficios de
                         <span className="block bg-gradient-to-r from-[#E0FE10] to-white bg-clip-text text-transparent">
-                            NutriCoach
+                            gidia.app
                         </span>
                     </h2>
                     <p className="text-xl text-white/80 max-w-3xl mx-auto">

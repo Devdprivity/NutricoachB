@@ -8,7 +8,7 @@ export default function AppLogo() {
             </div>
             <div className="ml-2 grid flex-1 text-left">
                 <span className="truncate text-lg leading-tight font-bold text-black dark:text-white">
-                    NutiCoach
+                    gidia.app
                 </span>
                 <span className="text-xs text-black dark:text-white dark:opacity-70 font-medium">
                     Tu aliado fitness

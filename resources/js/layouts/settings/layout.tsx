@@ -10,11 +10,6 @@ import { type PropsWithChildren } from 'react';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Perfil',
-        href: '/settings/profile',
-        icon: null,
-    },
-    {
         title: 'Datos Nutricionales',
         href: '/settings/nutritional-profile',
         icon: null,

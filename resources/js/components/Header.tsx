@@ -40,11 +40,11 @@ export const Header = forwardRef<HTMLElement>((props, ref) => {
                 >
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
                         <span className="text-xl font-bold text-white">
-                            N
+                            G
                         </span>
                     </div>
                     <span className="text-xl font-bold text-white">
-                        NutriCoach
+                        gidia.app
                     </span>
                 </div>
 

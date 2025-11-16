@@ -13,7 +13,7 @@ import { Head } from '@inertiajs/react';
 export default function Welcome() {
   return (
     <>
-      <Head title="NutriCoach - Tu Coach de Transformación Corporal">
+      <Head title="Gidia.app - Tu Coach de Transformación Corporal">
         <link rel="preconnect" href="https://fonts.bunny.net" />
         <link
           href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap"

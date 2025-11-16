@@ -10,9 +10,14 @@ export function useHiddenRouting() {
         let isNavigating = false;
         let isInitialLoad = true;
 
+        // Rutas que NO deben guardarse ni restaurarse
+        const excludedRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/two-factor'];
+
         // Guardar la ruta actual en sessionStorage
         const saveCurrentRoute = (path: string) => {
-            if (path && path !== '/' && path !== window.location.origin) {
+            // No guardar rutas de autenticación
+            const isExcludedRoute = excludedRoutes.some(route => path.startsWith(route));
+            if (path && path !== '/' && path !== window.location.origin && !isExcludedRoute) {
                 sessionStorage.setItem('_currentRoute', path);
             }
         };
@@ -140,6 +145,9 @@ export function useHiddenRouting() {
             // SIEMPRE forzar la URL limpia primero
             enforceCleanUrl();
 
+            // Verificar si la ruta guardada es una ruta excluida
+            const isExcludedRoute = savedPath && excludedRoutes.some(route => savedPath.startsWith(route));
+
             // Si la página actual no es la raíz (viene de refresh directo a una ruta)
             if (currentPath !== '/' && currentPath !== '') {
                 // Guardar esta ruta y luego navegar internamente
@@ -157,8 +165,8 @@ export function useHiddenRouting() {
                         }
                     });
                 }, 10);
-            } else if (savedPath && savedPath !== '/' && savedPath !== currentPath) {
-                // Si estamos en la raíz pero hay una ruta guardada, restaurarla
+            } else if (savedPath && savedPath !== '/' && savedPath !== currentPath && !isExcludedRoute) {
+                // Si estamos en la raíz pero hay una ruta guardada (y no es una ruta de autenticación), restaurarla
                 isInitialLoad = false;
 
                 setTimeout(() => {
@@ -172,6 +180,10 @@ export function useHiddenRouting() {
                     });
                 }, 10);
             } else {
+                // Si es una ruta excluida, limpiar el sessionStorage
+                if (isExcludedRoute) {
+                    sessionStorage.removeItem('_currentRoute');
+                }
                 isInitialLoad = false;
             }
         };

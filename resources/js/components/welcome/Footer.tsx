@@ -37,7 +37,7 @@ export function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <div>
               <h3 className="text-2xl text-white">
-                Nutri<span className="text-[#5ddc8a]">Coach</span>
+                gidia<span className="text-[#5ddc8a]">.app</span>
               </h3>
               <p className="text-gray-400 mt-2">
                 Tu coach nutricional personal para alcanzar tus metas de salud y bienestar.
@@ -121,7 +121,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[#1f1f1f] flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-gray-400">
-            © 2025 NutriCoach. Todos los derechos reservados.
+            © 2025 gidia.app. Todos los derechos reservados.
           </p>
           <div className="flex gap-6 text-sm">
             <a href="#" className="text-gray-400 hover:text-[#5ddc8a] transition-colors">

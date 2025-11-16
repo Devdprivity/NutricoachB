@@ -57,7 +57,7 @@ export function BenefitsSection() {
               Más que una app, tu <span className="text-[#5ddc8a]">aliado de salud</span>
             </h2>
             <p className="text-lg text-gray-400">
-              NutriCoach combina tecnología avanzada con conocimiento nutricional para ofrecerte 
+              gidia.app combina tecnología avanzada con conocimiento nutricional para ofrecerte 
               una experiencia personalizada que se adapta a tu estilo de vida.
             </p>
 

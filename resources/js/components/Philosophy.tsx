@@ -130,7 +130,7 @@ export const Philosophy = forwardRef<HTMLDivElement>((props, ref) => {
                             "La transformación sostenible se construye con autocompasión inteligente, no con perfección rígida"
                         </blockquote>
                         <cite className="text-lg text-[#E0FE10] font-semibold">
-                            — NutriCoach Luis
+                            — gidia.app Coach
                         </cite>
                     </div>
                 </div>

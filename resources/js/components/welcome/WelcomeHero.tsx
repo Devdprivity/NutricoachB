@@ -28,7 +28,7 @@ export function WelcomeHero() {
             
             <div className="space-y-4">
               <h1 className="text-5xl sm:text-6xl lg:text-7xl tracking-tight text-white">
-                Nutri<span className="text-[#5ddc8a]">Coach</span>
+                Gidia<span className="text-[#5ddc8a]">.app</span>
               </h1>
               <p className="text-xl sm:text-2xl text-gray-300 max-w-xl mx-auto lg:mx-0">
                 Tu compañero inteligente para alcanzar tus metas de salud y bienestar

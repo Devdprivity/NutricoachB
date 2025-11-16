@@ -60,7 +60,7 @@ export function AppShowcase() {
                   <div className="relative rounded-[2.5rem] overflow-hidden bg-black">
                     <ImageWithFallback
                       src="https://images.unsplash.com/photo-1762768767074-e491f1eebdfc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwYXBwJTIwc2NyZWVufGVufDF8fHx8MTc2MzE1MjU4MHww&ixlib=rb-4.1.0&q=80&w=1080"
-                      alt="NutriCoach App"
+                      alt="gidia.app App"
                       className="w-full h-auto"
                     />
                     

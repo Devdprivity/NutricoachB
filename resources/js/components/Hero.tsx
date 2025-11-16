@@ -156,7 +156,7 @@ export const Hero = forwardRef<HTMLDivElement>((props, ref) => {
                             ref={subtitleRef}
                             className="text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed"
                         >
-                            NutriCoach es un agente de inteligencia artificial especializado en seguimiento nutricional y análisis calórico personalizado
+                            gidia.app es un agente de inteligencia artificial especializado en seguimiento nutricional y análisis calórico personalizado
                         </p>
                     </div>
 

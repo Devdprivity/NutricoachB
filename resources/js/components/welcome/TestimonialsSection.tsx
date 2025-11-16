@@ -37,7 +37,7 @@ export function TestimonialsSection() {
             Lo que dicen nuestros <span className="text-[#5ddc8a]">usuarios</span>
           </h2>
           <p className="text-lg text-gray-400">
-            Miles de personas ya están transformando sus vidas con NutriCoach
+            Miles de personas ya están transformando sus vidas con gidia.app
           </p>
         </div>
 

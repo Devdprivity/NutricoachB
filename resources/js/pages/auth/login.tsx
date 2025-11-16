@@ -1,10 +1,20 @@
 import { Head } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 
 export default function Login() {
+    const [imageLoaded, setImageLoaded] = useState(false);
+
+    useEffect(() => {
+        const img = new Image();
+        img.src = '/img/modellogin.jpg';
+        img.onload = () => setImageLoaded(true);
+    }, []);
 
     return (
         <>
-            <Head title="Iniciar Sesión - NutriCoach" />
+            <Head title="Iniciar Sesión - Gidia.app">
+                <link rel="preload" as="image" href="/img/modellogin.jpg" />
+            </Head>
             
             <div 
                 className="min-h-screen flex items-center justify-center px-6 lg:px-8 relative overflow-hidden"
@@ -18,16 +28,28 @@ export default function Login() {
                 {/* Overlay con gradiente */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#1C2227]/80 via-[#1C2227]/60 to-[#E0FE10]/20"></div>
                 
+                {/* Loader mientras carga la imagen */}
+                {!imageLoaded && (
+                    <div className="absolute inset-0 bg-[#1C2227] flex items-center justify-center z-50">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 bg-[#5ddc8a] rounded-2xl flex items-center justify-center shadow-2xl animate-pulse">
+                                <span className="text-3xl font-bold text-black">G</span>
+                            </div>
+                            <div className="w-12 h-12 border-4 border-[#5ddc8a] border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    </div>
+                )}
+                
                 {/* Contenido del login */}
-                <div className="relative z-10 w-full max-w-md">
+                <div className={`relative z-10 w-full max-w-md transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
                     {/* Logo */}
                     <div className="text-center mb-8">
                         <div className="flex items-center justify-center gap-3 mb-6">
                             <div className="w-16 h-16 bg-[#5ddc8a] rounded-2xl flex items-center justify-center shadow-2xl">
-                                <span className="text-3xl font-bold text-black">N</span>
+                                <span className="text-3xl font-bold text-black">G</span>
                             </div>
                             <span className="text-3xl font-bold text-white">
-                                Nutri<span className="text-[#5ddc8a]">Coach</span>
+                                Gidia<span className="text-[#5ddc8a]">.app</span>
                             </span>
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-2">Bienvenido de vuelta</h2>

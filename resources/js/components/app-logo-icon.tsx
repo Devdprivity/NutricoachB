@@ -6,14 +6,14 @@ export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
             <text
                 x="50%"
                 y="50%"
-                dominantBaseline="middle"
+                dominantBaseline="central"
                 textAnchor="middle"
                 fontSize="20"
                 fontWeight="bold"
                 fill="currentColor"
                 className="font-bold"
             >
-                N
+                G
             </text>
         </svg>
     );

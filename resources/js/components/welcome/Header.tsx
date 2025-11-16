@@ -24,10 +24,10 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-[#5ddc8a] flex items-center justify-center">
-              <span className="text-black text-xl font-bold">N</span>
+              <span className="text-black text-xl font-bold">G</span>
             </div>
             <span className="text-xl">
-              Nutri<span className="text-[#5ddc8a]">Coach</span>
+              Gidia<span className="text-[#5ddc8a]">.app</span>
             </span>
           </Link>
 

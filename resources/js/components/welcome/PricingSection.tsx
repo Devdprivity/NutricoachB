@@ -170,7 +170,7 @@ export function PricingSection() {
           </div>
           <h4 className="text-xl mb-2 text-white font-semibold">Garantía de 30 días</h4>
           <p className="text-gray-400">
-            Si no estás satisfecho con NutriCoach, te devolvemos tu dinero sin preguntas. 
+            Si no estás satisfecho con gidia.app, te devolvemos tu dinero sin preguntas. 
             Tu satisfacción es nuestra prioridad.
           </p>
         </div>
