@@ -125,136 +125,6 @@ export default function NutritionalProfile({ profileData, errors = {}, user, mus
                         description="Configura tu información personal y datos nutricionales para obtener recomendaciones personalizadas"
                     />
 
-                    {/* Información Personal */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-2">
-                                <User className="h-5 w-5" />
-                                <CardTitle>Información Personal</CardTitle>
-                            </div>
-                            <CardDescription>
-                                Tu información básica de cuenta
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {/* Avatar */}
-                            <div className="flex items-center gap-6">
-                                <div className="relative">
-                                    <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-muted">
-                                        {(avatarPreview || userData.avatar) ? (
-                                            <img
-                                                src={avatarPreview || userData.avatar || ''}
-                                                alt="Avatar"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <User className="h-12 w-12 text-muted-foreground" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    {avatarPreview && (
-                                        <button
-                                            type="button"
-                                            onClick={handleRemoveAvatar}
-                                            className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-1 hover:bg-destructive/90 transition-colors"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="flex-1">
-                                    <Label htmlFor="avatar">Foto de Perfil</Label>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="gap-2"
-                                        >
-                                            <Camera className="h-4 w-4" />
-                                            {avatarPreview ? 'Cambiar foto' : 'Subir foto'}
-                                        </Button>
-                                        <input
-                                            ref={fileInputRef}
-                                            id="avatar"
-                                            name="avatar"
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleAvatarChange}
-                                            className="hidden"
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        Máximo 5MB. Formatos: JPG, PNG, GIF
-                                    </p>
-                                    <InputError message={errors.avatar} />
-                                </div>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Nombre *</Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    defaultValue={userData.name}
-                                    placeholder="Tu nombre completo"
-                                    required
-                                />
-                                <InputError message={errors.name} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Correo Electrónico</Label>
-                                <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    value={userData.email}
-                                    disabled
-                                    className="bg-muted cursor-not-allowed"
-                                    placeholder="tu@email.com"
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    El correo electrónico no se puede modificar
-                                </p>
-                            </div>
-
-                            {mustVerifyEmail && auth.user?.email_verified_at === null && (
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Tu correo electrónico no está verificado.{' '}
-                                        <Link
-                                            href={send()}
-                                            as="button"
-                                            className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                        >
-                                            Haz clic aquí para reenviar el correo de verificación.
-                                        </Link>
-                                    </p>
-
-                                    {status === 'verification-link-sent' && (
-                                        <div className="mt-2 text-sm font-medium text-green-600">
-                                            Se ha enviado un nuevo enlace de verificación a tu correo electrónico.
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="address">Dirección</Label>
-                                <Input
-                                    id="address"
-                                    name="address"
-                                    defaultValue={userData.address}
-                                    placeholder="Tu dirección"
-                                />
-                                <InputError message={errors.address} />
-                            </div>
-                        </CardContent>
-                    </Card>
-
                     {/* Mostrar resumen si hay datos */}
                     {profileData && (
                         <div className="grid gap-4 md:grid-cols-3">
@@ -299,6 +169,136 @@ export default function NutritionalProfile({ profileData, errors = {}, user, mus
 
                     {/* Formulario */}
                     <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-8">
+                        {/* Información Personal */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center gap-2">
+                                    <User className="h-5 w-5" />
+                                    <CardTitle>Información Personal</CardTitle>
+                                </div>
+                                <CardDescription>
+                                    Tu información básica de cuenta
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {/* Avatar */}
+                                <div className="flex items-center gap-6">
+                                    <div className="relative">
+                                        <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-muted">
+                                            {(avatarPreview || userData.avatar) ? (
+                                                <img
+                                                    src={avatarPreview || userData.avatar || ''}
+                                                    alt="Avatar"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <User className="h-12 w-12 text-muted-foreground" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        {avatarPreview && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveAvatar}
+                                                className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-1 hover:bg-destructive/90 transition-colors"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <Label htmlFor="avatar">Foto de Perfil</Label>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="gap-2"
+                                            >
+                                                <Camera className="h-4 w-4" />
+                                                {avatarPreview ? 'Cambiar foto' : 'Subir foto'}
+                                            </Button>
+                                            <input
+                                                ref={fileInputRef}
+                                                id="avatar"
+                                                name="avatar"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleAvatarChange}
+                                                className="hidden"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Máximo 5MB. Formatos: JPG, PNG, GIF
+                                        </p>
+                                        <InputError message={errors.avatar} />
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="name">Nombre *</Label>
+                                    <Input
+                                        id="name"
+                                        name="name"
+                                        defaultValue={userData.name}
+                                        placeholder="Tu nombre completo"
+                                        required
+                                    />
+                                    <InputError message={errors.name} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Correo Electrónico</Label>
+                                    <Input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        value={userData.email}
+                                        disabled
+                                        className="bg-muted cursor-not-allowed"
+                                        placeholder="tu@email.com"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        El correo electrónico no se puede modificar
+                                    </p>
+                                </div>
+
+                                {mustVerifyEmail && auth.user?.email_verified_at === null && (
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">
+                                            Tu correo electrónico no está verificado.{' '}
+                                            <Link
+                                                href={send()}
+                                                as="button"
+                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                            >
+                                                Haz clic aquí para reenviar el correo de verificación.
+                                            </Link>
+                                        </p>
+
+                                        {status === 'verification-link-sent' && (
+                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                                Se ha enviado un nuevo enlace de verificación a tu correo electrónico.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="address">Dirección</Label>
+                                    <Input
+                                        id="address"
+                                        name="address"
+                                        defaultValue={userData.address}
+                                        placeholder="Tu dirección"
+                                    />
+                                    <InputError message={errors.address} />
+                                </div>
+                            </CardContent>
+                        </Card>
+
                         {/* Datos Físicos Básicos */}
                         <Card>
                             <CardHeader>
