@@ -10,16 +10,16 @@ export function Footer() {
       { name: "FAQ", href: "#", external: false }
     ],
     company: [
-      { name: "Sobre Nosotros", href: "#", external: false },
-      { name: "Blog", href: "#", external: false },
-      { name: "Carreras", href: "#", external: false },
-      { name: "Contacto", href: "#", external: false }
+      { name: "Sobre Nosotros", href: "/about", external: true },
+      { name: "Blog", href: "/blog", external: true },
+      { name: "Carreras", href: "/careers", external: true },
+      { name: "Contacto", href: "/contact", external: true }
     ],
     legal: [
       { name: "Privacidad", href: "/privacy", external: true },
       { name: "Términos", href: "/terms", external: true },
-      { name: "Cookies", href: "#", external: false },
-      { name: "Licencias", href: "#", external: false }
+      { name: "Cookies", href: "/cookies", external: true },
+      { name: "Licencias", href: "/licenses", external: true }
     ]
   };
 
@@ -97,9 +97,15 @@ export function Footer() {
             <ul className="space-y-2">
               {footerLinks.company.map((link, index) => (
                 <li key={index}>
-                  <a href={link.href} className="text-gray-400 hover:text-[#5ddc8a] transition-colors text-sm">
-                    {link.name}
-                  </a>
+                  {link.external ? (
+                    <Link href={link.href} className="text-gray-400 hover:text-[#5ddc8a] transition-colors text-sm">
+                      {link.name}
+                    </Link>
+                  ) : (
+                    <a href={link.href} className="text-gray-400 hover:text-[#5ddc8a] transition-colors text-sm">
+                      {link.name}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

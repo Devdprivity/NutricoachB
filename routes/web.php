@@ -27,7 +27,7 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
-// Páginas legales
+// Páginas legales e informativas
 Route::get('/privacy', function () {
     return Inertia::render('privacy');
 })->name('privacy');
@@ -35,6 +35,30 @@ Route::get('/privacy', function () {
 Route::get('/terms', function () {
     return Inertia::render('terms');
 })->name('terms');
+
+Route::get('/cookies', function () {
+    return Inertia::render('cookies');
+})->name('cookies');
+
+Route::get('/licenses', function () {
+    return Inertia::render('licenses');
+})->name('licenses');
+
+Route::get('/about', function () {
+    return Inertia::render('about');
+})->name('about');
+
+Route::get('/contact', function () {
+    return Inertia::render('contact');
+})->name('contact');
+
+Route::get('/blog', function () {
+    return Inertia::render('blog');
+})->name('blog');
+
+Route::get('/careers', function () {
+    return Inertia::render('careers');
+})->name('careers');
 
 // Webhook de Stripe (sin autenticación)
 Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])->name('stripe.webhook');
