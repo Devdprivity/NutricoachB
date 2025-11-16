@@ -10,7 +10,7 @@ import { User, Mail, Camera, Lock } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { useForm } from '@inertiajs/react';
-import { HeadingSmall } from '@/components/heading-small';
+import HeadingSmall from '@/components/heading-small';
 import { ProfileSkeleton } from '@/components/skeletons/profile-skeleton';
 import InputError from '@/components/input-error';
 import { Transition } from '@headlessui/react';
