@@ -348,19 +348,19 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
             {isLoading ? (
                 <NutritionSkeleton />
             ) : (
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
                 {/* Header con título y botón de escáner */}
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                        <h1 className="text-3xl font-bold tracking-tight">Nutrición</h1>
-                        <p className="text-muted-foreground">
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Nutrición</h1>
+                        <p className="text-sm md:text-base text-muted-foreground">
                             Registra tus comidas con fotos y sigue tu progreso nutricional con IA
                         </p>
                     </div>
                     <Dialog open={isBarcodeDialogOpen} onOpenChange={setIsBarcodeDialogOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10">
-                                <Scan className="h-5 w-5" />
+                            <Button variant="outline" size="icon" className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0">
+                                <Scan className="h-4 w-4 md:h-5 md:w-5" />
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[500px]">
@@ -493,14 +493,16 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                 </div>
 
                 {/* Filtro de fecha para toda la vista */}
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4">
+                    <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleChangeDay(-1)}
+                            className="text-xs sm:text-sm whitespace-nowrap"
                         >
-                            Día anterior
+                            <span className="hidden sm:inline">Día anterior</span>
+                            <span className="sm:hidden">Anterior</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -510,6 +512,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                     new Date().toISOString().split('T')[0],
                                 )
                             }
+                            className="text-xs sm:text-sm"
                         >
                             Hoy
                         </Button>
@@ -517,26 +520,77 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                             variant="outline"
                             size="sm"
                             onClick={() => handleChangeDay(1)}
+                            className="text-xs sm:text-sm whitespace-nowrap"
                         >
-                            Día siguiente
+                            <span className="hidden sm:inline">Día siguiente</span>
+                            <span className="sm:hidden">Siguiente</span>
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Label htmlFor="date-filter">Fecha</Label>
+                        <Label htmlFor="date-filter" className="text-sm whitespace-nowrap">Fecha</Label>
                         <Input
                             id="date-filter"
                             type="date"
                             value={selectedDate}
                             onChange={(e) => handleDateFilterChange(e.target.value)}
-                            className="w-[180px]"
+                            className="w-full sm:w-[180px] text-sm"
                         />
                     </div>
                 </div>
 
+                {/* Cards de usuario y próxima comida - Horizontal en mobile, vertical en desktop */}
+                <div className="grid grid-cols-2 md:hidden gap-2">
+                    {/* Card de usuario con avatar, nombre y hora */}
+                    {auth?.user && (
+                        <Card>
+                            <CardContent className="p-3">
+                                <div className="flex flex-col items-center gap-2">
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
+                                        <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                                            {getInitials(auth.user.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="text-center">
+                                        <p className="text-xs font-semibold truncate w-full" title={auth.user.name}>
+                                            {auth.user.name}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            {currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Tarjeta pequeña de próxima comida */}
+                    {nextMeal && (
+                        <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                            <CardContent className="p-3">
+                                <div className="flex flex-col items-center gap-1.5">
+                                    <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-medium text-blue-900 dark:text-blue-100 uppercase tracking-wide">
+                                            Próxima
+                                        </p>
+                                        <p className="text-xs font-bold text-blue-700 dark:text-blue-300 mt-0.5">
+                                            {nextMeal.label}
+                                        </p>
+                                        <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
+                                            {nextMeal.hour}:00
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+
                 {/* Primera fila: Próxima comida pequeña y Grid principal */}
                 <div className="flex gap-4 items-start">
-                    {/* Columna izquierda: Cards pequeñas */}
-                    <div className="flex flex-col gap-4 w-[180px] flex-shrink-0">
+                    {/* Columna izquierda: Cards pequeñas - Solo visible en desktop */}
+                    <div className="hidden md:flex flex-col gap-4 w-[180px] flex-shrink-0">
                         {/* Card de usuario con avatar, nombre y hora */}
                         {auth?.user && (
                             <Card>
@@ -585,7 +639,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                     </div>
 
                     {/* Grid principal: Resumen Nutricional y Registrar Comida */}
-                    <div className="grid gap-6 md:grid-cols-2 flex-1">
+                    <div className="grid gap-4 md:gap-6 lg:grid-cols-2 flex-1">
                         {/* Resumen del Día */}
                         {totals && goals && percentages && (
                         <Card>
@@ -621,7 +675,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                             </div>
 
                             {/* Macronutrientes */}
-                            <div className="grid gap-4 md:grid-cols-3">
+                            <div className="grid gap-3 grid-cols-3">
                                 {/* Proteína */}
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
@@ -683,18 +737,18 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <form onSubmit={handleSubmit} className="space-y-6">
-                                    <div className="grid gap-4 md:grid-cols-3">
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                         <div className="space-y-2">
                                             <div className="flex items-center justify-between">
-                                                <Label>Tipo de Comida</Label>
+                                                <Label className="text-sm">Tipo de Comida</Label>
                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <Clock className="h-3 w-3" />
                                                     Auto
                                                 </span>
                                             </div>
                                             <Select value={mealType} onValueChange={setMealType}>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="text-sm">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -706,35 +760,38 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="meal-date">Fecha de la comida</Label>
+                                            <Label htmlFor="meal-date" className="text-sm">Fecha de la comida</Label>
                                             <Input
                                                 id="meal-date"
                                                 type="date"
                                                 value={mealDate}
                                                 onChange={(e) => setMealDate(e.target.value)}
                                                 disabled={isSubmitting}
+                                                className="text-sm"
                                             />
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="meal-time">Hora de la comida</Label>
+                                            <Label htmlFor="meal-time" className="text-sm">Hora de la comida</Label>
                                             <Input
                                                 id="meal-time"
                                                 type="time"
                                                 value={mealTime}
                                                 onChange={(e) => setMealTime(e.target.value)}
                                                 disabled={isSubmitting}
+                                                className="text-sm"
                                             />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="image">Foto de la Comida</Label>
+                                        <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                                            <Label htmlFor="image" className="text-sm">Foto de la Comida</Label>
                                             <Input
                                                 id="image"
                                                 type="file"
                                                 accept="image/*"
                                                 disabled={isSubmitting}
                                                 onChange={handleImageChange}
+                                                className="text-sm"
                                             />
                                         </div>
                                     </div>
@@ -795,7 +852,104 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                 </p>
                             </div>
                         ) : (
-                            <div className="rounded-lg border overflow-hidden">
+                            <>
+                            {/* Vista de cards para mobile */}
+                            <div className="md:hidden space-y-3">
+                                {records.map((record) => (
+                                    <Card key={record.id} className="overflow-hidden">
+                                        <CardContent className="p-3">
+                                            <div className="flex gap-3">
+                                                {/* Imagen */}
+                                                {record.image_path ? (
+                                                    <div className="w-20 h-20 rounded-md overflow-hidden border flex-shrink-0">
+                                                        <img
+                                                            src={record.image_url || (record.image_path.startsWith('http') ? record.image_path : `/storage/${record.image_path}`)}
+                                                            alt="Meal"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-20 h-20 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                                                        <Apple className="h-8 w-8 text-muted-foreground" />
+                                                    </div>
+                                                )}
+
+                                                {/* Contenido */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-sm font-semibold">{mealTypeLabels[record.meal_type]}</span>
+                                                                {record.ai_analyzed && (
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                                                        <Sparkles className="h-2.5 w-2.5" />
+                                                                        IA
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground">{record.time}</p>
+                                                        </div>
+                                                        <div className="flex gap-1 flex-shrink-0">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7"
+                                                                onClick={() => handleSaveAsFavorite(record.id)}
+                                                                title="Guardar como favorito"
+                                                            >
+                                                                <Heart className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7"
+                                                                onClick={() => handleDeleteRecord(record.id)}
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+
+                                                    {record.ai_description && (
+                                                        <p className="text-xs font-medium mb-2 line-clamp-2">
+                                                            {record.ai_description}
+                                                        </p>
+                                                    )}
+                                                    {record.food_items && (
+                                                        <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                                                            {record.food_items}
+                                                        </p>
+                                                    )}
+
+                                                    {/* Nutrientes */}
+                                                    <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t">
+                                                        <div className="text-center">
+                                                            <p className="text-xs font-semibold">{Math.round(record.calories)}</p>
+                                                            <p className="text-[10px] text-muted-foreground">kcal</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-xs font-semibold">{Math.round(record.protein)}g</p>
+                                                            <p className="text-[10px] text-muted-foreground">Prot</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-xs font-semibold">{Math.round(record.carbs)}g</p>
+                                                            <p className="text-[10px] text-muted-foreground">Carb</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-xs font-semibold">{Math.round(record.fat)}g</p>
+                                                            <p className="text-[10px] text-muted-foreground">Gras</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+
+                            {/* Vista de tabla para desktop */}
+                            <div className="hidden md:block rounded-lg border overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="w-full">
                                         <thead className="bg-muted/50 border-b">
@@ -901,6 +1055,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                     </table>
                                 </div>
                             </div>
+                            </>
                         )}
                     </CardContent>
                 </Card>
