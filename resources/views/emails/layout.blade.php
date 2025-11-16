@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>{{ $subject ?? 'NutriCoach' }}</title>
+    <title>{{ $subject ?? 'Gidia.app' }}</title>
     <style>
         * {
             margin: 0;
@@ -235,7 +235,7 @@
                     <!-- Header -->
                     <div class="email-header">
                         <div class="email-logo">
-                            Nutri<span>Coach</span>
+                            Gidia<span>.app</span>
                         </div>
                     </div>
 
@@ -247,7 +247,7 @@
                     <!-- Footer -->
                     <div class="email-footer">
                         <p class="footer-text">
-                            Este correo fue enviado por NutriCoach
+                            Este correo fue enviado por Gidia.app
                         </p>
 
                         <div class="footer-links">
@@ -263,7 +263,7 @@
                         </div>
 
                         <p class="copyright">
-                            © {{ date('Y') }} NutriCoach. Todos los derechos reservados.
+                            © {{ date('Y') }} Gidia.app. Todos los derechos reservados.
                         </p>
 
                         <p class="footer-text" style="margin-top: 15px; font-size: 12px;">

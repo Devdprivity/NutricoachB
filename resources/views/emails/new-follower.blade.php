@@ -6,7 +6,7 @@
     <div class="email-content">
         <p>Hola {{ $user->name }},</p>
 
-        <p><strong>{{ $follower->name }}</strong> ha comenzado a seguirte en NutriCoach.</p>
+        <p><strong>{{ $follower->name }}</strong> ha comenzado a seguirte en Gidia.app.</p>
     </div>
 
     <div class="info-box">

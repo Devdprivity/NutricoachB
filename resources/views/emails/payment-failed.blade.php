@@ -54,7 +54,7 @@
     <div class="email-content">
         <p style="font-size: 14px; color: #6a6a6a;">
             <strong>¿Necesitas ayuda?</strong> Nuestro equipo de facturación está disponible para asistirte en
-            <a href="mailto:billing@nutricoach.com" style="color: #22c55e;">billing@nutricoach.com</a>
+            <a href="mailto:billing@gidia.app" style="color: #22c55e;">billing@gidia.app</a>
         </p>
     </div>
 @endsection

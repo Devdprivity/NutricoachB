@@ -32,7 +32,7 @@ class PaymentUpcomingMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Próximo cargo de suscripción - NutriCoach',
+            subject: 'Próximo cargo de suscripción - Gidia.app',
         );
     }
 

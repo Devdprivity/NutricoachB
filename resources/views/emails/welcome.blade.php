@@ -1,12 +1,12 @@
 @extends('emails.layout')
 
 @section('content')
-    <h1 class="email-title">¡Bienvenido a NutriCoach, {{ $user->name }}!</h1>
+    <h1 class="email-title">¡Bienvenido a Gidia.app, {{ $user->name }}!</h1>
 
     <div class="email-content">
         <p>Nos emociona tenerte como parte de nuestra comunidad. Estás a punto de comenzar un viaje transformador hacia una vida más saludable.</p>
 
-        <p>Con NutriCoach tendrás acceso a:</p>
+        <p>Con Gidia.app tendrás acceso a:</p>
     </div>
 
     <div class="info-box">
@@ -39,7 +39,7 @@
     <div class="email-content">
         <p style="font-size: 14px; color: #6a6a6a;">
             ¿Necesitas ayuda para comenzar? Nuestro equipo de soporte está disponible en
-            <a href="mailto:support@nutricoach.com" style="color: #22c55e;">support@nutricoach.com</a>
+            <a href="mailto:support@gidia.app" style="color: #22c55e;">support@gidia.app</a>
         </p>
     </div>
 @endsection

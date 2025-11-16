@@ -34,7 +34,7 @@ class PaymentFailedMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Problema con tu pago - NutriCoach',
+            subject: 'Problema con tu pago - Gidia.app',
         );
     }
 

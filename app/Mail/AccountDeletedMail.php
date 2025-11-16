@@ -30,7 +30,7 @@ class AccountDeletedMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Tu cuenta ha sido eliminada - NutriCoach',
+            subject: 'Tu cuenta ha sido eliminada - Gidia.app',
         );
     }
 

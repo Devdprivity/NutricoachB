@@ -32,7 +32,7 @@ class RefundProcessedMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reembolso procesado - NutriCoach',
+            subject: 'Reembolso procesado - Gidia.app',
         );
     }
 

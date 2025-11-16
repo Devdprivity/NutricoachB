@@ -32,7 +32,7 @@ class NewFollowerMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Tienes un nuevo seguidor - NutriCoach',
+            subject: 'Tienes un nuevo seguidor - Gidia.app',
         );
     }
 

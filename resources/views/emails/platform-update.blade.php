@@ -1,12 +1,12 @@
 @extends('emails.layout')
 
 @section('content')
-    <h1 class="email-title">{{ $update['title'] ?? 'Nueva actualización de NutriCoach' }}</h1>
+    <h1 class="email-title">{{ $update['title'] ?? 'Nueva actualización de Gidia.app' }}</h1>
 
     <div class="email-content">
         <p>Hola {{ $user->name }},</p>
 
-        <p>Nos complace anunciarte las últimas mejoras y novedades en NutriCoach.</p>
+        <p>Nos complace anunciarte las últimas mejoras y novedades en Gidia.app.</p>
     </div>
 
     @if(isset($update['featured_image']))
@@ -80,7 +80,7 @@
     </div>
 
     <div style="text-align: center;">
-        <a href="mailto:feedback@nutricoach.com" class="email-button email-button-secondary">
+        <a href="mailto:feedback@gidia.app" class="email-button email-button-secondary">
             Enviar feedback
         </a>
     </div>

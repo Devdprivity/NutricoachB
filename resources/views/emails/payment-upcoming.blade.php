@@ -67,7 +67,7 @@
     <div class="email-content">
         <p style="font-size: 14px; color: #6a6a6a;">
             Si tienes preguntas sobre tu suscripción, contáctanos en
-            <a href="mailto:billing@nutricoach.com" style="color: #22c55e;">billing@nutricoach.com</a>
+            <a href="mailto:billing@gidia.app" style="color: #22c55e;">billing@gidia.app</a>
         </p>
     </div>
 @endsection

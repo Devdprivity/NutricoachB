@@ -6,7 +6,7 @@
     <div class="email-content">
         <p>Hola {{ $user->name }},</p>
 
-        <p>Confirmamos que tu cuenta de NutriCoach ha sido eliminada exitosamente el {{ now()->format('d/m/Y') }} a las {{ now()->format('H:i') }}.</p>
+        <p>Confirmamos que tu cuenta de Gidia.app ha sido eliminada exitosamente el {{ now()->format('d/m/Y') }} a las {{ now()->format('H:i') }}.</p>
     </div>
 
     <div class="info-box">
@@ -41,8 +41,8 @@
 
     <div class="email-content">
         <p style="font-size: 14px; color: #6a6a6a;">
-            <strong>Feedback:</strong> Nos encantaría conocer tu opinión sobre tu experiencia con NutriCoach.
-            <a href="mailto:feedback@nutricoach.com" style="color: #22c55e;">Envíanos tus comentarios</a>
+            <strong>Feedback:</strong> Nos encantaría conocer tu opinión sobre tu experiencia con Gidia.app.
+            <a href="mailto:feedback@gidia.app" style="color: #22c55e;">Envíanos tus comentarios</a>
         </p>
 
         <p style="font-size: 14px; color: #6a6a6a; margin-top: 15px;">

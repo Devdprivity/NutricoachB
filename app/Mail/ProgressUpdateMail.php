@@ -43,7 +43,7 @@ class ProgressUpdateMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Resumen de tu progreso semanal - NutriCoach',
+            subject: 'Resumen de tu progreso semanal - Gidia.app',
         );
     }
 

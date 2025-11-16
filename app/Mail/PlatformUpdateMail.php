@@ -32,7 +32,7 @@ class PlatformUpdateMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->update['title'] ?? 'Nueva actualización de NutriCoach',
+            subject: $this->update['title'] ?? 'Nueva actualización de Gidia.app',
         );
     }
 
