@@ -7,7 +7,6 @@ use App\Models\Exercise;
 use App\Models\ExerciseLog;
 use App\Models\MealRecord;
 use App\Services\GamificationService;
-use App\Services\ExerciseDBService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,7 +16,7 @@ class ExercisesController extends Controller
     /**
      * Mostrar la vista de ejercicios
      */
-    public function index(Request $request, ExerciseDBService $exerciseDB): Response
+    public function index(Request $request): Response
     {
         $user = $request->user();
         $today = now()->toDateString();
@@ -42,8 +41,20 @@ class ExercisesController extends Controller
         $netCalories = $caloriesConsumed - $caloriesBurned;
         $caloriesOverGoal = max(0, $netCalories - $calorieGoal);
 
-        // Obtener ejercicios desde ExerciseDB API con GIFs
-        $exercises = collect($exerciseDB->getAllExercises(100, 0));
+        // Obtener ejercicios desde la base de datos local (ya no usamos API)
+        $exercises = Exercise::all()->map(function ($exercise) {
+            return [
+                'id' => $exercise->id,
+                'name' => $exercise->name,
+                'body_part' => $exercise->body_part,
+                'equipment' => $exercise->equipment,
+                'target' => $exercise->target,
+                'category' => $exercise->category,
+                'difficulty' => $exercise->difficulty,
+                'gif_url' => $exercise->gif_url,
+                'instructions' => $exercise->instructions,
+            ];
+        });
 
         // Generar recomendaciones personalizadas
         $recommendations = $this->generateRecommendations(
