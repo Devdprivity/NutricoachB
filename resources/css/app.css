@@ -434,4 +434,24 @@
     [data-sidebar="footer"] {
         border-radius: 0.75rem;
     }
+
+    /* Ocultar scrollbar pero mantener funcionalidad */
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Snap scroll para mejor experiencia en mobile */
+    .snap-x {
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .snap-start {
+        scroll-snap-align: start;
+    }
 }

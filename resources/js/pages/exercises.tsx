@@ -3,6 +3,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { Activity, Dumbbell, Play, Flame, TrendingUp, Target, Clock, Zap, X, Video, Info, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { ExercisesSkeleton } from '@/components/skeletons/exercises-skeleton';
+import { ExerciseSwipe } from '@/components/exercise-swipe';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -20,14 +22,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface Exercise {
-    id: number;
+    id: string | number;
     name: string;
     description: string;
     category: string;
     difficulty: string;
     calories_per_minute: number;
-    image_url: string | null;
-    video_url: string | null;
+    image_url?: string | null;
+    video_url?: string | null;
+    gif_url?: string | null;
     muscles_worked: string | null;
     instructions: string | null;
     equipment: string | null;
@@ -79,7 +82,7 @@ export default function Exercises({ exerciseData }: Props) {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
 
     // Initial load
     useEffect(() => {
@@ -160,11 +163,12 @@ export default function Exercises({ exerciseData }: Props) {
         return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
     };
 
-    const filteredExercises = selectedCategory === 'all'
-        ? exerciseData.exercises
-        : exerciseData.exercises.filter(ex => ex.category === selectedCategory);
-
-    const categories = ['all', ...Array.from(new Set(exerciseData.exercises.map(ex => ex.category).filter(cat => cat != null && cat !== '')))];
+    // Filtrado por dificultad
+    const filteredExercises = exerciseData.exercises.filter(ex => {
+        // Filtro por dificultad
+        const matchesDifficulty = selectedDifficulty === 'all' || ex.difficulty === selectedDifficulty;
+        return matchesDifficulty;
+    });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -173,14 +177,66 @@ export default function Exercises({ exerciseData }: Props) {
             {isLoading ? (
                 <ExercisesSkeleton />
             ) : (
-                <div className="flex flex-col gap-6 p-6">
+                <div className="flex flex-col gap-4 md:gap-6 p-3 md:p-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Ejercicios y Entrenamiento</h1>
-                    <p className="text-muted-foreground">Entrena de forma inteligente basado en tu nutrición</p>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ejercicios y Entrenamiento</h1>
+                    <p className="text-sm md:text-base text-muted-foreground">Entrena de forma inteligente basado en tu nutrición</p>
                 </div>
 
                 {/* Calorie Balance Dashboard */}
-                <div className="grid gap-4 md:grid-cols-4">
+                {/* Mobile: Slider horizontal */}
+                <div className="md:hidden overflow-x-auto scrollbar-hide snap-x -mx-3 px-3">
+                    <div className="flex gap-2 pb-2">
+                        <Card className="flex-shrink-0 w-[140px] snap-start">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-2.5">
+                                <CardTitle className="text-xs font-medium">Consumidas</CardTitle>
+                                <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent className="p-2.5 pt-0">
+                                <div className="text-lg font-bold">{exerciseData.calorie_balance.consumed}</div>
+                                <p className="text-[10px] text-muted-foreground">kcal hoy</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="flex-shrink-0 w-[140px] snap-start">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-2.5">
+                                <CardTitle className="text-xs font-medium">Quemadas</CardTitle>
+                                <Flame className="h-3 w-3 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent className="p-2.5 pt-0">
+                                <div className="text-lg font-bold">{exerciseData.calorie_balance.burned}</div>
+                                <p className="text-[10px] text-muted-foreground">kcal ejercicio</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="flex-shrink-0 w-[140px] snap-start">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-2.5">
+                                <CardTitle className="text-xs font-medium">Balance</CardTitle>
+                                <Target className="h-3 w-3 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent className="p-2.5 pt-0">
+                                <div className="text-lg font-bold">{exerciseData.calorie_balance.net}</div>
+                                <p className="text-[10px] text-muted-foreground">Meta: {exerciseData.calorie_balance.goal}</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="flex-shrink-0 w-[140px] snap-start">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-2.5">
+                                <CardTitle className="text-xs font-medium">Exceso</CardTitle>
+                                <Zap className="h-3 w-3 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent className="p-2.5 pt-0">
+                                <div className={`text-lg font-bold ${exerciseData.calorie_balance.over_goal > 0 ? 'text-orange-500' : 'text-green-500'}`}>
+                                    {exerciseData.calorie_balance.over_goal}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">kcal encima</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+
+                {/* Desktop: Grid normal */}
+                <div className="hidden md:grid md:grid-cols-4 gap-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Calorías Consumidas</CardTitle>
@@ -210,9 +266,7 @@ export default function Exercises({ exerciseData }: Props) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{exerciseData.calorie_balance.net}</div>
-                            <p className="text-xs text-muted-foreground">
-                                Meta: {exerciseData.calorie_balance.goal} kcal
-                            </p>
+                            <p className="text-xs text-muted-foreground">Meta: {exerciseData.calorie_balance.goal} kcal</p>
                         </CardContent>
                     </Card>
 
@@ -231,17 +285,133 @@ export default function Exercises({ exerciseData }: Props) {
                 </div>
 
                 {/* Today's Exercises and Recommendations */}
-                <div className="grid gap-4 md:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Ejercicios de Hoy</CardTitle>
-                            <CardDescription>{exerciseData.today_logs.length} ejercicios completados</CardDescription>
+                {/* Mobile: Slider horizontal */}
+                <div className="md:hidden overflow-x-auto scrollbar-hide snap-x -mx-3 px-3">
+                    <div className="flex gap-3 pb-2">
+                        <Card className="flex-shrink-0 w-[85vw] snap-start">
+                            <CardHeader className="p-3">
+                                <CardTitle className="text-sm">Ejercicios de Hoy</CardTitle>
+                                <CardDescription className="text-xs">{exerciseData.today_logs.length} completados</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-0">
+                                {exerciseData.today_logs.length === 0 ? (
+                                    <div className="text-center py-3">
+                                        <Activity className="h-7 w-7 text-muted-foreground mx-auto mb-1.5" />
+                                        <p className="text-xs text-muted-foreground">No has registrado ejercicios hoy</p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">¡Empieza ahora!</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {exerciseData.today_logs.map((log) => (
+                                        <div key={log.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                                            <div className="flex items-center gap-3 flex-1">
+                                                {log.exercise.image_url && (
+                                                    <img
+                                                        src={log.exercise.image_url}
+                                                        alt={log.exercise.name}
+                                                        className="h-12 w-12 rounded object-cover"
+                                                    />
+                                                )}
+                                                <div>
+                                                    <div className="font-medium">{log.exercise.name}</div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {log.duration_minutes} min • {log.calories_burned} kcal • {log.start_time}
+                                                    </div>
+                                                    {log.notes && (
+                                                        <div className="text-xs text-muted-foreground mt-1">{log.notes}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline">Intensidad: {log.intensity}/10</Badge>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleDelete(log.id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="flex-shrink-0 w-[85vw] snap-start">
+                        <CardHeader className="p-3">
+                            <CardTitle className="text-sm">Recomendaciones</CardTitle>
+                            <CardDescription className="text-xs">Basadas en tu nutrición</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-3 pt-0">
+                            <Tabs defaultValue="0" className="w-full">
+                                <TabsList className="grid w-full h-8 text-xs" style={{ gridTemplateColumns: `repeat(${exerciseData.recommendations.length}, 1fr)` }}>
+                                    {exerciseData.recommendations.map((_, index) => (
+                                        <TabsTrigger key={index} value={index.toString()} className="text-xs">
+                                            {index + 1}
+                                        </TabsTrigger>
+                                    ))}
+                                </TabsList>
+                                {exerciseData.recommendations.map((rec, index) => (
+                                    <TabsContent key={index} value={index.toString()} className="space-y-2 mt-2">
+                                        <div className="text-xs text-muted-foreground p-2 bg-muted rounded-lg">
+                                            {rec.message}
+                                            {rec.minutes_needed && (
+                                                <div className="mt-1 font-medium text-primary text-[11px]">
+                                                    Tiempo: {rec.minutes_needed} min
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                            {rec.exercises.map((exercise) => (
+                                                <div
+                                                    key={exercise.id}
+                                                    className="flex items-center justify-between p-2 border rounded-lg active:bg-muted/50 cursor-pointer transition-colors"
+                                                    onClick={() => handleExerciseClick(exercise)}
+                                                >
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        {exercise.image_url && (
+                                                            <img
+                                                                src={exercise.image_url}
+                                                                alt={exercise.name}
+                                                                className="h-8 w-8 rounded object-cover flex-shrink-0"
+                                                            />
+                                                        )}
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-medium text-xs truncate">{exercise.name}</div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {exercise.duration_minutes}m • {exercise.calories_per_minute * exercise.duration_minutes} kcal
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <Button size="sm" className="h-7 text-xs px-2 flex-shrink-0 ml-2">
+                                                        <Play className="h-2.5 w-2.5 mr-1" />
+                                                        Ir
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </TabsContent>
+                                ))}
+                            </Tabs>
+                        </CardContent>
+                    </Card>
+                    </div>
+                </div>
+
+                {/* Desktop: Grid normal */}
+                <div className="hidden md:grid md:grid-cols-2 gap-4">
+                    <Card>
+                        <CardHeader className="p-6">
+                            <CardTitle className="text-lg">Ejercicios de Hoy</CardTitle>
+                            <CardDescription className="text-sm">{exerciseData.today_logs.length} ejercicios completados</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6 pt-0">
                             {exerciseData.today_logs.length === 0 ? (
                                 <div className="text-center py-8">
                                     <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                                    <p className="text-muted-foreground">No has registrado ejercicios hoy</p>
+                                    <p className="text-base text-muted-foreground">No has registrado ejercicios hoy</p>
                                     <p className="text-sm text-muted-foreground mt-1">¡Empieza tu entrenamiento ahora!</p>
                                 </div>
                             ) : (
@@ -284,11 +454,11 @@ export default function Exercises({ exerciseData }: Props) {
                     </Card>
 
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Recomendaciones Personalizadas</CardTitle>
-                            <CardDescription>Basadas en tu nutrición y nivel de actividad</CardDescription>
+                        <CardHeader className="p-6">
+                            <CardTitle className="text-lg">Recomendaciones Personalizadas</CardTitle>
+                            <CardDescription className="text-sm">Basadas en tu nutrición y nivel de actividad</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-6 pt-0">
                             <Tabs defaultValue="0" className="w-full">
                                 <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${exerciseData.recommendations.length}, 1fr)` }}>
                                     {exerciseData.recommendations.map((_, index) => (
@@ -343,70 +513,74 @@ export default function Exercises({ exerciseData }: Props) {
                     </Card>
                 </div>
 
-                {/* Exercise Library */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Biblioteca de Ejercicios</CardTitle>
-                        <CardDescription>Explora todos los ejercicios disponibles</CardDescription>
-                        <div className="flex gap-2 pt-4">
-                            {categories.map((category) => (
-                                <Button
-                                    key={category}
-                                    size="sm"
-                                    variant={selectedCategory === category ? 'default' : 'outline'}
-                                    onClick={() => setSelectedCategory(category)}
-                                >
-                                    {category === 'all' ? 'Todos' : (category && category.length > 0 ? category.charAt(0).toUpperCase() + category.slice(1) : category)}
-                                </Button>
-                            ))}
+                {/* Exercise Library - Diseño Visual Mejorado */}
+                <div className="space-y-3 md:space-y-6">
+                    {/* Header con Título */}
+                    <div>
+                        <h2 className="text-xl md:text-3xl font-bold tracking-tight">Biblioteca de Ejercicios</h2>
+                        <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Explora todos los ejercicios disponibles con GIFs animados</p>
+                    </div>
+
+                    {/* Filtro de dificultad */}
+                    <div className="flex gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide -mx-3 px-3 md:mx-0 md:px-0">
+                        <Button
+                            size="sm"
+                            variant={selectedDifficulty === 'all' ? 'default' : 'outline'}
+                            onClick={() => setSelectedDifficulty('all')}
+                            className="h-7 md:h-8 text-[11px] md:text-xs px-2 md:px-3 flex-shrink-0"
+                        >
+                            Todos
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant={selectedDifficulty === 'beginner' ? 'default' : 'outline'}
+                            onClick={() => setSelectedDifficulty('beginner')}
+                            className="h-7 md:h-8 text-[11px] md:text-xs px-2 md:px-3 flex-shrink-0"
+                        >
+                            <span className="h-2 w-2 rounded-full bg-green-500 mr-1"></span>
+                            Beginner
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant={selectedDifficulty === 'intermediate' ? 'default' : 'outline'}
+                            onClick={() => setSelectedDifficulty('intermediate')}
+                            className="h-7 md:h-8 text-[11px] md:text-xs px-2 md:px-3 flex-shrink-0"
+                        >
+                            <span className="h-2 w-2 rounded-full bg-yellow-500 mr-1"></span>
+                            Intermediate
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant={selectedDifficulty === 'advanced' ? 'default' : 'outline'}
+                            onClick={() => setSelectedDifficulty('advanced')}
+                            className="h-7 md:h-8 text-[11px] md:text-xs px-2 md:px-3 flex-shrink-0"
+                        >
+                            <span className="h-2 w-2 rounded-full bg-red-500 mr-1"></span>
+                            Advanced
+                        </Button>
+                    </div>
+
+                    {/* Ejercicios con Swipe en Mobile y Grid en Desktop */}
+                    {filteredExercises.length > 0 ? (
+                        <ExerciseSwipe
+                            exercises={filteredExercises}
+                            onExerciseClick={handleExerciseClick}
+                            getDifficultyColor={getDifficultyColor}
+                        />
+                    ) : (
+                        <div className="text-center py-20">
+                            <Activity className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                            <h3 className="text-lg font-semibold mb-2">No se encontraron ejercicios</h3>
+                            <p className="text-muted-foreground mb-4">Intenta seleccionar un nivel de dificultad diferente</p>
+                            <Button
+                                variant="outline"
+                                onClick={() => setSelectedDifficulty('all')}
+                            >
+                                Ver todos los ejercicios
+                            </Button>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {filteredExercises.map((exercise) => (
-                                <div
-                                    key={exercise.id}
-                                    className="group relative overflow-hidden rounded-lg border cursor-pointer hover:shadow-lg transition-all"
-                                    onClick={() => handleExerciseClick(exercise)}
-                                >
-                                    {exercise.image_url && (
-                                        <div className="relative h-48 overflow-hidden">
-                                            <img
-                                                src={exercise.image_url}
-                                                alt={exercise.name}
-                                                className="h-full w-full object-cover group-hover:scale-105 transition-transform"
-                                            />
-                                            <div className="absolute top-2 right-2 flex gap-2">
-                                                <Badge className={getDifficultyColor(exercise.difficulty)}>
-                                                    {exercise.difficulty}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="p-4">
-                                        <div className="flex items-start justify-between mb-2">
-                                            <h3 className="font-semibold">{exercise.name}</h3>
-                                            {getCategoryIcon(exercise.category)}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                            {exercise.description}
-                                        </p>
-                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {exercise.duration_minutes} min
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Flame className="h-3 w-3" />
-                                                {exercise.calories_per_minute}/min
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                    )}
+                </div>
             </div>
             )}
 
@@ -421,16 +595,13 @@ export default function Exercises({ exerciseData }: Props) {
                             </DialogHeader>
 
                             <div className="space-y-6">
-                                {/* Video */}
-                                {selectedExercise.video_url && getVideoEmbedUrl(selectedExercise.video_url) && (
-                                    <div className="aspect-video rounded-lg overflow-hidden">
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            src={getVideoEmbedUrl(selectedExercise.video_url) || ''}
-                                            title={selectedExercise.name}
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
+                                {/* GIF Animation */}
+                                {selectedExercise.gif_url && (
+                                    <div className="rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                        <img
+                                            src={selectedExercise.gif_url}
+                                            alt={selectedExercise.name}
+                                            className="w-full h-auto max-h-[500px] object-contain"
                                         />
                                     </div>
                                 )}

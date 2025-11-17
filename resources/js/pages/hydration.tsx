@@ -86,10 +86,10 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Hidratación" />
 
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-3 md:gap-6 p-3 md:p-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Hidratación</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Hidratación</h1>
+                    <p className="text-sm md:text-base text-muted-foreground">
                         Registra tu consumo de agua y otras bebidas
                     </p>
                 </div>
@@ -97,22 +97,22 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
                 {/* Resumen del Día */}
                 {summary && (
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Resumen de Hoy</CardTitle>
+                        <CardHeader className="p-3 md:p-6">
+                            <CardTitle className="text-base md:text-lg">Resumen de Hoy</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-2 md:space-y-4 p-3 pt-0 md:p-6 md:pt-0">
                             <div className="flex items-end justify-between">
                                 <div>
-                                    <div className="text-4xl font-bold text-blue-500">
+                                    <div className="text-2xl md:text-4xl font-bold text-blue-500">
                                         {summary.total_ml} ml
                                     </div>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-xs md:text-sm text-muted-foreground">
                                         de {summary.goal_ml} ml
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-3xl font-bold">{summary.percentage}%</div>
-                                    <p className="text-sm text-muted-foreground">
+                                    <div className="text-xl md:text-3xl font-bold">{summary.percentage}%</div>
+                                    <p className="text-xs md:text-sm text-muted-foreground">
                                         {summary.status === 'excellent' && '⭐ Excelente'}
                                         {summary.status === 'good' && '✅ Bien'}
                                         {summary.status === 'fair' && '🟡 Regular'}
@@ -121,9 +121,9 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
                                     </p>
                                 </div>
                             </div>
-                            <Progress value={Math.min(summary.percentage, 100)} className="h-3" />
+                            <Progress value={Math.min(summary.percentage, 100)} className="h-2 md:h-3" />
                             {summary.percentage < 100 && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs md:text-sm text-muted-foreground">
                                     Te faltan {summary.goal_ml - summary.total_ml} ml para tu meta
                                 </p>
                             )}

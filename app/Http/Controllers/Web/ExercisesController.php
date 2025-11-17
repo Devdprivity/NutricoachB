@@ -7,6 +7,7 @@ use App\Models\Exercise;
 use App\Models\ExerciseLog;
 use App\Models\MealRecord;
 use App\Services\GamificationService;
+use App\Services\ExerciseDBService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,7 +17,7 @@ class ExercisesController extends Controller
     /**
      * Mostrar la vista de ejercicios
      */
-    public function index(Request $request): Response
+    public function index(Request $request, ExerciseDBService $exerciseDB): Response
     {
         $user = $request->user();
         $today = now()->toDateString();
@@ -41,23 +42,8 @@ class ExercisesController extends Controller
         $netCalories = $caloriesConsumed - $caloriesBurned;
         $caloriesOverGoal = max(0, $netCalories - $calorieGoal);
 
-        // Obtener todos los ejercicios disponibles
-        $exercises = Exercise::all()->map(function ($exercise) {
-            return [
-                'id' => $exercise->id,
-                'name' => $exercise->name,
-                'description' => $exercise->description,
-                'category' => $exercise->category,
-                'difficulty' => $exercise->difficulty,
-                'calories_per_minute' => $exercise->calories_per_minute,
-                'image_url' => $exercise->image_url,
-                'video_url' => $exercise->video_url,
-                'muscles_worked' => $exercise->muscles_worked,
-                'instructions' => $exercise->instructions,
-                'equipment' => $exercise->equipment,
-                'duration_minutes' => $exercise->duration_minutes,
-            ];
-        });
+        // Obtener ejercicios desde ExerciseDB API con GIFs
+        $exercises = collect($exerciseDB->getAllExercises(100, 0));
 
         // Generar recomendaciones personalizadas
         $recommendations = $this->generateRecommendations(
@@ -67,7 +53,7 @@ class ExercisesController extends Controller
         );
 
         $exerciseData = [
-            'exercises' => $exercises,
+            'exercises' => $exercises->values()->all(),
             'today_logs' => $todayExercises->map(function ($log) {
                 return [
                     'id' => $log->id,

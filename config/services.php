@@ -45,6 +45,10 @@ return [
         'key' => env('API_NINJAS_KEY'),
     ],
 
+    'exercisedb' => [
+        'key' => env('EXERCISEDB_API_KEY'),
+    ],
+
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-pro'),
