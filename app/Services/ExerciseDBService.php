@@ -180,7 +180,8 @@ class ExerciseDBService
                 $filename = basename($file);
                 // Buscar archivos que empiecen con el ID (formato: 0001_nombre.gif o 0001.gif)
                 if (strpos($filename, $exerciseId . '_') === 0 || $filename === $exerciseId . '.gif') {
-                    return asset("storage/{$file}");
+                    // Usar Storage::url() para generar la URL correcta
+                    return \Storage::disk('public')->url($file);
                 }
             }
         } catch (\Exception $e) {
