@@ -86,45 +86,42 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Hidratación" />
 
-            <div className="flex flex-col gap-3 md:gap-6 p-3 md:p-6">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Hidratación</h1>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                        Registra tu consumo de agua y otras bebidas
+            <div className="flex flex-col gap-2 md:gap-6 p-3 md:p-6">
+                <div className="mb-1">
+                    <h1 className="text-xl md:text-3xl font-bold tracking-tight">Hidratación</h1>
+                    <p className="text-xs md:text-base text-muted-foreground">
+                        Registra tu consumo de agua
                     </p>
                 </div>
 
                 {/* Resumen del Día */}
                 {summary && (
                     <Card>
-                        <CardHeader className="p-3 md:p-6">
-                            <CardTitle className="text-base md:text-lg">Resumen de Hoy</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 md:space-y-4 p-3 pt-0 md:p-6 md:pt-0">
-                            <div className="flex items-end justify-between">
+                        <CardContent className="p-3 md:p-6">
+                            <div className="flex items-center justify-between mb-2">
                                 <div>
-                                    <div className="text-2xl md:text-4xl font-bold text-blue-500">
-                                        {summary.total_ml} ml
+                                    <div className="text-xl md:text-4xl font-bold text-blue-500">
+                                        {summary.total_ml} <span className="text-sm md:text-2xl">ml</span>
                                     </div>
-                                    <p className="text-xs md:text-sm text-muted-foreground">
+                                    <p className="text-[10px] md:text-sm text-muted-foreground">
                                         de {summary.goal_ml} ml
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-xl md:text-3xl font-bold">{summary.percentage}%</div>
-                                    <p className="text-xs md:text-sm text-muted-foreground">
-                                        {summary.status === 'excellent' && '⭐ Excelente'}
-                                        {summary.status === 'good' && '✅ Bien'}
-                                        {summary.status === 'fair' && '🟡 Regular'}
-                                        {summary.status === 'poor' && '⚠️ Bajo'}
-                                        {summary.status === 'critical' && '🔴 Crítico'}
+                                    <div className="text-lg md:text-3xl font-bold">{summary.percentage}%</div>
+                                    <p className="text-[10px] md:text-sm text-muted-foreground">
+                                        {summary.status === 'excellent' && '⭐'}
+                                        {summary.status === 'good' && '✅'}
+                                        {summary.status === 'fair' && '🟡'}
+                                        {summary.status === 'poor' && '⚠️'}
+                                        {summary.status === 'critical' && '🔴'}
                                     </p>
                                 </div>
                             </div>
-                            <Progress value={Math.min(summary.percentage, 100)} className="h-2 md:h-3" />
+                            <Progress value={Math.min(summary.percentage, 100)} className="h-1.5 md:h-3" />
                             {summary.percentage < 100 && (
-                                <p className="text-xs md:text-sm text-muted-foreground">
-                                    Te faltan {summary.goal_ml - summary.total_ml} ml para tu meta
+                                <p className="text-[10px] md:text-sm text-muted-foreground mt-1">
+                                    Faltan {summary.goal_ml - summary.total_ml} ml
                                 </p>
                             )}
                         </CardContent>
@@ -133,16 +130,11 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
 
                 {/* Registro Rápido */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Registrar Consumo</CardTitle>
-                        <CardDescription>Agrega agua u otras bebidas a tu registro diario</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label>Tipo de Bebida</Label>
+                    <CardContent className="p-3 md:p-6">
+                        <div className="space-y-2 md:space-y-4">
+                            <div className="flex gap-2">
                                 <Select value={drinkType} onValueChange={setDrinkType}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-8 md:h-10 text-xs md:text-sm">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -151,65 +143,56 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <Input
+                                    type="number"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    min="1"
+                                    max="2000"
+                                    placeholder="250"
+                                    className="h-8 md:h-10 text-xs md:text-sm w-20"
+                                />
+                                <Button onClick={handleCustomAdd} disabled={isSubmitting} className="h-8 md:h-10 text-xs md:text-sm px-2 md:px-4">
+                                    <Plus className="h-3 w-3 md:h-4 md:w-4" />
+                                </Button>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Cantidad Personalizada (ml)</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="number"
-                                        value={amount}
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        min="1"
-                                        max="2000"
-                                        placeholder="250"
-                                    />
-                                    <Button onClick={handleCustomAdd} disabled={isSubmitting}>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Agregar
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <Label className="mb-3 block">Accesos Rápidos</Label>
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-4 gap-1.5 md:gap-2">
                                 <Button
                                     variant="outline"
                                     onClick={() => handleQuickAdd(250)}
                                     disabled={isSubmitting}
-                                    className="h-16 flex flex-col"
+                                    className="h-12 md:h-16 flex flex-col p-1"
                                 >
-                                    <Droplet className="h-5 w-5 mb-1" />
-                                    <span className="text-sm">250ml</span>
+                                    <Droplet className="h-4 w-4 md:h-5 md:w-5 mb-0.5" />
+                                    <span className="text-[10px] md:text-sm">250ml</span>
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => handleQuickAdd(500)}
                                     disabled={isSubmitting}
-                                    className="h-16 flex flex-col"
+                                    className="h-12 md:h-16 flex flex-col p-1"
                                 >
-                                    <Droplet className="h-6 w-6 mb-1" />
-                                    <span className="text-sm">500ml</span>
+                                    <Droplet className="h-5 w-5 md:h-6 md:w-6 mb-0.5" />
+                                    <span className="text-[10px] md:text-sm">500ml</span>
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => handleQuickAdd(750)}
                                     disabled={isSubmitting}
-                                    className="h-16 flex flex-col"
+                                    className="h-12 md:h-16 flex flex-col p-1"
                                 >
-                                    <Droplet className="h-7 w-7 mb-1" />
-                                    <span className="text-sm">750ml</span>
+                                    <Droplet className="h-6 w-6 md:h-7 md:w-7 mb-0.5" />
+                                    <span className="text-[10px] md:text-sm">750ml</span>
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => handleQuickAdd(1000)}
                                     disabled={isSubmitting}
-                                    className="h-16 flex flex-col"
+                                    className="h-12 md:h-16 flex flex-col p-1"
                                 >
-                                    <Droplet className="h-8 w-8 mb-1" />
-                                    <span className="text-sm">1L</span>
+                                    <Droplet className="h-7 w-7 md:h-8 md:w-8 mb-0.5" />
+                                    <span className="text-[10px] md:text-sm">1L</span>
                                 </Button>
                             </div>
                         </div>
@@ -217,34 +200,23 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
                 </Card>
 
                 {/* Registros de Hoy */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Registros de Hoy</CardTitle>
-                        <CardDescription>Historial de consumo del día</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {records.length === 0 ? (
-                            <div className="text-center py-12">
-                                <Droplet className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                                <p className="text-muted-foreground">
-                                    No has registrado consumo de bebidas hoy
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
+                {records.length > 0 && (
+                    <Card>
+                        <CardContent className="p-3 md:p-6">
+                            <div className="space-y-1 md:space-y-2 max-h-48 md:max-h-96 overflow-y-auto">
                                 {records.map((record) => (
                                     <div
                                         key={record.id}
-                                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                                        className="flex items-center justify-between p-2 md:p-3 border rounded-lg hover:bg-accent/50 transition-colors"
                                     >
-                                        <div className="flex items-center gap-4">
-                                            {record.type === 'coffee' && <Coffee className="h-5 w-5" />}
-                                            {record.type !== 'coffee' && <Droplet className="h-5 w-5 text-blue-500" />}
-                                            <div>
-                                                <div className="font-medium">
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            {record.type === 'coffee' && <Coffee className="h-3 w-3 md:h-5 md:w-5 flex-shrink-0" />}
+                                            {record.type !== 'coffee' && <Droplet className="h-3 w-3 md:h-5 md:w-5 text-blue-500 flex-shrink-0" />}
+                                            <div className="min-w-0 flex-1">
+                                                <div className="font-medium text-xs md:text-base truncate">
                                                     {record.amount_ml} ml - {drinkTypeLabels[record.type] || record.type}
                                                 </div>
-                                                <div className="text-sm text-muted-foreground">
+                                                <div className="text-[10px] md:text-sm text-muted-foreground">
                                                     {record.time}
                                                 </div>
                                             </div>
@@ -253,15 +225,16 @@ export default function Hydration({ hydrationData }: { hydrationData?: Hydration
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleDelete(record.id)}
+                                            className="h-7 w-7 md:h-10 md:w-10 flex-shrink-0"
                                         >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-destructive" />
                                         </Button>
                                     </div>
                                 ))}
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </AppLayout>
     );

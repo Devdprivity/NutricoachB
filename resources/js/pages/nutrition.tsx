@@ -348,13 +348,13 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
             {isLoading ? (
                 <NutritionSkeleton />
             ) : (
-            <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
+            <div className="flex flex-col gap-2 md:gap-6 p-3 md:p-6">
                 {/* Header con título y botón de escáner */}
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Nutrición</h1>
-                        <p className="text-sm md:text-base text-muted-foreground">
-                            Registra tus comidas con fotos y sigue tu progreso nutricional con IA
+                        <h1 className="text-xl md:text-3xl font-bold tracking-tight">Nutrición</h1>
+                        <p className="text-xs md:text-base text-muted-foreground">
+                            Registra tus comidas con IA
                         </p>
                     </div>
                     <Dialog open={isBarcodeDialogOpen} onOpenChange={setIsBarcodeDialogOpen}>
@@ -639,85 +639,77 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                     </div>
 
                     {/* Grid principal: Resumen Nutricional y Registrar Comida */}
-                    <div className="grid gap-4 md:gap-6 lg:grid-cols-2 flex-1">
+                    <div className="grid gap-2 md:gap-6 lg:grid-cols-2 flex-1">
                         {/* Resumen del Día */}
                         {totals && goals && percentages && (
                         <Card>
-                        <CardHeader>
-                            <CardTitle>
-                                Resumen Nutricional del Día
-                            </CardTitle>
-                            <CardDescription>
-                                {formattedSelectedDate} · Comparación con tus objetivos diarios
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="p-3 md:p-6">
                             {/* Calorías */}
-                            <div className="space-y-2">
-                                <div className="flex items-end justify-between">
+                            <div className="space-y-1.5 md:space-y-2 mb-3 md:mb-4">
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <div className="text-2xl font-bold text-blue-600">
-                                            {Math.round(totals.calories)} kcal
+                                        <div className="text-xl md:text-2xl font-bold text-blue-600">
+                                            {Math.round(totals.calories)} <span className="text-sm md:text-xl">kcal</span>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-[10px] md:text-sm text-muted-foreground">
                                             de {goals.calories} kcal
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-xl font-bold">{percentages.calories}%</div>
-                                        <p className="text-xs text-muted-foreground">Consumido</p>
+                                        <div className="text-lg md:text-xl font-bold">{percentages.calories}%</div>
+                                        <p className="text-[10px] md:text-xs text-muted-foreground">Consumido</p>
                                     </div>
                                 </div>
                                 <Progress
                                     value={Math.min(percentages.calories, 100)}
-                                    className="h-2"
+                                    className="h-1.5 md:h-2"
                                 />
                             </div>
 
                             {/* Macronutrientes */}
-                            <div className="grid gap-3 grid-cols-3">
+                            <div className="grid gap-2 md:gap-3 grid-cols-3">
                                 {/* Proteína */}
-                                <div className="space-y-2">
+                                <div className="space-y-1 md:space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <Label>Proteína</Label>
-                                        <span className="text-sm font-medium">{percentages.protein}%</span>
+                                        <Label className="text-[10px] md:text-sm">Proteína</Label>
+                                        <span className="text-[10px] md:text-sm font-medium">{percentages.protein}%</span>
                                     </div>
-                                    <div className="flex justify-between text-sm text-muted-foreground">
+                                    <div className="flex justify-between text-[10px] md:text-sm text-muted-foreground">
                                         <span>{Math.round(totals.protein)}g</span>
                                         <span>{goals.protein}g</span>
                                     </div>
-                                    <Progress value={Math.min(percentages.protein, 100)} className="h-2" />
+                                    <Progress value={Math.min(percentages.protein, 100)} className="h-1 md:h-2" />
                                 </div>
 
                                 {/* Carbohidratos */}
-                                <div className="space-y-2">
+                                <div className="space-y-1 md:space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <Label>Carbohidratos</Label>
-                                        <span className="text-sm font-medium">{percentages.carbs}%</span>
+                                        <Label className="text-[10px] md:text-sm">Carbs</Label>
+                                        <span className="text-[10px] md:text-sm font-medium">{percentages.carbs}%</span>
                                     </div>
-                                    <div className="flex justify-between text-sm text-muted-foreground">
+                                    <div className="flex justify-between text-[10px] md:text-sm text-muted-foreground">
                                         <span>{Math.round(totals.carbs)}g</span>
                                         <span>{goals.carbs}g</span>
                                     </div>
-                                    <Progress value={Math.min(percentages.carbs, 100)} className="h-2" />
+                                    <Progress value={Math.min(percentages.carbs, 100)} className="h-1 md:h-2" />
                                 </div>
 
                                 {/* Grasas */}
-                                <div className="space-y-2">
+                                <div className="space-y-1 md:space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <Label>Grasas</Label>
-                                        <span className="text-sm font-medium">{percentages.fat}%</span>
+                                        <Label className="text-[10px] md:text-sm">Grasas</Label>
+                                        <span className="text-[10px] md:text-sm font-medium">{percentages.fat}%</span>
                                     </div>
-                                    <div className="flex justify-between text-sm text-muted-foreground">
+                                    <div className="flex justify-between text-[10px] md:text-sm text-muted-foreground">
                                         <span>{Math.round(totals.fat)}g</span>
                                         <span>{goals.fat}g</span>
                                     </div>
-                                    <Progress value={Math.min(percentages.fat, 100)} className="h-2" />
+                                    <Progress value={Math.min(percentages.fat, 100)} className="h-1 md:h-2" />
                                 </div>
                             </div>
 
                             {percentages.calories < 100 && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-[10px] md:text-sm text-muted-foreground mt-1 md:mt-0">
                                     Te faltan {Math.round(goals.calories - totals.calories)} kcal para tu meta
                                 </p>
                             )}
@@ -727,28 +719,19 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
 
                         {/* Registrar Comida con IA */}
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Camera className="h-5 w-5" />
-                                    Registrar Comida con IA
-                                </CardTitle>
-                                <CardDescription>
-                                    Sube una foto de tu comida y la IA analizará sus valores nutricionales
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                        <div className="space-y-2">
+                            <CardContent className="p-3 md:p-6">
+                                <form onSubmit={handleSubmit} className="space-y-2 md:space-y-4">
+                                    <div className="grid gap-2 md:gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                        <div className="space-y-1 md:space-y-2">
                                             <div className="flex items-center justify-between">
-                                                <Label className="text-sm">Tipo de Comida</Label>
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" />
+                                                <Label className="text-xs md:text-sm">Tipo</Label>
+                                                <span className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-0.5">
+                                                    <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
                                                     Auto
                                                 </span>
                                             </div>
                                             <Select value={mealType} onValueChange={setMealType}>
-                                                <SelectTrigger className="text-sm">
+                                                <SelectTrigger className="text-xs md:text-sm h-8 md:h-10">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -759,48 +742,47 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                             </Select>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="meal-date" className="text-sm">Fecha de la comida</Label>
+                                        <div className="space-y-1 md:space-y-2">
+                                            <Label htmlFor="meal-date" className="text-xs md:text-sm">Fecha</Label>
                                             <Input
                                                 id="meal-date"
                                                 type="date"
                                                 value={mealDate}
                                                 onChange={(e) => setMealDate(e.target.value)}
                                                 disabled={isSubmitting}
-                                                className="text-sm"
+                                                className="text-xs md:text-sm h-8 md:h-10"
                                             />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="meal-time" className="text-sm">Hora de la comida</Label>
+                                        <div className="space-y-1 md:space-y-2">
+                                            <Label htmlFor="meal-time" className="text-xs md:text-sm">Hora</Label>
                                             <Input
                                                 id="meal-time"
                                                 type="time"
                                                 value={mealTime}
                                                 onChange={(e) => setMealTime(e.target.value)}
                                                 disabled={isSubmitting}
-                                                className="text-sm"
+                                                className="text-xs md:text-sm h-8 md:h-10"
                                             />
                                         </div>
 
-                                        <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-                                            <Label htmlFor="image" className="text-sm">Foto de la Comida</Label>
+                                        <div className="space-y-1 md:space-y-2 sm:col-span-2 lg:col-span-3">
+                                            <Label htmlFor="image" className="text-xs md:text-sm">Foto de la Comida</Label>
                                             <Input
                                                 id="image"
                                                 type="file"
                                                 accept="image/*"
                                                 disabled={isSubmitting}
                                                 onChange={handleImageChange}
-                                                className="text-sm"
+                                                className="text-xs md:text-sm h-8 md:h-10"
                                             />
                                         </div>
                                     </div>
 
                                     {imagePreview && (
-                                        <div className="space-y-2">
-                                            <Label>Vista Previa</Label>
+                                        <div className="space-y-1 md:space-y-2">
                                             <div className="flex justify-center">
-                                                <div className="relative h-[100px] w-[100px] overflow-hidden rounded-lg border">
+                                                <div className="relative h-20 w-20 md:h-[100px] md:w-[100px] overflow-hidden rounded-lg border">
                                                     <img
                                                         src={imagePreview}
                                                         alt="Preview"
@@ -815,16 +797,19 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                         <Button
                                             type="submit"
                                             disabled={!selectedImage || isSubmitting}
+                                            className="h-8 md:h-10 text-xs md:text-sm"
                                         >
                                             {isSubmitting ? (
                                                 <>
-                                                    <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                                                    Analizando con IA...
+                                                    <Sparkles className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 animate-spin" />
+                                                    <span className="hidden md:inline">Analizando con IA...</span>
+                                                    <span className="md:hidden">Analizando...</span>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Upload className="mr-2 h-4 w-4" />
-                                                    Subir y Analizar
+                                                    <Upload className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                                                    <span className="hidden md:inline">Subir y Analizar</span>
+                                                    <span className="md:hidden">Analizar</span>
                                                 </>
                                             )}
                                         </Button>
@@ -836,32 +821,18 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                 </div>
 
                 {/* Registros del día - Tabla Moderna */}
+                {records.length > 0 && (
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Comidas del día</CardTitle>
-                        <CardDescription>
-                            {formattedSelectedDate} · Historial de consumo del día
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {records.length === 0 ? (
-                            <div className="text-center py-12">
-                                <Apple className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                                <p className="text-muted-foreground">
-                                    No has registrado comidas hoy
-                                </p>
-                            </div>
-                        ) : (
-                            <>
-                            {/* Vista de cards para mobile */}
-                            <div className="md:hidden space-y-3">
+                    <CardContent className="p-3 md:p-6">
+                        {/* Vista de cards para mobile */}
+                        <div className="md:hidden space-y-2 md:space-y-3">
                                 {records.map((record) => (
                                     <Card key={record.id} className="overflow-hidden">
-                                        <CardContent className="p-3">
-                                            <div className="flex gap-3">
+                                        <CardContent className="p-2.5 md:p-3">
+                                            <div className="flex gap-2 md:gap-3">
                                                 {/* Imagen */}
                                                 {record.image_path ? (
-                                                    <div className="w-20 h-20 rounded-md overflow-hidden border flex-shrink-0">
+                                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-md overflow-hidden border flex-shrink-0">
                                                         <img
                                                             src={record.image_url || (record.image_path.startsWith('http') ? record.image_path : `/storage/${record.image_path}`)}
                                                             alt="Meal"
@@ -869,17 +840,17 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <div className="w-20 h-20 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                                                        <Apple className="h-8 w-8 text-muted-foreground" />
+                                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                                                        <Apple className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
                                                     </div>
                                                 )}
 
                                                 {/* Contenido */}
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                                    <div className="flex items-start justify-between gap-1.5 md:gap-2 mb-1 md:mb-2">
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-sm font-semibold">{mealTypeLabels[record.meal_type]}</span>
+                                                            <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
+                                                                <span className="text-xs md:text-sm font-semibold">{mealTypeLabels[record.meal_type]}</span>
                                                                 {record.ai_analyzed && (
                                                                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
                                                                         <Sparkles className="h-2.5 w-2.5" />
@@ -912,33 +883,33 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                                     </div>
 
                                                     {record.ai_description && (
-                                                        <p className="text-xs font-medium mb-2 line-clamp-2">
+                                                        <p className="text-[11px] md:text-xs font-medium mb-1 md:mb-2 line-clamp-2">
                                                             {record.ai_description}
                                                         </p>
                                                     )}
                                                     {record.food_items && (
-                                                        <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                                                        <p className="text-[10px] md:text-xs text-muted-foreground mb-1 md:mb-2 line-clamp-1">
                                                             {record.food_items}
                                                         </p>
                                                     )}
 
                                                     {/* Nutrientes */}
-                                                    <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t">
+                                                    <div className="grid grid-cols-4 gap-1.5 md:gap-2 mt-1.5 md:mt-2 pt-1.5 md:pt-2 border-t">
                                                         <div className="text-center">
-                                                            <p className="text-xs font-semibold">{Math.round(record.calories)}</p>
-                                                            <p className="text-[10px] text-muted-foreground">kcal</p>
+                                                            <p className="text-[11px] md:text-xs font-semibold">{Math.round(record.calories)}</p>
+                                                            <p className="text-[9px] md:text-[10px] text-muted-foreground">kcal</p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-xs font-semibold">{Math.round(record.protein)}g</p>
-                                                            <p className="text-[10px] text-muted-foreground">Prot</p>
+                                                            <p className="text-[11px] md:text-xs font-semibold">{Math.round(record.protein)}g</p>
+                                                            <p className="text-[9px] md:text-[10px] text-muted-foreground">Prot</p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-xs font-semibold">{Math.round(record.carbs)}g</p>
-                                                            <p className="text-[10px] text-muted-foreground">Carb</p>
+                                                            <p className="text-[11px] md:text-xs font-semibold">{Math.round(record.carbs)}g</p>
+                                                            <p className="text-[9px] md:text-[10px] text-muted-foreground">Carb</p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-xs font-semibold">{Math.round(record.fat)}g</p>
-                                                            <p className="text-[10px] text-muted-foreground">Gras</p>
+                                                            <p className="text-[11px] md:text-xs font-semibold">{Math.round(record.fat)}g</p>
+                                                            <p className="text-[9px] md:text-[10px] text-muted-foreground">Gras</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1055,10 +1026,9 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                     </table>
                                 </div>
                             </div>
-                            </>
-                        )}
                     </CardContent>
                 </Card>
+                )}
             </div>
             )}
         </AppLayout>

@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ExerciseDBService
@@ -18,171 +16,121 @@ class ExerciseDBService
     }
 
     /**
-     * Obtener ejercicios por parte del cuerpo con GIFs
+     * Obtener ejercicios por parte del cuerpo (SOLO desde archivos locales, SIN API)
      */
     public function getExercisesByBodyPart(string $bodyPart, int $limit = 10, int $offset = 0): array
     {
-        $cacheKey = "exercisedb_bodypart_{$bodyPart}_{$limit}_{$offset}";
+        // Solo usar archivos locales, NO llamar a la API
+        $allExercises = $this->getAllExercises(1000, 0); // Obtener todos los disponibles
         
-        return Cache::remember($cacheKey, now()->addHours(24), function () use ($bodyPart, $limit, $offset) {
-            try {
-                $response = Http::withHeaders([
-                    'X-RapidAPI-Key' => $this->apiKey,
-                    'X-RapidAPI-Host' => $this->apiHost,
-                ])->get("{$this->baseUrl}/exercises/bodyPart/{$bodyPart}", [
-                    'limit' => $limit,
-                    'offset' => $offset,
-                ]);
-
-                if ($response->successful()) {
-                    return $this->transformExercises($response->json());
-                }
-
-                Log::error('ExerciseDB API Error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-                return [];
-            } catch (\Exception $e) {
-                Log::error('ExerciseDB Service Error: ' . $e->getMessage());
-                return [];
-            }
+        // Filtrar por parte del cuerpo
+        $filtered = array_filter($allExercises, function($exercise) use ($bodyPart) {
+            return isset($exercise['body_part']) && 
+                   strtolower($exercise['body_part']) === strtolower($bodyPart);
         });
+        
+        // Aplicar limit y offset
+        return array_slice(array_values($filtered), $offset, $limit);
     }
 
     /**
-     * Obtener todos los ejercicios disponibles
+     * Obtener todos los ejercicios disponibles (SOLO desde archivos locales, SIN API)
      */
     public function getAllExercises(int $limit = 50, int $offset = 0): array
     {
-        // Primero intentar cargar desde archivo local
-        if (\Storage::disk('public')->exists('exercises/metadata.json')) {
-            try {
-                $metadata = json_decode(\Storage::disk('public')->get('exercises/metadata.json'), true);
-                
-                if (!empty($metadata)) {
-                    // Aplicar limit y offset
-                    $exercises = array_slice($metadata, $offset, $limit);
-                    
-                    // Asegurarse de que las URLs apunten a archivos locales
-                    return array_map(function($exercise) {
-                        $exercise['gif_url'] = $this->buildGifUrl($exercise['id']);
-                        $exercise['image_url'] = $this->buildGifUrl($exercise['id'], 180);
-                        return $exercise;
-                    }, $exercises);
-                }
-            } catch (\Exception $e) {
-                Log::warning('Could not load local exercises metadata: ' . $e->getMessage());
-            }
+        // Solo usar archivos locales, NO llamar a la API
+        if (!\Storage::disk('public')->exists('exercises/metadata.json')) {
+            Log::warning('No se encontró metadata.json local. Ejecuta: php artisan exercises:download-gifs');
+            return [];
         }
-        
-        // Si no hay metadata local, consultar API
-        $cacheKey = "exercisedb_all_{$limit}_{$offset}";
-        
-        return Cache::remember($cacheKey, now()->addHours(24), function () use ($limit, $offset) {
-            try {
-                $response = Http::withHeaders([
-                    'X-RapidAPI-Key' => $this->apiKey,
-                    'X-RapidAPI-Host' => $this->apiHost,
-                ])->get("{$this->baseUrl}/exercises", [
-                    'limit' => $limit,
-                    'offset' => $offset,
-                ]);
 
-                if ($response->successful()) {
-                    return $this->transformExercises($response->json());
-                }
-
-                return [];
-            } catch (\Exception $e) {
-                Log::error('ExerciseDB Service Error: ' . $e->getMessage());
+        try {
+            $metadata = json_decode(\Storage::disk('public')->get('exercises/metadata.json'), true);
+            
+            if (empty($metadata)) {
+                Log::warning('metadata.json está vacío. Ejecuta: php artisan exercises:download-gifs');
                 return [];
             }
-        });
+
+            // Aplicar limit y offset
+            $exercises = array_slice($metadata, $offset, $limit);
+            
+            // Transformar y asegurarse de que las URLs apunten a archivos locales
+            return array_map(function($exercise) {
+                $transformed = $this->transformExercise($exercise);
+                // Asegurar que las URLs sean locales
+                $transformed['gif_url'] = $this->buildGifUrl($exercise['id']);
+                $transformed['image_url'] = $this->buildGifUrl($exercise['id'], 180);
+                return $transformed;
+            }, $exercises);
+        } catch (\Exception $e) {
+            Log::error('Error al cargar ejercicios locales: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
-     * Obtener GIF de un ejercicio específico
+     * Obtener GIF de un ejercicio específico (SOLO desde archivos locales, SIN API)
      */
     public function getExerciseGif(string $exerciseId, int $resolution = 360): ?string
     {
-        $cacheKey = "exercisedb_gif_{$exerciseId}_{$resolution}";
-        
-        return Cache::remember($cacheKey, now()->addDays(7), function () use ($exerciseId, $resolution) {
-            try {
-                $response = Http::withHeaders([
-                    'X-RapidAPI-Key' => $this->apiKey,
-                    'X-RapidAPI-Host' => $this->apiHost,
-                ])->get("{$this->baseUrl}/image", [
-                    'exerciseId' => $exerciseId,
-                    'resolution' => $resolution,
-                ]);
-
-                if ($response->successful() && $response->header('Content-Type') === 'image/gif') {
-                    // Retornar la URL construida para el frontend
-                    return "{$this->baseUrl}/image?exerciseId={$exerciseId}&resolution={$resolution}";
-                }
-
-                return null;
-            } catch (\Exception $e) {
-                Log::error('ExerciseDB GIF Error: ' . $e->getMessage());
-                return null;
-            }
-        });
+        // Solo usar archivos locales, NO llamar a la API
+        $gifUrl = $this->buildGifUrl($exerciseId, $resolution);
+        return !empty($gifUrl) ? $gifUrl : null;
     }
 
     /**
-     * Obtener ejercicio por ID
+     * Obtener ejercicio por ID (SOLO desde archivos locales, SIN API)
      */
     public function getExerciseById(string $exerciseId): ?array
     {
-        $cacheKey = "exercisedb_exercise_{$exerciseId}";
-        
-        return Cache::remember($cacheKey, now()->addHours(24), function () use ($exerciseId) {
-            try {
-                $response = Http::withHeaders([
-                    'X-RapidAPI-Key' => $this->apiKey,
-                    'X-RapidAPI-Host' => $this->apiHost,
-                ])->get("{$this->baseUrl}/exercises/exercise/{$exerciseId}");
+        // Solo usar archivos locales, NO llamar a la API
+        if (!\Storage::disk('public')->exists('exercises/metadata.json')) {
+            return null;
+        }
 
-                if ($response->successful()) {
-                    $data = $response->json();
-                    return $this->transformExercise($data);
-                }
-
-                return null;
-            } catch (\Exception $e) {
-                Log::error('ExerciseDB Service Error: ' . $e->getMessage());
+        try {
+            $metadata = json_decode(\Storage::disk('public')->get('exercises/metadata.json'), true);
+            
+            if (empty($metadata)) {
                 return null;
             }
-        });
+
+            // Buscar el ejercicio por ID
+            foreach ($metadata as $exercise) {
+                if (isset($exercise['id']) && (string)$exercise['id'] === (string)$exerciseId) {
+                    $transformed = $this->transformExercise($exercise);
+                    $transformed['gif_url'] = $this->buildGifUrl($exercise['id']);
+                    $transformed['image_url'] = $this->buildGifUrl($exercise['id'], 180);
+                    return $transformed;
+                }
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error al buscar ejercicio por ID: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
-     * Buscar ejercicios por nombre
+     * Buscar ejercicios por nombre (SOLO desde archivos locales, SIN API)
      */
     public function searchExercises(string $name): array
     {
-        $cacheKey = "exercisedb_search_" . md5($name);
+        // Solo usar archivos locales, NO llamar a la API
+        $allExercises = $this->getAllExercises(1000, 0); // Obtener todos los disponibles
         
-        return Cache::remember($cacheKey, now()->addHours(6), function () use ($name) {
-            try {
-                $response = Http::withHeaders([
-                    'X-RapidAPI-Key' => $this->apiKey,
-                    'X-RapidAPI-Host' => $this->apiHost,
-                ])->get("{$this->baseUrl}/exercises/name/{$name}");
-
-                if ($response->successful()) {
-                    return $this->transformExercises($response->json());
-                }
-
-                return [];
-            } catch (\Exception $e) {
-                Log::error('ExerciseDB Service Error: ' . $e->getMessage());
-                return [];
-            }
+        // Filtrar por nombre (búsqueda parcial, case-insensitive)
+        $searchTerm = strtolower(trim($name));
+        $filtered = array_filter($allExercises, function($exercise) use ($searchTerm) {
+            $exerciseName = strtolower($exercise['name'] ?? '');
+            $exerciseDescription = strtolower($exercise['description'] ?? '');
+            return strpos($exerciseName, $searchTerm) !== false || 
+                   strpos($exerciseDescription, $searchTerm) !== false;
         });
+        
+        return array_values($filtered);
     }
 
     /**
@@ -222,19 +170,23 @@ class ExerciseDBService
      */
     private function buildGifUrl(string $exerciseId, int $resolution = 360): string
     {
-        // Buscar archivo que empiece con el ID del ejercicio
-        $files = \Storage::disk('public')->files('exercises');
-        
-        foreach ($files as $file) {
-            $filename = basename($file);
-            // Buscar archivos que empiecen con el ID (formato: 0001_nombre.gif)
-            if (strpos($filename, $exerciseId . '_') === 0 || $filename === $exerciseId . '.gif') {
-                return asset("storage/{$file}");
+        try {
+            // Buscar archivo que empiece con el ID del ejercicio
+            $files = \Storage::disk('public')->files('exercises');
+            
+            foreach ($files as $file) {
+                $filename = basename($file);
+                // Buscar archivos que empiecen con el ID (formato: 0001_nombre.gif o 0001.gif)
+                if (strpos($filename, $exerciseId . '_') === 0 || $filename === $exerciseId . '.gif') {
+                    return asset("storage/{$file}");
+                }
             }
+        } catch (\Exception $e) {
+            Log::warning("Error al buscar GIF para ejercicio {$exerciseId}: " . $e->getMessage());
         }
         
-        // Si no existe localmente, retornar placeholder o null
-        return asset('img/exercise-placeholder.gif');
+        // Si no existe localmente, retornar null (el frontend manejará el placeholder)
+        return '';
     }
 
     /**
@@ -318,29 +270,29 @@ class ExerciseDBService
     }
 
     /**
-     * Obtener lista de partes del cuerpo disponibles
+     * Obtener lista de partes del cuerpo disponibles (SOLO desde archivos locales, SIN API)
      */
     public function getBodyPartsList(): array
     {
-        $cacheKey = "exercisedb_bodyparts_list";
+        // Solo usar archivos locales, NO llamar a la API
+        $allExercises = $this->getAllExercises(1000, 0);
         
-        return Cache::remember($cacheKey, now()->addDays(7), function () {
-            try {
-                $response = Http::withHeaders([
-                    'X-RapidAPI-Key' => $this->apiKey,
-                    'X-RapidAPI-Host' => $this->apiHost,
-                ])->get("{$this->baseUrl}/exercises/bodyPartList");
-
-                if ($response->successful()) {
-                    return $response->json();
-                }
-
-                return ['back', 'cardio', 'chest', 'lower arms', 'lower legs', 'neck', 'shoulders', 'upper arms', 'upper legs', 'waist'];
-            } catch (\Exception $e) {
-                Log::error('ExerciseDB Service Error: ' . $e->getMessage());
-                return ['back', 'cardio', 'chest', 'lower arms', 'lower legs', 'neck', 'shoulders', 'upper arms', 'upper legs', 'waist'];
+        // Extraer todas las partes del cuerpo únicas
+        $bodyParts = [];
+        foreach ($allExercises as $exercise) {
+            if (isset($exercise['body_part']) && !empty($exercise['body_part'])) {
+                $bodyParts[] = $exercise['body_part'];
             }
-        });
+        }
+        
+        // Retornar lista única y ordenada
+        $uniqueBodyParts = array_unique($bodyParts);
+        sort($uniqueBodyParts);
+        
+        // Si no hay datos locales, retornar lista por defecto
+        return !empty($uniqueBodyParts) 
+            ? array_values($uniqueBodyParts)
+            : ['back', 'cardio', 'chest', 'lower arms', 'lower legs', 'neck', 'shoulders', 'upper arms', 'upper legs', 'waist'];
     }
 }
 
