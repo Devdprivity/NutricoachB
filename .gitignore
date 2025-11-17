@@ -9,6 +9,9 @@
 /resources/js/wayfinder
 /storage/*.key
 /storage/pail
+# Incluir carpeta de ejercicios (necesaria para producción)
+!/storage/app/public/exercises/
+!/storage/app/public/exercises/**
 /vendor
 .DS_Store
 .env

@@ -6,13 +6,15 @@ use Illuminate\Support\Facades\Log;
 
 class ExerciseDBService
 {
-    private string $apiKey;
+    // Ya no necesitamos la API, pero mantenemos las propiedades por compatibilidad
+    private ?string $apiKey = null;
     private string $apiHost = 'exercisedb.p.rapidapi.com';
     private string $baseUrl = 'https://exercisedb.p.rapidapi.com';
 
     public function __construct()
     {
-        $this->apiKey = config('services.exercisedb.key', '');
+        // Ya no usamos la API, pero mantenemos esto por si acaso
+        $this->apiKey = config('services.exercisedb.key') ?? null;
     }
 
     /**

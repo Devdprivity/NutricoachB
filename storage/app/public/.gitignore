@@ -1,2 +1,5 @@
 *
 !.gitignore
+# Incluir carpeta de ejercicios (necesaria para producción)
+!exercises/
+!exercises/**
