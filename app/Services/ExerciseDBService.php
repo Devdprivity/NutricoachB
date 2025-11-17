@@ -173,19 +173,36 @@ class ExerciseDBService
     private function buildGifUrl(string $exerciseId, int $resolution = 360): string
     {
         try {
+            // Normalizar el ID del ejercicio (asegurar formato 4 dígitos)
+            $normalizedId = str_pad($exerciseId, 4, '0', STR_PAD_LEFT);
+            
             // Buscar archivo que empiece con el ID del ejercicio
             $files = \Storage::disk('public')->files('exercises');
             
             foreach ($files as $file) {
                 $filename = basename($file);
                 // Buscar archivos que empiecen con el ID (formato: 0001_nombre.gif o 0001.gif)
-                if (strpos($filename, $exerciseId . '_') === 0 || $filename === $exerciseId . '.gif') {
-                    // Usar Storage::url() para generar la URL correcta
-                    return \Storage::disk('public')->url($file);
+                // Intentar con ID normalizado y sin normalizar
+                if (strpos($filename, $normalizedId . '_') === 0 || 
+                    strpos($filename, $exerciseId . '_') === 0 || 
+                    $filename === $normalizedId . '.gif' ||
+                    $filename === $exerciseId . '.gif') {
+                    
+                    // Verificar que el archivo realmente existe
+                    if (\Storage::disk('public')->exists($file)) {
+                        // Usar Storage::url() para generar la URL correcta
+                        $url = \Storage::disk('public')->url($file);
+                        Log::debug("GIF encontrado para ejercicio {$exerciseId}: {$url}");
+                        return $url;
+                    } else {
+                        Log::warning("Archivo encontrado pero no existe físicamente: {$file}");
+                    }
                 }
             }
+            
+            Log::warning("No se encontró GIF para ejercicio ID: {$exerciseId} (normalized: {$normalizedId})");
         } catch (\Exception $e) {
-            Log::warning("Error al buscar GIF para ejercicio {$exerciseId}: " . $e->getMessage());
+            Log::error("Error al buscar GIF para ejercicio {$exerciseId}: " . $e->getMessage());
         }
         
         // Si no existe localmente, retornar null (el frontend manejará el placeholder)
