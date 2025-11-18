@@ -139,7 +139,7 @@ export default function Exercises({ exerciseData }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('exercises.store'), {
+        post('/exercises', {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
@@ -151,7 +151,7 @@ export default function Exercises({ exerciseData }: Props) {
 
     const handleDelete = (id: number) => {
         if (confirm('¿Estás seguro de eliminar este registro de ejercicio?')) {
-            router.delete(route('exercises.destroy', id), {
+            router.delete(`/exercises/${id}`, {
                 preserveScroll: true,
             });
         }
