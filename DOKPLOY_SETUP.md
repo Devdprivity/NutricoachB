@@ -102,7 +102,7 @@ Copia el valor y agrégalo como variable de entorno `APP_KEY` en Dokploy.
 
 En Dokploy, configura:
 
-- **Docker Build Stage**: `production` (o dejar vacío para usar el último stage)
+- **Docker Build Stage**: `runner` (Dokploy busca este stage por defecto, o usar `production`)
 - **Build Command**: (dejar vacío, el Dockerfile lo maneja)
 - **Start Command**: (dejar vacío, el Dockerfile usa el CMD por defecto)
 - **Port**: `80`

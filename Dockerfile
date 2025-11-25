@@ -85,3 +85,6 @@ EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/usr/local/bin/start.sh"]
 
+# Stage "runner" para compatibilidad con Dokploy (alias de production)
+FROM production AS runner
+
