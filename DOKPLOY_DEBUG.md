@@ -161,6 +161,26 @@ php artisan db:show
 
 ## 🚨 Errores Comunes y Soluciones
 
+### Error: "relation 'sessions' does not exist"
+
+**Causa**: La tabla `sessions` no existe en PostgreSQL porque las migraciones no se han ejecutado.
+
+**Solución 1 - Rápida (Sesiones por archivo)**:
+En Dokploy, agrega esta variable de entorno:
+```
+SESSION_DRIVER=file
+```
+Luego reinicia el contenedor.
+
+**Solución 2 - Permanente (Crear tabla sessions)**:
+1. En Dokploy, asegúrate de tener `RUN_MIGRATIONS=true`
+2. O ejecuta manualmente por SSH:
+```bash
+php artisan migrate --force
+```
+
+La tabla `sessions` se creará automáticamente con la migración `0001_01_01_000000_create_users_table.php`.
+
 ### Error: "No application encryption key has been specified"
 
 **Solución**: Configura `APP_KEY` en Dokploy:

@@ -67,8 +67,12 @@ CACHE_DRIVER=file
 SESSION_DRIVER=file
 QUEUE_CONNECTION=database
 
-# Ejecutar migraciones automáticamente (opcional)
+# Ejecutar migraciones automáticamente (RECOMENDADO para primera vez)
 RUN_MIGRATIONS=true
+
+# Driver de sesiones (file = archivos, database = base de datos)
+# Usa 'file' si la tabla sessions no existe aún
+SESSION_DRIVER=file
 
 # Iniciar queue worker (opcional, o usar supervisor separado)
 START_QUEUE_WORKER=false

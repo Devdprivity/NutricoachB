@@ -41,6 +41,10 @@ if [ "$RUN_MIGRATIONS" = "true" ]; then
         echo "❌ Migration failed! Check database connection and credentials"
         exit 1
     }
+    echo "✅ Migrations completed"
+else
+    echo "⚠️  Migrations skipped (RUN_MIGRATIONS not set to 'true')"
+    echo "   To run migrations, set RUN_MIGRATIONS=true in Dokploy environment variables"
 fi
 
 # Limpiar cache antes de cachear (por si hay cambios)
