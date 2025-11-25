@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nuticoach:latest
+    container_name: nuticoach-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      # Variables de entorno - CONFIGURAR EN DOKPLOY, NO EN DOCKERFILE
+      # Estas variables se pasan en tiempo de ejecución, no en build time
+      APP_NAME: "gidia.app"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: https://www.gidia.app
+      
+      # Base de datos (PostgreSQL)
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      
+      # Cache y Session
+      CACHE_DRIVER: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: database
+      
+      # Las siguientes variables SENSIBLES deben configurarse en Dokploy:
+      # - APP_KEY (generar con: php artisan key:generate)
+      # - GOOGLE_CLIENT_ID
+      # - GOOGLE_CLIENT_SECRET
+      # - STRIPE_KEY
+      # - STRIPE_SECRET
+      # - STRIPE_WEBHOOK_SECRET
+      # - CLOUDINARY_CLOUD_NAME
+      # - CLOUDINARY_API_KEY
+      # - CLOUDINARY_API_SECRET
+      # - GEMINI_API_KEY
+      # - OPENAI_API_KEY
+      # - SPOTIFY_CLIENT_ID
+      # - SPOTIFY_CLIENT_SECRET
+      # - MAIL_* (configuración de email)
+      
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache
+    networks:
+      - nuticoach-network
+
+networks:
+  nuticoach-network:
+    driver: bridge
+
