@@ -41,13 +41,23 @@ return new class extends Migration
                     $table->integer('duration_minutes')->default(30)->after('equipment');
                 }
                 
-                // Agregar índices si no existen
-                if (!Schema::hasColumn('exercises', 'category') || 
-                    !collect(\DB::select("SHOW INDEX FROM exercises WHERE Key_name = 'exercises_category_index'"))->count()) {
+                // Agregar índices si no existen (compatible con MySQL y PostgreSQL)
+                $connection = \DB::getDriverName();
+                $categoryIndexExists = false;
+                $difficultyIndexExists = false;
+                
+                if ($connection === 'mysql' || $connection === 'mariadb') {
+                    $categoryIndexExists = collect(\DB::select("SHOW INDEX FROM exercises WHERE Key_name = 'exercises_category_index'"))->count() > 0;
+                    $difficultyIndexExists = collect(\DB::select("SHOW INDEX FROM exercises WHERE Key_name = 'exercises_difficulty_index'"))->count() > 0;
+                } elseif ($connection === 'pgsql') {
+                    $categoryIndexExists = collect(\DB::select("SELECT 1 FROM pg_indexes WHERE tablename = 'exercises' AND indexname = 'exercises_category_index'"))->count() > 0;
+                    $difficultyIndexExists = collect(\DB::select("SELECT 1 FROM pg_indexes WHERE tablename = 'exercises' AND indexname = 'exercises_difficulty_index'"))->count() > 0;
+                }
+                
+                if (Schema::hasColumn('exercises', 'category') && !$categoryIndexExists) {
                     $table->index('category');
                 }
-                if (!Schema::hasColumn('exercises', 'difficulty') || 
-                    !collect(\DB::select("SHOW INDEX FROM exercises WHERE Key_name = 'exercises_difficulty_index'"))->count()) {
+                if (Schema::hasColumn('exercises', 'difficulty') && !$difficultyIndexExists) {
                     $table->index('difficulty');
                 }
             });
