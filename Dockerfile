@@ -40,8 +40,8 @@ COPY composer.json composer.lock package.json package-lock.json ./
 # Instalar dependencias PHP (sin dev para producción)
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
-# Instalar dependencias Node
-RUN npm ci --only=production
+# Instalar dependencias Node (incluyendo devDependencies para build)
+RUN npm ci
 
 # Copiar el resto de los archivos
 COPY . .
