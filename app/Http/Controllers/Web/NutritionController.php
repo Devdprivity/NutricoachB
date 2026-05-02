@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
-use OpenAI;
+use Illuminate\Support\Facades\Http;
 
 class NutritionController extends Controller
 {
@@ -152,8 +152,8 @@ class NutritionController extends Controller
                 $imageUrl = $uploadResult['secure_url'];
                 $imagePublicId = $uploadResult['public_id'];
 
-                // Analizar imagen con OpenAI si está configurado
-                if (config('services.openai.api_key')) {
+                // Analizar imagen con DeepSeek si está configurado
+                if (config('services.deepseek.api_key')) {
                     try {
                         $aiAnalysis = $this->analyzeImageWithAI($imageUrl);
                     } catch (\Exception $e) {
@@ -236,27 +236,26 @@ class NutritionController extends Controller
     }
 
     /**
-     * Analizar imagen con OpenAI Vision API
+     * Analizar imagen con DeepSeek Vision API
      */
     private function analyzeImageWithAI(string $imageUrl): array
     {
-        $client = OpenAI::client(config('services.openai.api_key'));
+        $apiKey = config('services.deepseek.api_key');
 
-        // Si es una URL de Cloudinary, usarla directamente
-        // Si es una ruta local, convertir a base64
         if (str_starts_with($imageUrl, 'http')) {
-            // Es una URL de Cloudinary, usar directamente
             $imageUrlForAI = $imageUrl;
         } else {
-            // Es una ruta local antigua, convertir a base64
             $imageContent = Storage::disk('public')->get($imageUrl);
             $base64Image = base64_encode($imageContent);
             $mimeType = Storage::disk('public')->mimeType($imageUrl);
             $imageUrlForAI = "data:{$mimeType};base64,{$base64Image}";
         }
 
-        $response = $client->chat()->create([
-            'model' => 'gpt-4o-mini',
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+            'Content-Type' => 'application/json',
+        ])->timeout(30)->post(config('services.deepseek.base_url') . '/chat/completions', [
+            'model' => 'deepseek-chat',
             'messages' => [
                 [
                     'role' => 'user',
@@ -287,9 +286,12 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
             'max_tokens' => 500,
         ]);
 
-        $content = $response->choices[0]->message->content;
+        if (! $response->successful()) {
+            throw new \Exception('DeepSeek API error: ' . $response->body());
+        }
 
-        // Extraer JSON de la respuesta
+        $content = $response->json()['choices'][0]['message']['content'] ?? '';
+
         $jsonStart = strpos($content, '{');
         $jsonEnd = strrpos($content, '}');
 
@@ -302,7 +304,7 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
             }
         }
 
-        throw new \Exception('No se pudo parsear la respuesta de OpenAI');
+        throw new \Exception('No se pudo parsear la respuesta de DeepSeek');
     }
 
     /**
