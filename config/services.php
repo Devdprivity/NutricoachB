@@ -60,6 +60,12 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'deepseek' => [
+        'api_key' => env('DEEPSEEK_API_KEY'),
+        'base_url' => 'https://api.deepseek.com/v1',
+        'model' => 'deepseek-chat',
+    ],
+
     'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),

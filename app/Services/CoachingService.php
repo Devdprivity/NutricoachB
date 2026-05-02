@@ -173,23 +173,23 @@ class CoachingService
         ];
 
         try {
-            $apiKey = config('services.openai.api_key');
-            
+            $apiKey = config('services.deepseek.api_key');
+
             // Verificar si la API key está configurada
             if (!$apiKey) {
-                Log::warning('OpenAI API key not configured');
+                Log::warning('DeepSeek API key not configured');
                 return [
                     'success' => false,
                     'message' => 'El servicio de coaching no está configurado. Por favor, contacta al administrador.',
                 ];
             }
-            
-            // Llamar a OpenAI API
+
+            // Llamar a DeepSeek API (compatible con OpenAI)
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
-            ])->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
-                'model' => 'gpt-4o-mini',
+            ])->timeout(30)->post(config('services.deepseek.base_url') . '/chat/completions', [
+                'model' => config('services.deepseek.model'),
                 'messages' => $messages,
                 'temperature' => 0.7,
                 'max_tokens' => 800,
@@ -224,14 +224,14 @@ class CoachingService
                     'message' => $assistantMessage,
                 ];
             } else {
-                Log::error('OpenAI API Error', ['response' => $response->body()]);
+                Log::error('DeepSeek API Error', ['response' => $response->body()]);
                 return [
                     'success' => false,
                     'message' => 'Lo siento, hubo un error al procesar tu solicitud. Por favor, inténtalo de nuevo.',
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Coaching Service Error', ['error' => $e->getMessage()]);
+            Log::error('DeepSeek Coaching Service Error', ['error' => $e->getMessage()]);
             return [
                 'success' => false,
                 'message' => 'Error de conexión. Por favor, verifica tu conexión a Internet e inténtalo de nuevo.',
