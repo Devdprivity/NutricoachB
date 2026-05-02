@@ -26,106 +26,134 @@ interface ExerciseSwipeProps {
 export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }: ExerciseSwipeProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [startY, setStartY] = useState(0);
     const [offsetX, setOffsetX] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
+
     const isHorizontalSwipe = useRef<boolean | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
+    // Refs so native event handlers always see current values (avoid stale closures)
+    const startXRef = useRef(0);
+    const startYRef = useRef(0);
+    const isDraggingRef = useRef(false);
+    const offsetXRef = useRef(0);
+    const currentIndexRef = useRef(0);
+    const exercisesLengthRef = useRef(exercises.length);
+    const isMobileRef = useRef(false);
+
+    useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+    useEffect(() => { exercisesLengthRef.current = exercises.length; }, [exercises.length]);
+    useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
+
     useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-        if (!isMobile) return;
-        setIsDragging(true);
-        setStartX(e.touches[0].clientX);
-        setStartY(e.touches[0].clientY);
-        isHorizontalSwipe.current = null;
-    };
+    // Native listeners so touchmove can be { passive: false } and call preventDefault
+    useEffect(() => {
+        const el = cardRef.current;
+        if (!el) return;
 
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isMobile || !isDragging) return;
-        const currentX = e.touches[0].clientX;
-        const currentY = e.touches[0].clientY;
-        const diffX = currentX - startX;
-        const diffY = currentY - startY;
+        const onTouchStart = (e: TouchEvent) => {
+            if (!isMobileRef.current) return;
+            isDraggingRef.current = true;
+            setIsDragging(true);
+            startXRef.current = e.touches[0].clientX;
+            startYRef.current = e.touches[0].clientY;
+            isHorizontalSwipe.current = null;
+        };
 
-        // Determinar dirección en el primer movimiento significativo
-        if (isHorizontalSwipe.current === null && (Math.abs(diffX) > 5 || Math.abs(diffY) > 5)) {
-            isHorizontalSwipe.current = Math.abs(diffX) > Math.abs(diffY);
-        }
+        const onTouchMove = (e: TouchEvent) => {
+            if (!isMobileRef.current || !isDraggingRef.current) return;
+            const diffX = e.touches[0].clientX - startXRef.current;
+            const diffY = e.touches[0].clientY - startYRef.current;
 
-        if (isHorizontalSwipe.current) {
-            e.preventDefault();
-            setOffsetX(diffX);
-        }
-    };
-
-    const handleTouchEnd = () => {
-        if (!isMobile || !isDragging) return;
-        setIsDragging(false);
-
-        const threshold = 100; // Píxeles mínimos para cambiar de card
-
-        if (isHorizontalSwipe.current) {
-            if (offsetX > threshold && currentIndex > 0) {
-                // Swipe right - ir al anterior
-                setCurrentIndex(currentIndex - 1);
-            } else if (offsetX < -threshold && currentIndex < exercises.length - 1) {
-                // Swipe left - ir al siguiente
-                setCurrentIndex(currentIndex + 1);
+            if (isHorizontalSwipe.current === null && (Math.abs(diffX) > 5 || Math.abs(diffY) > 5)) {
+                isHorizontalSwipe.current = Math.abs(diffX) > Math.abs(diffY);
             }
-        }
 
-        setOffsetX(0);
-        isHorizontalSwipe.current = null;
-    };
+            if (isHorizontalSwipe.current) {
+                e.preventDefault();
+                offsetXRef.current = diffX;
+                setOffsetX(diffX);
+            }
+        };
+
+        const onTouchEnd = () => {
+            if (!isMobileRef.current || !isDraggingRef.current) return;
+            isDraggingRef.current = false;
+            setIsDragging(false);
+
+            const threshold = 100;
+            if (isHorizontalSwipe.current) {
+                const offset = offsetXRef.current;
+                const idx = currentIndexRef.current;
+                const len = exercisesLengthRef.current;
+                if (offset > threshold && idx > 0) {
+                    setCurrentIndex(idx - 1);
+                } else if (offset < -threshold && idx < len - 1) {
+                    setCurrentIndex(idx + 1);
+                }
+            }
+
+            offsetXRef.current = 0;
+            setOffsetX(0);
+            isHorizontalSwipe.current = null;
+        };
+
+        el.addEventListener('touchstart', onTouchStart, { passive: true });
+        el.addEventListener('touchmove', onTouchMove, { passive: false });
+        el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+        return () => {
+            el.removeEventListener('touchstart', onTouchStart);
+            el.removeEventListener('touchmove', onTouchMove);
+            el.removeEventListener('touchend', onTouchEnd);
+        };
+    }, []); // empty deps — dynamic values are read from refs
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!isMobile) return;
+        isDraggingRef.current = true;
         setIsDragging(true);
-        setStartX(e.clientX);
+        startXRef.current = e.clientX;
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isMobile || !isDragging) return;
-        const currentX = e.clientX;
-        const diff = currentX - startX;
+        if (!isMobile || !isDraggingRef.current) return;
+        const diff = e.clientX - startXRef.current;
+        offsetXRef.current = diff;
         setOffsetX(diff);
     };
 
     const handleMouseUp = () => {
-        if (!isMobile || !isDragging) return;
+        if (!isMobile || !isDraggingRef.current) return;
+        isDraggingRef.current = false;
         setIsDragging(false);
 
         const threshold = 100;
-
-        if (offsetX > threshold && currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
-        } else if (offsetX < -threshold && currentIndex < exercises.length - 1) {
-            setCurrentIndex(currentIndex + 1);
+        const offset = offsetXRef.current;
+        const idx = currentIndexRef.current;
+        const len = exercisesLengthRef.current;
+        if (offset > threshold && idx > 0) {
+            setCurrentIndex(idx - 1);
+        } else if (offset < -threshold && idx < len - 1) {
+            setCurrentIndex(idx + 1);
         }
 
+        offsetXRef.current = 0;
         setOffsetX(0);
     };
 
     const goToNext = () => {
-        if (currentIndex < exercises.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-        }
+        if (currentIndex < exercises.length - 1) setCurrentIndex(currentIndex + 1);
     };
 
     const goToPrev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
-        }
+        if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
     };
 
     if (exercises.length === 0) {
@@ -137,15 +165,15 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
     }
 
     const currentExercise = exercises[currentIndex];
-    const rotation = offsetX * 0.1; // Rotación sutil durante el swipe
-    const opacity = 1 - Math.abs(offsetX) / 300; // Opacidad que disminuye al arrastrar
+    const rotation = offsetX * 0.1;
+    const opacity = 1 - Math.abs(offsetX) / 300;
 
     return (
         <div className="relative h-full">
             {/* Mobile: Swipe Container */}
             <div className="md:hidden flex flex-col h-full">
                 <div className="flex-1 relative min-h-0">
-                    {/* Card Container */}
+                    {/* Card Container — touch events handled via native listeners above */}
                     <div
                         ref={cardRef}
                         className="absolute inset-0 flex items-center justify-center px-2"
@@ -153,11 +181,8 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                             transform: `translateX(${offsetX}px) rotate(${rotation}deg)`,
                             opacity: Math.max(0.3, opacity),
                             transition: isDragging ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out',
-                            touchAction: 'none',
+                            touchAction: 'pan-y',
                         }}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
@@ -165,9 +190,8 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                     >
                         <div
                             className="relative w-full h-full max-w-sm mx-auto"
-                            onClick={() => !isDragging && onExerciseClick(currentExercise)}
+                            onClick={() => !isDraggingRef.current && onExerciseClick(currentExercise)}
                         >
-                            {/* GIF del ejercicio */}
                             {currentExercise.gif_url ? (
                                 <img
                                     src={currentExercise.gif_url}
@@ -190,14 +214,12 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                                 </div>
                             )}
 
-                            {/* Badge de dificultad */}
                             <div className="absolute top-2 right-2 z-10">
                                 <Badge className={cn("text-xs font-semibold", getDifficultyColor(currentExercise.difficulty))}>
                                     {currentExercise.difficulty}
                                 </Badge>
                             </div>
 
-                            {/* Overlay con información */}
                             <div className="absolute inset-x-0 bottom-0">
                                 <div className="bg-gradient-to-t from-black/95 via-black/70 to-transparent rounded-b-[15px] p-3 pt-6" style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
                                     <div className="space-y-1">
@@ -221,7 +243,6 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                                 </div>
                             </div>
 
-                            {/* Botón de Play */}
                             <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                                 <div className="bg-primary rounded-full p-4 shadow-xl pointer-events-auto">
                                     <Play className="h-6 w-6 text-primary-foreground fill-current" />
@@ -230,7 +251,6 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                         </div>
                     </div>
 
-                    {/* Indicadores de dirección durante swipe */}
                     {isDragging && (
                         <>
                             {offsetX > 50 && currentIndex > 0 && (
@@ -247,7 +267,6 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                     )}
                 </div>
 
-                {/* Controles de navegación */}
                 <div className="flex items-center justify-between mt-2 px-4 flex-shrink-0">
                     <Button
                         variant="outline"
@@ -259,7 +278,6 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
 
-                    {/* Indicadores de posición */}
                     <div className="flex gap-1.5">
                         {exercises.slice(Math.max(0, currentIndex - 2), Math.min(exercises.length, currentIndex + 3)).map((_, idx) => {
                             const actualIdx = Math.max(0, currentIndex - 2) + idx;
@@ -288,7 +306,6 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                     </Button>
                 </div>
 
-                {/* Contador */}
                 <div className="text-center mt-1 mb-1 text-xs text-muted-foreground flex-shrink-0">
                     {currentIndex + 1} de {exercises.length}
                 </div>
@@ -303,7 +320,6 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                         onClick={() => onExerciseClick(exercise)}
                     >
                         <div className="relative aspect-[3/4] transition-all duration-300 hover:scale-105">
-                            {/* GIF del ejercicio flotante */}
                             <div className="absolute inset-0 flex items-center justify-center p-4">
                                 {exercise.gif_url ? (
                                     <img
@@ -328,14 +344,12 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                                 )}
                             </div>
 
-                            {/* Badge de dificultad */}
                             <div className="absolute top-3 right-3 z-10">
                                 <Badge className={cn("text-xs font-semibold", getDifficultyColor(exercise.difficulty))}>
                                     {exercise.difficulty}
                                 </Badge>
                             </div>
 
-                            {/* Overlay con información - Posicionado sobre el GIF */}
                             <div className="absolute inset-x-0 bottom-0 p-4">
                                 <div className="bg-gradient-to-t from-black/90 via-black/70 to-transparent rounded-b-[15px] p-4 pt-8 -mx-4 -mb-4" style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
                                     <div className="space-y-2">
@@ -359,7 +373,6 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                                 </div>
                             </div>
 
-                            {/* Botón de Play al hacer hover */}
                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                                 <div className="bg-primary rounded-full p-4 shadow-xl transform group-hover:scale-110 transition-transform pointer-events-auto">
                                     <Play className="h-6 w-6 text-primary-foreground fill-current" />
@@ -372,5 +385,3 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
         </div>
     );
 }
-
-
