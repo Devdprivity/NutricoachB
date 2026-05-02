@@ -53,15 +53,21 @@ class WorkoutPlanController extends Controller
             ->limit(6)
             ->get();
 
-        // Estadísticas del usuario
+        // Plan stats in one query
+        $planStats = WorkoutPlan::where('user_id', $user->id)
+            ->selectRaw('COUNT(*) as total_plans, SUM(CASE WHEN is_active THEN 1 ELSE 0 END) as active_plans')
+            ->first();
+        // Log stats in one query
+        $logStats = WorkoutLog::where('user_id', $user->id)
+            ->where('completed', true)
+            ->selectRaw('COUNT(*) as total_workouts_logged, SUM(CASE WHEN date BETWEEN ? AND ? THEN 1 ELSE 0 END) as workouts_this_week',
+                [now()->startOfWeek()->toDateString(), now()->endOfWeek()->toDateString()])
+            ->first();
         $stats = [
-            'total_plans' => WorkoutPlan::where('user_id', $user->id)->count(),
-            'active_plans' => WorkoutPlan::where('user_id', $user->id)->where('is_active', true)->count(),
-            'total_workouts_logged' => WorkoutLog::where('user_id', $user->id)->where('completed', true)->count(),
-            'workouts_this_week' => WorkoutLog::where('user_id', $user->id)
-                ->where('completed', true)
-                ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
-                ->count(),
+            'total_plans' => (int) ($planStats->total_plans ?? 0),
+            'active_plans' => (int) ($planStats->active_plans ?? 0),
+            'total_workouts_logged' => (int) ($logStats->total_workouts_logged ?? 0),
+            'workouts_this_week' => (int) ($logStats->workouts_this_week ?? 0),
         ];
 
         return Inertia::render('workout-plans', [

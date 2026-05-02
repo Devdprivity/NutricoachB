@@ -52,11 +52,14 @@ class WeeklyMealPlanController extends Controller
             ->limit(6)
             ->get();
 
-        // Estadísticas
+        // Stats in a single query
+        $statsRow = WeeklyMealPlan::where('user_id', $user->id)
+            ->selectRaw('COUNT(*) as total_plans, SUM(CASE WHEN is_active THEN 1 ELSE 0 END) as active_plans, COALESCE(SUM(times_completed), 0) as completed_plans')
+            ->first();
         $stats = [
-            'total_plans' => WeeklyMealPlan::where('user_id', $user->id)->count(),
-            'active_plans' => WeeklyMealPlan::where('user_id', $user->id)->where('is_active', true)->count(),
-            'completed_plans' => WeeklyMealPlan::where('user_id', $user->id)->sum('times_completed'),
+            'total_plans' => (int) ($statsRow->total_plans ?? 0),
+            'active_plans' => (int) ($statsRow->active_plans ?? 0),
+            'completed_plans' => (int) ($statsRow->completed_plans ?? 0),
         ];
 
         $userRecipes = Recipe::where('user_id', $user->id)

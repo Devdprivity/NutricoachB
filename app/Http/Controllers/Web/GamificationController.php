@@ -31,15 +31,17 @@ class GamificationController extends Controller
         // Obtener progreso general
         $progress = $this->gamificationService->getUserProgress($user);
 
-        // Obtener todos los achievements disponibles
+        // Load all user achievements at once (keyed by achievement_id) to avoid N+1
+        $userAchievements = UserAchievement::where('user_id', $user->id)
+            ->get()
+            ->keyBy('achievement_id');
+
         $allAchievements = Achievement::where('is_active', true)
             ->orderBy('difficulty')
             ->orderBy('category')
             ->get()
-            ->map(function ($achievement) use ($user) {
-                $userAchievement = UserAchievement::where('user_id', $user->id)
-                    ->where('achievement_id', $achievement->id)
-                    ->first();
+            ->map(function ($achievement) use ($userAchievements) {
+                $userAchievement = $userAchievements->get($achievement->id);
 
                 return [
                     'id' => $achievement->id,

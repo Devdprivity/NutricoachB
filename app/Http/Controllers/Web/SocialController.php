@@ -21,9 +21,12 @@ class SocialController extends Controller
     {
         $user = $request->user();
 
-        // Obtener feed de actividades
+        // Obtain user counts in one query using loadCount
+        $user->loadCount(['followers', 'following', 'activities']);
+
+        // Obtain feed — likes already eager-loaded so isLikedBy can check in-memory
         $activities = Activity::feedFor($user)
-            ->with(['user', 'likes.user'])
+            ->with(['user:id,name,avatar', 'likes:id,activity_id,user_id'])
             ->recent()
             ->limit(50)
             ->get()
@@ -37,7 +40,7 @@ class SocialController extends Controller
                     'visibility' => $activity->visibility,
                     'likes_count' => $activity->likes_count,
                     'comments_count' => $activity->comments_count,
-                    'is_liked' => $activity->isLikedBy($user),
+                    'is_liked' => $activity->likes->contains('user_id', $user->id),
                     'created_at' => $activity->created_at->toISOString(),
                     'user' => [
                         'id' => $activity->user->id,
@@ -47,11 +50,10 @@ class SocialController extends Controller
                 ];
             });
 
-        // Obtener estadísticas del usuario
         $stats = [
-            'followers_count' => $user->followers()->count(),
-            'following_count' => $user->following()->count(),
-            'activities_count' => $user->activities()->count(),
+            'followers_count' => $user->followers_count,
+            'following_count' => $user->following_count,
+            'activities_count' => $user->activities_count,
         ];
 
         // Sugerencias de usuarios para seguir (usuarios con más seguidores que el usuario no sigue)
@@ -138,18 +140,18 @@ class SocialController extends Controller
         $targetUser = User::findOrFail($userId);
         $currentUser = $request->user();
 
-        $followers = $targetUser->followers()
-            ->withCount('followers')
-            ->get()
-            ->map(function ($follower) use ($currentUser) {
-                return [
-                    'id' => $follower->id,
-                    'name' => $follower->name,
-                    'avatar' => $follower->avatar,
-                    'followers_count' => $follower->followers_count,
-                    'is_following' => $currentUser->isFollowing($follower),
-                ];
-            });
+        $followersList = $targetUser->followers()->withCount('followers')->get();
+        $followingIds = $currentUser->following()->pluck('following_id')->flip();
+
+        $followers = $followersList->map(function ($follower) use ($followingIds) {
+            return [
+                'id' => $follower->id,
+                'name' => $follower->name,
+                'avatar' => $follower->avatar,
+                'followers_count' => $follower->followers_count,
+                'is_following' => $followingIds->has($follower->id),
+            ];
+        });
 
         return response()->json($followers);
     }
@@ -162,18 +164,18 @@ class SocialController extends Controller
         $targetUser = User::findOrFail($userId);
         $currentUser = $request->user();
 
-        $following = $targetUser->following()
-            ->withCount('followers')
-            ->get()
-            ->map(function ($followedUser) use ($currentUser) {
-                return [
-                    'id' => $followedUser->id,
-                    'name' => $followedUser->name,
-                    'avatar' => $followedUser->avatar,
-                    'followers_count' => $followedUser->followers_count,
-                    'is_following' => $currentUser->isFollowing($followedUser),
-                ];
-            });
+        $followingList = $targetUser->following()->withCount('followers')->get();
+        $currentFollowingIds = $currentUser->following()->pluck('following_id')->flip();
+
+        $following = $followingList->map(function ($followedUser) use ($currentFollowingIds) {
+            return [
+                'id' => $followedUser->id,
+                'name' => $followedUser->name,
+                'avatar' => $followedUser->avatar,
+                'followers_count' => $followedUser->followers_count,
+                'is_following' => $currentFollowingIds->has($followedUser->id),
+            ];
+        });
 
         return response()->json($following);
     }
@@ -249,20 +251,23 @@ class SocialController extends Controller
             return response()->json([]);
         }
 
-        $users = User::where('name', 'like', "%{$query}%")
+        $results = User::where('name', 'like', "%{$query}%")
             ->where('id', '!=', $currentUser->id)
             ->withCount('followers')
             ->limit(10)
-            ->get()
-            ->map(function ($user) use ($currentUser) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'avatar' => $user->avatar,
-                    'followers_count' => $user->followers_count,
-                    'is_following' => $currentUser->isFollowing($user),
-                ];
-            });
+            ->get();
+
+        $followingIds = $currentUser->following()->pluck('following_id')->flip();
+
+        $users = $results->map(function ($user) use ($followingIds) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'avatar' => $user->avatar,
+                'followers_count' => $user->followers_count,
+                'is_following' => $followingIds->has($user->id),
+            ];
+        });
 
         return response()->json($users);
     }
@@ -288,14 +293,17 @@ class SocialController extends Controller
                 $query->withCount('followers')->orderBy('followers_count', 'desc');
         }
 
-        $topUsers = $query->limit(20)->get()->map(function ($user, $index) use ($currentUser) {
+        $topUsers = $query->limit(20)->get();
+        $followingIds = $currentUser->following()->pluck('following_id')->flip();
+
+        $topUsers = $topUsers->map(function ($user, $index) use ($currentUser, $followingIds) {
             return [
                 'rank' => $index + 1,
                 'id' => $user->id,
                 'name' => $user->name,
                 'avatar' => $user->avatar,
                 'score' => $user->followers_count ?? $user->activities_count ?? 0,
-                'is_following' => $currentUser->isFollowing($user),
+                'is_following' => $followingIds->has($user->id),
                 'is_current_user' => $user->id === $currentUser->id,
             ];
         });

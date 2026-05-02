@@ -39,12 +39,15 @@ class RecipeController extends Controller
             ->limit(12)
             ->get();
 
-        // Estadísticas
+        // All stats in a single query
+        $statsRow = Recipe::where('user_id', $user->id)
+            ->selectRaw('COUNT(*) as total_recipes, SUM(CASE WHEN is_public THEN 1 ELSE 0 END) as public_recipes, COALESCE(SUM(times_cooked), 0) as total_times_cooked, AVG(CASE WHEN rating IS NOT NULL THEN rating END) as avg_rating')
+            ->first();
         $stats = [
-            'total_recipes' => Recipe::where('user_id', $user->id)->count(),
-            'public_recipes' => Recipe::where('user_id', $user->id)->where('is_public', true)->count(),
-            'total_times_cooked' => Recipe::where('user_id', $user->id)->sum('times_cooked'),
-            'avg_rating' => Recipe::where('user_id', $user->id)->whereNotNull('rating')->avg('rating'),
+            'total_recipes' => (int) ($statsRow->total_recipes ?? 0),
+            'public_recipes' => (int) ($statsRow->public_recipes ?? 0),
+            'total_times_cooked' => (int) ($statsRow->total_times_cooked ?? 0),
+            'avg_rating' => $statsRow->avg_rating ? round((float) $statsRow->avg_rating, 1) : null,
         ];
 
         $mealTimes = [
