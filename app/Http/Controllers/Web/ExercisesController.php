@@ -156,17 +156,33 @@ class ExercisesController extends Controller
     /**
      * Registrar inicio de ejercicio
      */
-    public function store(Request $request)
+    public function store(Request $request, ExerciseDBService $exerciseDB)
     {
         $validated = $request->validate([
-            'exercise_id' => 'required|exists:exercises,id',
+            'exercise_id' => 'required',
             'duration_minutes' => 'required|integer|min:1',
             'intensity' => 'nullable|integer|min:1|max:10',
             'notes' => 'nullable|string',
         ]);
 
         $user = $request->user();
-        $exercise = Exercise::findOrFail($validated['exercise_id']);
+
+        // Exercises come from local JSON files, not the DB — find or create the DB record
+        $jsonExercise = $exerciseDB->getExerciseById((string) $validated['exercise_id']);
+        if (!$jsonExercise) {
+            return redirect()->route('exercises')->withErrors(['exercise_id' => 'Ejercicio no encontrado.']);
+        }
+
+        $exercise = Exercise::firstOrCreate(
+            ['name' => $jsonExercise['name']],
+            [
+                'description' => $jsonExercise['name'],
+                'category' => $jsonExercise['category'] ?? 'strength',
+                'difficulty' => $jsonExercise['difficulty'] ?? 'beginner',
+                'calories_per_minute' => $jsonExercise['calories_per_minute'] ?? 5,
+                'image_url' => $jsonExercise['image_url'] ?? null,
+            ]
+        );
 
         // Calcular calorías quemadas
         $caloriesBurned = $exercise->calories_per_minute * $validated['duration_minutes'];
