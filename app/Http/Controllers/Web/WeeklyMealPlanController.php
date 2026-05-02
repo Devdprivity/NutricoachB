@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\WeeklyMealPlan;
 use App\Models\Recipe;
+use App\Models\RecipeIngredient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -56,10 +59,14 @@ class WeeklyMealPlanController extends Controller
             'completed_plans' => WeeklyMealPlan::where('user_id', $user->id)->sum('times_completed'),
         ];
 
+        $userRecipes = Recipe::where('user_id', $user->id)
+            ->get(['id', 'name', 'category', 'calories_per_serving', 'description']);
+
         return Inertia::render('weekly-meal-plans', [
             'plans' => $plans,
             'publicPlans' => $publicPlans,
             'stats' => $stats,
+            'userRecipes' => $userRecipes,
         ]);
     }
 
@@ -235,6 +242,188 @@ class WeeklyMealPlanController extends Controller
         $plan->recipes()->detach($recipeId);
 
         return redirect()->back()->with('success', 'Receta removida del plan');
+    }
+
+    /**
+     * Generar plan semanal con IA
+     */
+    public function aiGenerate(Request $request)
+    {
+        $user = $request->user();
+        $profile = $user->profile;
+
+        if (!$profile || !$profile->weight || !$profile->height || !$profile->age || !$profile->gender) {
+            return response()->json(['error' => 'Completa tu perfil antes de generar un plan.'], 422);
+        }
+
+        // Days from today to Sunday
+        $today = Carbon::today();
+        $sunday = Carbon::today()->endOfWeek(Carbon::SUNDAY);
+        $days = [];
+        $current = $today->copy();
+        $dayLabels = [
+            'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles',
+            'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado', 'Sunday' => 'Domingo',
+        ];
+        $monthLabels = [
+            1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio',
+            7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
+        ];
+        while ($current->lte($sunday)) {
+            $days[] = [
+                'date' => $current->toDateString(),
+                'day_label' => $dayLabels[$current->format('l')] . ' ' . $current->day . ' ' . $monthLabels[(int)$current->month],
+                'meals' => ['breakfast', 'lunch', 'dinner'],
+            ];
+            $current->addDay();
+        }
+
+        // User recipes grouped
+        $recipes = Recipe::where('user_id', $user->id)
+            ->get(['id', 'name', 'category', 'calories_per_serving'])
+            ->toArray();
+
+        $categoryMap = [
+            'breakfast' => 'breakfast', 'desayuno' => 'breakfast',
+            'lunch' => 'lunch', 'almuerzo' => 'lunch',
+            'dinner' => 'dinner', 'cena' => 'dinner',
+        ];
+        $mappedRecipes = array_map(function ($r) use ($categoryMap) {
+            $r['category'] = $categoryMap[strtolower($r['category'] ?? '')] ?? 'lunch';
+            return $r;
+        }, $recipes);
+
+        $prompt = "Eres un nutricionista experto. Crea un plan de comidas semanal.\n\n"
+            . "PERFIL:\n"
+            . "- Peso: {$profile->weight}kg, Altura: {$profile->height}cm, Edad: {$profile->age}, Género: {$profile->gender}\n"
+            . "- Metas: " . ($profile->daily_calorie_goal ?? 'N/A') . " kcal/día, "
+            . ($profile->protein_goal ?? 'N/A') . "g proteína, "
+            . ($profile->carbs_goal ?? 'N/A') . "g carbs\n"
+            . "- Condiciones médicas: " . ($profile->medical_conditions ?? 'Ninguna') . "\n"
+            . "- Restricciones dietéticas: " . ($profile->dietary_restrictions ?? 'Ninguna') . "\n\n"
+            . "RECETAS DISPONIBLES DEL USUARIO:\n"
+            . json_encode($mappedRecipes, JSON_UNESCAPED_UNICODE) . "\n\n"
+            . "DÍAS A PLANIFICAR:\n"
+            . json_encode($days, JSON_UNESCAPED_UNICODE) . "\n\n"
+            . "Para cada slot, usa una receta existente (por su id) si es apropiada, o crea una nueva.\n"
+            . "Responde SOLO con este JSON (sin markdown, sin texto extra):\n"
+            . '[{"date":"2026-05-02","day_label":"Viernes 2 mayo","meals":{"breakfast":{"recipe_id":5},"lunch":{"recipe_id":null,"new_recipe":{"name":"...","description":"...","category":"lunch","calories_per_serving":450,"protein_g":35,"carbs_g":40,"fat_g":12,"ingredients":[{"name":"...","quantity":"150","unit":"g"}],"instructions":["Paso 1..."]}},"dinner":{"recipe_id":3}}}]';
+
+        try {
+            $response = Http::timeout(60)->withHeaders([
+                'Authorization' => 'Bearer ' . config('services.deepseek.api_key'),
+                'Content-Type' => 'application/json',
+            ])->post('https://api.deepseek.com/v1/chat/completions', [
+                'model' => 'deepseek-chat',
+                'max_tokens' => 3000,
+                'messages' => [
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+            ]);
+
+            if (!$response->successful()) {
+                return response()->json(['error' => 'No se pudo generar el plan. Intenta nuevamente.'], 500);
+            }
+
+            $content = $response->json()['choices'][0]['message']['content'] ?? '';
+            // Strip markdown code fences if present
+            $content = preg_replace('/^```(?:json)?\n?/i', '', trim($content));
+            $content = preg_replace('/\n?```$/', '', $content);
+
+            $aiDays = json_decode($content, true);
+            if (!is_array($aiDays)) {
+                return response()->json(['error' => 'Error al procesar la respuesta de IA.'], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'No se pudo generar el plan. Intenta nuevamente.'], 500);
+        }
+
+        $mealLabels = ['breakfast' => 'Desayuno', 'lunch' => 'Almuerzo', 'dinner' => 'Cena'];
+        $resolvedDays = [];
+
+        foreach ($aiDays as $day) {
+            $resolvedMeals = [];
+            foreach ($day['meals'] as $mealType => $slot) {
+                $recipe = null;
+
+                if (!empty($slot['recipe_id'])) {
+                    $existing = Recipe::where('id', $slot['recipe_id'])
+                        ->where('user_id', $user->id)
+                        ->first();
+                    if ($existing) {
+                        $recipe = [
+                            'id' => $existing->id,
+                            'name' => $existing->name,
+                            'calories_per_serving' => $existing->calories_per_serving,
+                            'description' => $existing->description,
+                        ];
+                    }
+                }
+
+                if (!$recipe && !empty($slot['new_recipe'])) {
+                    $nr = $slot['new_recipe'];
+                    $newRecipe = Recipe::create([
+                        'user_id' => $user->id,
+                        'name' => $nr['name'],
+                        'description' => $nr['description'] ?? null,
+                        'category' => $nr['category'] ?? $mealType,
+                        'calories_per_serving' => $nr['calories_per_serving'] ?? null,
+                        'protein_g' => $nr['protein_g'] ?? null,
+                        'carbs_g' => $nr['carbs_g'] ?? null,
+                        'fat_g' => $nr['fat_g'] ?? null,
+                        'instructions' => $nr['instructions'] ?? [],
+                        'prep_time_minutes' => null,
+                        'cook_time_minutes' => null,
+                        'servings' => 1,
+                    ]);
+
+                    if (!empty($nr['ingredients']) && is_array($nr['ingredients'])) {
+                        foreach ($nr['ingredients'] as $ing) {
+                            RecipeIngredient::create([
+                                'recipe_id' => $newRecipe->id,
+                                'name' => $ing['name'],
+                                'quantity' => is_numeric($ing['quantity']) ? (float)$ing['quantity'] : 0,
+                                'unit' => $ing['unit'] ?? '',
+                            ]);
+                        }
+                    }
+
+                    $recipe = [
+                        'id' => $newRecipe->id,
+                        'name' => $newRecipe->name,
+                        'calories_per_serving' => $newRecipe->calories_per_serving,
+                        'description' => $newRecipe->description,
+                    ];
+                }
+
+                if (!$recipe) {
+                    $recipe = ['id' => 0, 'name' => 'Sin receta', 'calories_per_serving' => null, 'description' => null];
+                }
+
+                $resolvedMeals[$mealType] = [
+                    'meal_label' => $mealLabels[$mealType] ?? ucfirst($mealType),
+                    'recipe' => $recipe,
+                ];
+            }
+
+            $resolvedDays[] = [
+                'date' => $day['date'],
+                'day_label' => $day['day_label'],
+                'meals' => $resolvedMeals,
+            ];
+        }
+
+        $startDate = $resolvedDays[0]['date'] ?? $today->toDateString();
+        $endDate = $resolvedDays[count($resolvedDays) - 1]['date'] ?? $sunday->toDateString();
+        $planName = 'Plan semana ' . $today->day . ' ' . $monthLabels[(int)$today->month]
+            . ' - ' . $sunday->day . ' ' . $monthLabels[(int)$sunday->month];
+
+        return response()->json([
+            'name' => $planName,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'days' => $resolvedDays,
+        ]);
     }
 
     /**

@@ -149,6 +149,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('weekly-meal-plans/{id}/recipes', [WeeklyMealPlanController::class, 'addRecipe'])->name('weekly-meal-plans.add-recipe');
     Route::delete('weekly-meal-plans/{planId}/recipes/{recipeId}', [WeeklyMealPlanController::class, 'removeRecipe'])->name('weekly-meal-plans.remove-recipe');
     Route::get('weekly-meal-plans/today/plan', [WeeklyMealPlanController::class, 'getTodayPlan'])->name('weekly-meal-plans.today');
+    Route::post('weekly-meal-plans/ai-generate', [WeeklyMealPlanController::class, 'aiGenerate'])->name('weekly-meal-plans.ai-generate');
 
     // Suscripciones
     Route::get('subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
