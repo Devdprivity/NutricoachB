@@ -180,23 +180,84 @@ export default function Exercises({ exerciseData }: Props) {
                 <>
                 {/* ── Mobile: vista nativa pantalla completa sin scroll ── */}
                 <div className="md:hidden flex flex-col overflow-hidden" style={{ height: 'calc(100dvh - 8rem)' }}>
+
+                    {/* Stats de calorías - scroll horizontal */}
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide px-3 pt-3 pb-1 flex-shrink-0">
+                        <Card className="flex-shrink-0 w-[110px]">
+                            <CardContent className="p-2">
+                                <p className="text-[10px] text-muted-foreground">Consumidas</p>
+                                <p className="text-base font-bold">{exerciseData.calorie_balance.consumed}</p>
+                                <p className="text-[9px] text-muted-foreground">kcal</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="flex-shrink-0 w-[110px]">
+                            <CardContent className="p-2">
+                                <p className="text-[10px] text-muted-foreground">Quemadas</p>
+                                <p className="text-base font-bold">{exerciseData.calorie_balance.burned}</p>
+                                <p className="text-[9px] text-muted-foreground">kcal</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="flex-shrink-0 w-[110px]">
+                            <CardContent className="p-2">
+                                <p className="text-[10px] text-muted-foreground">Balance</p>
+                                <p className="text-base font-bold">{exerciseData.calorie_balance.net}</p>
+                                <p className="text-[9px] text-muted-foreground">meta: {exerciseData.calorie_balance.goal}</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="flex-shrink-0 w-[110px]">
+                            <CardContent className="p-2">
+                                <p className="text-[10px] text-muted-foreground">Exceso</p>
+                                <p className={`text-base font-bold ${exerciseData.calorie_balance.over_goal > 0 ? 'text-orange-500' : 'text-green-500'}`}>{exerciseData.calorie_balance.over_goal}</p>
+                                <p className="text-[9px] text-muted-foreground">kcal</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Ejercicios de hoy + Recomendaciones - scroll horizontal */}
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide px-3 pb-1 flex-shrink-0">
+                        <Card className="flex-shrink-0 w-[200px]">
+                            <CardContent className="p-2">
+                                <p className="text-[10px] font-medium mb-1">Ejercicios de Hoy <span className="text-muted-foreground">({exerciseData.today_logs.length})</span></p>
+                                {exerciseData.today_logs.length === 0 ? (
+                                    <p className="text-[10px] text-muted-foreground">¡Empieza ahora!</p>
+                                ) : (
+                                    <div className="space-y-1">
+                                        {exerciseData.today_logs.slice(0, 2).map((log) => (
+                                            <div key={log.id} className="text-[10px] text-muted-foreground truncate">
+                                                {log.exercise.name} · {log.duration_minutes}min
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                        {exerciseData.recommendations.map((rec, idx) => (
+                            <Card key={idx} className="flex-shrink-0 w-[200px]">
+                                <CardContent className="p-2">
+                                    <p className="text-[10px] font-medium mb-1">Recomendación {idx + 1}</p>
+                                    <p className="text-[10px] text-muted-foreground line-clamp-2">{rec.message}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
                     {/* Filtro de dificultad */}
-                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 pt-3 pb-2 flex-shrink-0">
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide px-3 pb-1 flex-shrink-0">
                         <Button size="sm" variant={selectedDifficulty === 'all' ? 'default' : 'outline'} onClick={() => setSelectedDifficulty('all')} className="h-7 text-[11px] px-2 flex-shrink-0">Todos</Button>
                         <Button size="sm" variant={selectedDifficulty === 'beginner' ? 'default' : 'outline'} onClick={() => setSelectedDifficulty('beginner')} className="h-7 text-[11px] px-2 flex-shrink-0"><span className="h-2 w-2 rounded-full bg-green-500 mr-1" />Beginner</Button>
                         <Button size="sm" variant={selectedDifficulty === 'intermediate' ? 'default' : 'outline'} onClick={() => setSelectedDifficulty('intermediate')} className="h-7 text-[11px] px-2 flex-shrink-0"><span className="h-2 w-2 rounded-full bg-yellow-500 mr-1" />Intermediate</Button>
                         <Button size="sm" variant={selectedDifficulty === 'advanced' ? 'default' : 'outline'} onClick={() => setSelectedDifficulty('advanced')} className="h-7 text-[11px] px-2 flex-shrink-0"><span className="h-2 w-2 rounded-full bg-red-500 mr-1" />Advanced</Button>
                     </div>
+
                     {/* Swipe card ocupa todo el espacio restante */}
-                    <div className="flex-1 min-h-0 overflow-hidden px-3 pb-3">
+                    <div className="flex-1 min-h-0 overflow-hidden px-3 pb-2">
                         {filteredExercises.length > 0 ? (
                             <ExerciseSwipe exercises={filteredExercises} onExerciseClick={handleExerciseClick} getDifficultyColor={getDifficultyColor} />
                         ) : (
                             <div className="flex h-full flex-col items-center justify-center">
-                                <Activity className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
-                                <h3 className="text-base font-semibold mb-1">No hay ejercicios</h3>
-                                <p className="text-sm text-muted-foreground mb-3">Intenta otro nivel de dificultad</p>
-                                <Button variant="outline" size="sm" onClick={() => setSelectedDifficulty('all')}>Ver todos</Button>
+                                <Activity className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
+                                <p className="text-sm text-muted-foreground">No hay ejercicios</p>
+                                <Button variant="outline" size="sm" className="mt-2" onClick={() => setSelectedDifficulty('all')}>Ver todos</Button>
                             </div>
                         )}
                     </div>

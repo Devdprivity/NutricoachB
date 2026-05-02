@@ -141,10 +141,10 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
     const opacity = 1 - Math.abs(offsetX) / 300; // Opacidad que disminuye al arrastrar
 
     return (
-        <div className="relative">
+        <div className="relative h-full">
             {/* Mobile: Swipe Container */}
-            <div className="md:hidden">
-                <div className="relative w-full h-full">
+            <div className="md:hidden flex flex-col h-full">
+                <div className="flex-1 relative min-h-0">
                     {/* Card Container */}
                     <div
                         ref={cardRef}
@@ -248,7 +248,7 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                 </div>
 
                 {/* Controles de navegación */}
-                <div className="flex items-center justify-between mt-3 px-4">
+                <div className="flex items-center justify-between mt-2 px-4 flex-shrink-0">
                     <Button
                         variant="outline"
                         size="icon"
@@ -289,7 +289,7 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                 </div>
 
                 {/* Contador */}
-                <div className="text-center mt-2 text-xs text-muted-foreground">
+                <div className="text-center mt-1 mb-1 text-xs text-muted-foreground flex-shrink-0">
                     {currentIndex + 1} de {exercises.length}
                 </div>
             </div>
