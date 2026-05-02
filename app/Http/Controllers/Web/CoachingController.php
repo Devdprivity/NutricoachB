@@ -69,7 +69,7 @@ class CoachingController extends Controller
         if ($response['success']) {
             return redirect()->route('coaching');
         } else {
-            return back()->withErrors(['message' => $response['message']]);
+            return redirect()->route('coaching')->withErrors(['message' => $response['message']]);
         }
     }
 
