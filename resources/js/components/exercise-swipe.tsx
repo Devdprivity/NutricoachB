@@ -144,7 +144,7 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
         <div className="relative">
             {/* Mobile: Swipe Container */}
             <div className="md:hidden">
-                <div className="relative w-full" style={{ height: 'calc(100vh - 280px)', minHeight: '520px', maxHeight: '700px' }}>
+                <div className="relative w-full h-full">
                     {/* Card Container */}
                     <div
                         ref={cardRef}
