@@ -138,6 +138,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('recipes/{id}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
     Route::post('recipes/{id}/cooked', [RecipeController::class, 'markAsCooked'])->name('recipes.cooked');
     Route::get('recipes/search/query', [RecipeController::class, 'search'])->name('recipes.search');
+    Route::post('recipes/ai-suggest', [RecipeController::class, 'aiSuggest'])->name('recipes.ai-suggest');
 
     // Planes de Comidas Semanales
     Route::get('weekly-meal-plans', [WeeklyMealPlanController::class, 'index'])->name('weekly-meal-plans');
