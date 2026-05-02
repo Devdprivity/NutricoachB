@@ -27,8 +27,10 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
+    const [startY, setStartY] = useState(0);
     const [offsetX, setOffsetX] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
+    const isHorizontalSwipe = useRef<boolean | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -44,13 +46,26 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
         if (!isMobile) return;
         setIsDragging(true);
         setStartX(e.touches[0].clientX);
+        setStartY(e.touches[0].clientY);
+        isHorizontalSwipe.current = null;
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isMobile || !isDragging) return;
         const currentX = e.touches[0].clientX;
-        const diff = currentX - startX;
-        setOffsetX(diff);
+        const currentY = e.touches[0].clientY;
+        const diffX = currentX - startX;
+        const diffY = currentY - startY;
+
+        // Determinar dirección en el primer movimiento significativo
+        if (isHorizontalSwipe.current === null && (Math.abs(diffX) > 5 || Math.abs(diffY) > 5)) {
+            isHorizontalSwipe.current = Math.abs(diffX) > Math.abs(diffY);
+        }
+
+        if (isHorizontalSwipe.current) {
+            e.preventDefault();
+            setOffsetX(diffX);
+        }
     };
 
     const handleTouchEnd = () => {
@@ -59,15 +74,18 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
 
         const threshold = 100; // Píxeles mínimos para cambiar de card
 
-        if (offsetX > threshold && currentIndex > 0) {
-            // Swipe right - ir al anterior
-            setCurrentIndex(currentIndex - 1);
-        } else if (offsetX < -threshold && currentIndex < exercises.length - 1) {
-            // Swipe left - ir al siguiente
-            setCurrentIndex(currentIndex + 1);
+        if (isHorizontalSwipe.current) {
+            if (offsetX > threshold && currentIndex > 0) {
+                // Swipe right - ir al anterior
+                setCurrentIndex(currentIndex - 1);
+            } else if (offsetX < -threshold && currentIndex < exercises.length - 1) {
+                // Swipe left - ir al siguiente
+                setCurrentIndex(currentIndex + 1);
+            }
         }
 
         setOffsetX(0);
+        isHorizontalSwipe.current = null;
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -135,6 +153,7 @@ export function ExerciseSwipe({ exercises, onExerciseClick, getDifficultyColor }
                             transform: `translateX(${offsetX}px) rotate(${rotation}deg)`,
                             opacity: Math.max(0.3, opacity),
                             transition: isDragging ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out',
+                            touchAction: 'none',
                         }}
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
