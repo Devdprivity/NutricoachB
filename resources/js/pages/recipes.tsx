@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Clock, Users, ChefHat, Star, Flame } from 'lucide-react';
+import { Plus, Trash2, Clock, Users, ChefHat, Star, Flame, Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { RecipesSkeleton } from '@/components/skeletons/recipes-skeleton';
@@ -52,15 +52,24 @@ interface Stats {
     avg_rating: number;
 }
 
+interface NextMeal {
+    type: string;
+    label: string;
+    hour: number;
+}
+
 interface RecipesProps {
     myRecipes: Recipe[];
     publicRecipes: Recipe[];
     stats: Stats;
+    nextMealSuggestion: NextMeal | null;
+    aiSuggestedMealsToday: string[];
 }
 
-export default function Recipes({ myRecipes, publicRecipes, stats }: RecipesProps) {
+export default function Recipes({ myRecipes, publicRecipes, stats, nextMealSuggestion, aiSuggestedMealsToday }: RecipesProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [isAiGenerating, setIsAiGenerating] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -150,6 +159,16 @@ export default function Recipes({ myRecipes, publicRecipes, stats }: RecipesProp
         setIngredients([]);
     };
 
+    const handleAiSuggest = () => {
+        setIsAiGenerating(true);
+        router.post('/recipes/ai-suggest', {}, {
+            onFinish: () => {
+                setIsAiGenerating(false);
+                setIsCreateDialogOpen(false);
+            },
+        });
+    };
+
     const addIngredient = () => {
         if (!currentIngredient.name || currentIngredient.quantity <= 0) {
             alert('Completa los datos del ingrediente');
@@ -233,6 +252,52 @@ export default function Recipes({ myRecipes, publicRecipes, stats }: RecipesProp
                                     Define los detalles de tu receta
                                 </DialogDescription>
                             </DialogHeader>
+                            {/* AI Suggestion Button */}
+                            {nextMealSuggestion && (
+                                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                                    <div className="flex items-center gap-2 text-sm font-medium">
+                                        <Sparkles className="h-4 w-4 text-primary" />
+                                        Sugerir receta con IA
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Próxima comida: <span className="font-semibold">{nextMealSuggestion.label}</span> · La IA analizará tu perfil y comidas de hoy
+                                    </p>
+                                    {aiSuggestedMealsToday.includes(nextMealSuggestion.type) ? (
+                                        <p className="text-xs text-muted-foreground italic">
+                                            Ya generaste una receta de {nextMealSuggestion.label} para hoy.
+                                        </p>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            className="w-full"
+                                            onClick={handleAiSuggest}
+                                            disabled={isAiGenerating}
+                                        >
+                                            {isAiGenerating ? (
+                                                <>
+                                                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent inline-block" />
+                                                    Analizando tu perfil y comidas de hoy...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="mr-2 h-4 w-4" />
+                                                    Generar automáticamente para {nextMealSuggestion.label}
+                                                </>
+                                            )}
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-background px-2 text-muted-foreground">o crea manualmente</span>
+                                </div>
+                            </div>
+
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
