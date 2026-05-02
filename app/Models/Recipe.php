@@ -28,6 +28,8 @@ class Recipe extends Model
         'fiber_g',
         'times_cooked',
         'rating',
+        'suggested_for_meal',
+        'suggested_date',
     ];
 
     protected $casts = [
@@ -43,6 +45,7 @@ class Recipe extends Model
         'fiber_g' => 'float',
         'times_cooked' => 'integer',
         'rating' => 'float',
+        'suggested_date' => 'date',
     ];
 
     /**
