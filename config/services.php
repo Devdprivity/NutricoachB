@@ -51,9 +51,9 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-pro'),
-        'temperature' => env('GEMINI_TEMPERATURE', 0.7),
-        'max_tokens' => env('GEMINI_MAX_TOKENS', 1024),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash-lite'),
+        'vision_model' => env('GEMINI_VISION_MODEL', 'gemini-2.5-flash-lite'),
+        'base_url' => 'https://generativelanguage.googleapis.com/v1/models',
     ],
 
     'openai' => [

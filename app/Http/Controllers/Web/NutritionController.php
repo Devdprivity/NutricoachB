@@ -152,8 +152,8 @@ class NutritionController extends Controller
                 $imageUrl = $uploadResult['secure_url'];
                 $imagePublicId = $uploadResult['public_id'];
 
-                // Analizar imagen con DeepSeek si está configurado
-                if (config('services.deepseek.api_key')) {
+                // Analizar imagen con Gemini Vision si está configurado
+                if (config('services.gemini.api_key')) {
                     try {
                         $aiAnalysis = $this->analyzeImageWithAI($imageUrl);
                     } catch (\Exception $e) {
@@ -236,33 +236,15 @@ class NutritionController extends Controller
     }
 
     /**
-     * Analizar imagen con DeepSeek Vision API
+     * Analizar imagen con Gemini Vision API
      */
     private function analyzeImageWithAI(string $imageUrl): array
     {
-        $apiKey = config('services.deepseek.api_key');
+        $apiKey = config('services.gemini.api_key');
+        $model = config('services.gemini.vision_model');
+        $baseUrl = config('services.gemini.base_url');
 
-        if (str_starts_with($imageUrl, 'http')) {
-            $imageUrlForAI = $imageUrl;
-        } else {
-            $imageContent = Storage::disk('public')->get($imageUrl);
-            $base64Image = base64_encode($imageContent);
-            $mimeType = Storage::disk('public')->mimeType($imageUrl);
-            $imageUrlForAI = "data:{$mimeType};base64,{$base64Image}";
-        }
-
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $apiKey,
-            'Content-Type' => 'application/json',
-        ])->timeout(30)->post(config('services.deepseek.base_url') . '/chat/completions', [
-            'model' => 'deepseek-chat',
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => [
-                        [
-                            'type' => 'text',
-                            'text' => 'Analiza esta imagen de comida y proporciona la siguiente información en formato JSON:
+        $prompt = 'Analiza esta imagen de comida y proporciona la siguiente información en formato JSON:
 {
   "food_items": "lista de alimentos identificados separados por comas",
   "description": "descripción breve de la comida",
@@ -272,25 +254,45 @@ class NutritionController extends Controller
   "fat": gramos de grasa,
   "fiber": gramos de fibra (opcional)
 }
-Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto adicional.',
-                        ],
+Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto adicional.';
+
+        if (str_starts_with($imageUrl, 'http')) {
+            // URL de Cloudinary — descargar y convertir a base64
+            $imageContent = file_get_contents($imageUrl);
+            $base64Image = base64_encode($imageContent);
+            $mimeType = 'image/jpeg';
+        } else {
+            $imageContent = Storage::disk('public')->get($imageUrl);
+            $base64Image = base64_encode($imageContent);
+            $mimeType = Storage::disk('public')->mimeType($imageUrl);
+        }
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+        ])->timeout(30)->post("{$baseUrl}/{$model}:generateContent?key={$apiKey}", [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt],
                         [
-                            'type' => 'image_url',
-                            'image_url' => [
-                                'url' => $imageUrlForAI,
+                            'inline_data' => [
+                                'mime_type' => $mimeType,
+                                'data' => $base64Image,
                             ],
                         ],
                     ],
                 ],
             ],
-            'max_tokens' => 500,
+            'generationConfig' => [
+                'maxOutputTokens' => 500,
+            ],
         ]);
 
         if (! $response->successful()) {
-            throw new \Exception('DeepSeek API error: ' . $response->body());
+            throw new \Exception('Gemini API error: ' . $response->body());
         }
 
-        $content = $response->json()['choices'][0]['message']['content'] ?? '';
+        $content = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
         $jsonStart = strpos($content, '{');
         $jsonEnd = strrpos($content, '}');
@@ -304,7 +306,7 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
             }
         }
 
-        throw new \Exception('No se pudo parsear la respuesta de DeepSeek');
+        throw new \Exception('No se pudo parsear la respuesta de Gemini');
     }
 
     /**
