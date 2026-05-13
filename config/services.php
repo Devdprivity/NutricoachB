@@ -51,8 +51,8 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash-lite'),
-        'vision_model' => env('GEMINI_VISION_MODEL', 'gemini-2.5-flash-lite'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        'vision_model' => env('GEMINI_VISION_MODEL', 'gemini-2.0-flash'),
         'base_url' => 'https://generativelanguage.googleapis.com/v1beta/models',
     ],
 
