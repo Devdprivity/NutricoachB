@@ -135,7 +135,7 @@ class NutritionController extends Controller
             return response()->json(['success' => true, 'analysis' => $analysis]);
         } catch (\Exception $e) {
             \Log::error('analyzeImage error: ' . $e->getMessage());
-            return response()->json(['error' => 'No se pudo analizar la imagen'], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

@@ -391,10 +391,16 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
             if (data.success) {
                 setAiAnalysis(data.analysis);
             } else {
-                setAnalyzeError('No se pudo analizar la imagen. Intenta de nuevo.');
+                setAnalyzeError(data.error ?? 'No se pudo analizar la imagen.');
             }
-        } catch (_e) {
-            setAnalyzeError('No se pudo analizar la imagen. Intenta de nuevo.');
+        } catch (e: unknown) {
+            let msg = 'Error de conexión.';
+            if (axios.isAxiosError(e)) {
+                if (e.code === 'ECONNABORTED') msg = 'Tiempo agotado (la IA tardó demasiado).';
+                else if (e.response) msg = `Error ${e.response.status}: ${e.response.data?.error ?? e.response.data?.message ?? 'intenta de nuevo'}`;
+                else msg = `Sin respuesta del servidor (${e.message}).`;
+            }
+            setAnalyzeError(msg);
         } finally {
             setIsAnalyzing(false);
             setAnalyzeStep('');
