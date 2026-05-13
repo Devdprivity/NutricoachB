@@ -122,7 +122,7 @@ class NutritionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'image' => 'nullable|image|max:10240', // 10MB max
+            'image' => 'nullable|image|max:20480', // 20MB max
             'meal_type' => 'required|string|in:breakfast,morning_snack,lunch,afternoon_snack,dinner,evening_snack,other',
             'time' => 'nullable|string',
             'date' => 'nullable|date',
@@ -236,6 +236,58 @@ class NutritionController extends Controller
     }
 
     /**
+     * Redimensiona la imagen a máx 1024px y la convierte a JPEG para reducir el payload a Gemini.
+     * Soporta JPEG, PNG, GIF, WebP. Devuelve los bytes JPEG resultantes.
+     */
+    private function prepareImageForAI(string $filePath, string $mimeType): string
+    {
+        $supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($mimeType, $supported)) {
+            // Si no es soportado por GD, devolver raw
+            return file_get_contents($filePath);
+        }
+
+        $image = match($mimeType) {
+            'image/png'  => imagecreatefrompng($filePath),
+            'image/gif'  => imagecreatefromgif($filePath),
+            'image/webp' => imagecreatefromwebp($filePath),
+            default      => imagecreatefromjpeg($filePath),
+        };
+
+        if (!$image) {
+            return file_get_contents($filePath);
+        }
+
+        $origW = imagesx($image);
+        $origH = imagesy($image);
+        $maxPx = 1024;
+
+        if ($origW > $maxPx || $origH > $maxPx) {
+            if ($origW >= $origH) {
+                $newW = $maxPx;
+                $newH = (int) round($origH * $maxPx / $origW);
+            } else {
+                $newH = $maxPx;
+                $newW = (int) round($origW * $maxPx / $origH);
+            }
+            $resized = imagecreatetruecolor($newW, $newH);
+            // Preservar transparencia para PNG
+            imagealphablending($resized, false);
+            imagesavealpha($resized, true);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        ob_start();
+        imagejpeg($image, null, 85);
+        $jpegBytes = ob_get_clean();
+        imagedestroy($image);
+
+        return $jpegBytes;
+    }
+
+    /**
      * Analizar imagen con Gemini Vision API usando el archivo local temporal
      */
     private function analyzeImageWithAI(string $filePath, string $mimeType = 'image/jpeg'): array
@@ -256,7 +308,9 @@ class NutritionController extends Controller
 }
 Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto adicional.';
 
-        $base64Image = base64_encode(file_get_contents($filePath));
+        // Redimensionar y convertir a JPEG (reduce payload de ~8MB a ~200KB)
+        $imageBytes = $this->prepareImageForAI($filePath, $mimeType);
+        $base64Image = base64_encode($imageBytes);
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
@@ -267,7 +321,7 @@ Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto
                         ['text' => $prompt],
                         [
                             'inline_data' => [
-                                'mime_type' => $mimeType,
+                                'mime_type' => 'image/jpeg',
                                 'data' => $base64Image,
                             ],
                         ],
