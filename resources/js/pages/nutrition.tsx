@@ -319,30 +319,54 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         }
     };
 
+    // Comprime la imagen en el cliente a máx 1024px JPEG antes de enviar al servidor.
+    // Evita enviar fotos de 5-10MB desde Safari iOS que cortan el request silenciosamente.
+    const compressImageForUpload = (file: File): Promise<Blob> =>
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                const MAX = 1024;
+                let { width, height } = img;
+                if (width > MAX || height > MAX) {
+                    if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
+                    else { width = Math.round(width * MAX / height); height = MAX; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+                canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob failed')), 'image/jpeg', 0.85);
+            };
+            img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Image load failed')); };
+            img.src = objectUrl;
+        });
+
     const handleAnalyze = async () => {
         if (!selectedImage) return;
         setIsAnalyzing(true);
         setAnalyzeError(null);
         setAiAnalysis(null);
 
-        const formData = new FormData();
-        formData.append('image', selectedImage);
-
         try {
-            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
-            const res = await fetch('/nutrition/analyze-image', {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken ?? '', 'Accept': 'application/json' },
-                body: formData,
+            const compressed = await compressImageForUpload(selectedImage);
+            const formData = new FormData();
+            formData.append('image', compressed, 'photo.jpg');
+
+            // axios gestiona CSRF automáticamente (X-XSRF-TOKEN desde cookie)
+            const { data } = await axios.post('/nutrition/analyze-image', formData, {
+                headers: { 'Accept': 'application/json' },
+                timeout: 90000,
             });
-            const data = await res.json();
+
             if (data.success) {
                 setAiAnalysis(data.analysis);
             } else {
                 setAnalyzeError('No se pudo analizar la imagen. Intenta de nuevo.');
             }
         } catch {
-            setAnalyzeError('Error de conexión. Intenta de nuevo.');
+            setAnalyzeError('No se pudo analizar la imagen. Intenta de nuevo.');
         } finally {
             setIsAnalyzing(false);
         }
