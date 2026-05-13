@@ -77,6 +77,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Nutrición
     Route::get('nutrition', [NutritionController::class, 'index'])->name('nutrition');
+    Route::post('nutrition/analyze-image', [NutritionController::class, 'analyzeImage'])->name('nutrition.analyze-image');
     Route::post('nutrition', [NutritionController::class, 'store'])->name('nutrition.store');
     Route::delete('nutrition/{id}', [NutritionController::class, 'destroy'])->name('nutrition.destroy');
 

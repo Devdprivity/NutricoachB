@@ -117,12 +117,35 @@ class NutritionController extends Controller
     }
 
     /**
-     * Registrar nuevo consumo de comida
+     * Analizar imagen con IA y devolver macros como JSON (sin guardar nada).
+     * El frontend llama esto primero; si hay éxito muestra los resultados
+     * y el usuario confirma con store().
+     */
+    public function analyzeImage(Request $request)
+    {
+        $request->validate(['image' => 'required|image|max:20480']);
+
+        if (!config('services.gemini.api_key')) {
+            return response()->json(['error' => 'AI no configurada'], 503);
+        }
+
+        try {
+            $file = $request->file('image');
+            $analysis = $this->analyzeImageWithAI($file->getPathname(), $file->getMimeType());
+            return response()->json(['success' => true, 'analysis' => $analysis]);
+        } catch (\Exception $e) {
+            \Log::error('analyzeImage error: ' . $e->getMessage());
+            return response()->json(['error' => 'No se pudo analizar la imagen'], 500);
+        }
+    }
+
+    /**
+     * Registrar nuevo consumo de comida (la IA ya analizó antes, los macros llegan como campos)
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'image' => 'nullable|image|max:20480', // 20MB max
+            'image' => 'nullable|image|max:20480',
             'meal_type' => 'required|string|in:breakfast,morning_snack,lunch,afternoon_snack,dinner,evening_snack,other',
             'time' => 'nullable|string',
             'date' => 'nullable|date',
@@ -130,25 +153,18 @@ class NutritionController extends Controller
             'protein' => 'nullable|numeric|min:0',
             'carbs' => 'nullable|numeric|min:0',
             'fat' => 'nullable|numeric|min:0',
+            'fiber' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
+            'food_items' => 'nullable|string',
+            'ai_description' => 'nullable|string',
+            'ai_analyzed' => 'nullable|boolean',
         ]);
 
         $user = $request->user();
         $imageUrl = null;
         $imagePublicId = null;
-        $aiAnalysis = null;
 
-        // Si hay imagen, analizarla primero (con el archivo local) y luego subir a Cloudinary
         if ($request->hasFile('image')) {
-            // Analizar con IA antes de subir (evita re-descargar desde Cloudinary)
-            if (config('services.gemini.api_key')) {
-                try {
-                    $aiAnalysis = $this->analyzeImageWithAI($request->file('image')->getPathname(), $request->file('image')->getMimeType());
-                } catch (\Exception $e) {
-                    \Log::error('Error analyzing image with AI: '.$e->getMessage());
-                }
-            }
-
             try {
                 $cloudinaryService = app(CloudinaryService::class);
                 $date = $validated['date'] ?? now()->toDateString();
@@ -157,51 +173,36 @@ class NutritionController extends Controller
                     $user->id,
                     $date
                 );
-
                 $imageUrl = $uploadResult['secure_url'];
                 $imagePublicId = $uploadResult['public_id'];
             } catch (\Exception $e) {
-                \Log::error('Error uploading image to Cloudinary: '.$e->getMessage());
+                \Log::error('Error uploading image to Cloudinary: ' . $e->getMessage());
                 return redirect()->route('nutrition')
                     ->withErrors(['image' => 'Error al subir la imagen. Por favor intenta nuevamente.']);
             }
         }
 
-        // Crear el registro
         $mealData = [
             'user_id' => $user->id,
             'date' => $validated['date'] ?? now()->toDateString(),
             'meal_type' => $validated['meal_type'],
             'time' => $validated['time'] ?? now()->format('H:i'),
-            'image_path' => $imageUrl, // Guardar URL de Cloudinary
-            'image_public_id' => $imagePublicId, // Guardar public_id para poder eliminar después
+            'image_path' => $imageUrl,
+            'image_public_id' => $imagePublicId,
             'notes' => $validated['notes'] ?? null,
+            'calories' => $validated['calories'] ?? 0,
+            'protein' => $validated['protein'] ?? 0,
+            'carbs' => $validated['carbs'] ?? 0,
+            'fat' => $validated['fat'] ?? 0,
+            'fiber' => $validated['fiber'] ?? null,
+            'food_items' => $validated['food_items'] ?? null,
+            'ai_description' => $validated['ai_description'] ?? null,
+            'ai_analyzed' => $validated['ai_analyzed'] ?? false,
         ];
-
-        // Si hay análisis de IA, usar esos valores; de lo contrario, usar los proporcionados
-        if ($aiAnalysis) {
-            $mealData['calories'] = $aiAnalysis['calories'];
-            $mealData['protein'] = $aiAnalysis['protein'];
-            $mealData['carbs'] = $aiAnalysis['carbs'];
-            $mealData['fat'] = $aiAnalysis['fat'];
-            $mealData['fiber'] = $aiAnalysis['fiber'] ?? null;
-            $mealData['food_items'] = $aiAnalysis['food_items'];
-            $mealData['ai_description'] = $aiAnalysis['description'];
-            $mealData['ai_analyzed'] = true;
-        } else {
-            $mealData['calories'] = $validated['calories'] ?? 0;
-            $mealData['protein'] = $validated['protein'] ?? 0;
-            $mealData['carbs'] = $validated['carbs'] ?? 0;
-            $mealData['fat'] = $validated['fat'] ?? 0;
-            $mealData['ai_analyzed'] = false;
-        }
 
         MealRecord::create($mealData);
 
-        // Registrar actividad en gamificación
         app(GamificationService::class)->logMealActivity($user);
-
-        // Verificar si el usuario alcanzó sus objetivos del día
         $this->checkAndNotifyGoalAchievement($user, $mealData['date']);
 
         return redirect()->route('nutrition', ['date' => $mealData['date']]);

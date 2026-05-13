@@ -151,7 +151,13 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
     };
     
     const [mealType, setMealType] = useState(() => getMealTypeByTime());
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+    const [aiAnalysis, setAiAnalysis] = useState<{
+        calories: number; protein: number; carbs: number; fat: number;
+        fiber?: number; food_items?: string; description?: string;
+    } | null>(null);
 
     useEffect(() => {
         setIsLoading(true);
@@ -305,17 +311,46 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         const file = e.target.files?.[0];
         if (file) {
             setSelectedImage(file);
+            setAiAnalysis(null);
+            setAnalyzeError(null);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
+            reader.onloadend = () => setImagePreview(reader.result as string);
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleAnalyze = async () => {
+        if (!selectedImage) return;
+        setIsAnalyzing(true);
+        setAnalyzeError(null);
+        setAiAnalysis(null);
+
+        const formData = new FormData();
+        formData.append('image', selectedImage);
+
+        try {
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+            const res = await fetch('/nutrition/analyze-image', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken ?? '', 'Accept': 'application/json' },
+                body: formData,
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAiAnalysis(data.analysis);
+            } else {
+                setAnalyzeError('No se pudo analizar la imagen. Intenta de nuevo.');
+            }
+        } catch {
+            setAnalyzeError('Error de conexión. Intenta de nuevo.');
+        } finally {
+            setIsAnalyzing(false);
         }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedImage) return;
+        if (!selectedImage || !aiAnalysis) return;
 
         setIsSubmitting(true);
         const formData = new FormData();
@@ -323,6 +358,14 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         formData.append('meal_type', mealType);
         formData.append('time', mealTime);
         formData.append('date', mealDate);
+        formData.append('calories', String(aiAnalysis.calories));
+        formData.append('protein', String(aiAnalysis.protein));
+        formData.append('carbs', String(aiAnalysis.carbs));
+        formData.append('fat', String(aiAnalysis.fat));
+        if (aiAnalysis.fiber != null) formData.append('fiber', String(aiAnalysis.fiber));
+        if (aiAnalysis.food_items) formData.append('food_items', aiAnalysis.food_items);
+        if (aiAnalysis.description) formData.append('ai_description', aiAnalysis.description);
+        formData.append('ai_analyzed', '1');
 
         router.post('/nutrition', formData, {
             preserveScroll: true,
@@ -330,6 +373,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                 setIsSubmitting(false);
                 setSelectedImage(null);
                 setImagePreview(null);
+                setAiAnalysis(null);
             },
         });
     };
@@ -772,7 +816,8 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                                 id="image"
                                                 type="file"
                                                 accept="image/*"
-                                                disabled={isSubmitting}
+                                                capture="environment"
+                                                disabled={isAnalyzing || isSubmitting}
                                                 onChange={handleImageChange}
                                                 className="text-xs md:text-sm h-8 md:h-10"
                                             />
@@ -780,7 +825,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                     </div>
 
                                     {imagePreview && (
-                                        <div className="space-y-1 md:space-y-2">
+                                        <div className="space-y-2 md:space-y-3">
                                             <div className="flex justify-center">
                                                 <div className="relative h-20 w-20 md:h-[100px] md:w-[100px] overflow-hidden rounded-lg border">
                                                     <img
@@ -790,30 +835,73 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                                     />
                                                 </div>
                                             </div>
+
+                                            {/* Paso 1: Analizar */}
+                                            {!aiAnalysis && (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        onClick={handleAnalyze}
+                                                        disabled={isAnalyzing}
+                                                        className="h-8 md:h-10 text-xs md:text-sm"
+                                                    >
+                                                        {isAnalyzing ? (
+                                                            <>
+                                                                <Loader2 className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 animate-spin" />
+                                                                Analizando...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Sparkles className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                                                                Analizar con IA
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                    {analyzeError && (
+                                                        <p className="text-xs text-red-500 text-center">{analyzeError}</p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Paso 2: Confirmar resultados y guardar */}
+                                            {aiAnalysis && (
+                                                <div className="space-y-2 rounded-lg border bg-muted/40 p-3 text-xs md:text-sm">
+                                                    {aiAnalysis.food_items && (
+                                                        <p className="font-medium text-center">{aiAnalysis.food_items}</p>
+                                                    )}
+                                                    <div className="grid grid-cols-4 gap-2 text-center">
+                                                        <div><p className="font-semibold">{Math.round(aiAnalysis.calories)}</p><p className="text-muted-foreground">kcal</p></div>
+                                                        <div><p className="font-semibold">{Math.round(aiAnalysis.protein)}g</p><p className="text-muted-foreground">Proteína</p></div>
+                                                        <div><p className="font-semibold">{Math.round(aiAnalysis.carbs)}g</p><p className="text-muted-foreground">Carbs</p></div>
+                                                        <div><p className="font-semibold">{Math.round(aiAnalysis.fat)}g</p><p className="text-muted-foreground">Grasa</p></div>
+                                                    </div>
+                                                    <div className="flex gap-2 justify-center pt-1">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="text-xs h-7"
+                                                            onClick={() => { setAiAnalysis(null); setAnalyzeError(null); }}
+                                                        >
+                                                            Reintentar
+                                                        </Button>
+                                                        <Button
+                                                            type="submit"
+                                                            size="sm"
+                                                            disabled={isSubmitting}
+                                                            className="text-xs h-7"
+                                                        >
+                                                            {isSubmitting ? (
+                                                                <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Guardando...</>
+                                                            ) : (
+                                                                <><Upload className="mr-1 h-3 w-3" />Guardar</>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-
-                                    <div className="flex justify-center">
-                                        <Button
-                                            type="submit"
-                                            disabled={!selectedImage || isSubmitting}
-                                            className="h-8 md:h-10 text-xs md:text-sm"
-                                        >
-                                            {isSubmitting ? (
-                                                <>
-                                                    <Sparkles className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 animate-spin" />
-                                                    <span className="hidden md:inline">Analizando con IA...</span>
-                                                    <span className="md:hidden">Analizando...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Upload className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
-                                                    <span className="hidden md:inline">Subir y Analizar</span>
-                                                    <span className="md:hidden">Analizar</span>
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
                                 </form>
                             </CardContent>
                         </Card>
