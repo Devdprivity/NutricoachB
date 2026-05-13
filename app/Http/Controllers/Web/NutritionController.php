@@ -138,8 +138,17 @@ class NutritionController extends Controller
         $imagePublicId = null;
         $aiAnalysis = null;
 
-        // Si hay imagen, subirla a Cloudinary y analizarla
+        // Si hay imagen, analizarla primero (con el archivo local) y luego subir a Cloudinary
         if ($request->hasFile('image')) {
+            // Analizar con IA antes de subir (evita re-descargar desde Cloudinary)
+            if (config('services.gemini.api_key')) {
+                try {
+                    $aiAnalysis = $this->analyzeImageWithAI($request->file('image')->getPathname(), $request->file('image')->getMimeType());
+                } catch (\Exception $e) {
+                    \Log::error('Error analyzing image with AI: '.$e->getMessage());
+                }
+            }
+
             try {
                 $cloudinaryService = app(CloudinaryService::class);
                 $date = $validated['date'] ?? now()->toDateString();
@@ -148,18 +157,9 @@ class NutritionController extends Controller
                     $user->id,
                     $date
                 );
-                
+
                 $imageUrl = $uploadResult['secure_url'];
                 $imagePublicId = $uploadResult['public_id'];
-
-                // Analizar imagen con Gemini Vision si está configurado
-                if (config('services.gemini.api_key')) {
-                    try {
-                        $aiAnalysis = $this->analyzeImageWithAI($imageUrl);
-                    } catch (\Exception $e) {
-                        \Log::error('Error analyzing image with AI: '.$e->getMessage());
-                    }
-                }
             } catch (\Exception $e) {
                 \Log::error('Error uploading image to Cloudinary: '.$e->getMessage());
                 return redirect()->route('nutrition')
@@ -236,9 +236,9 @@ class NutritionController extends Controller
     }
 
     /**
-     * Analizar imagen con Gemini Vision API
+     * Analizar imagen con Gemini Vision API usando el archivo local temporal
      */
-    private function analyzeImageWithAI(string $imageUrl): array
+    private function analyzeImageWithAI(string $filePath, string $mimeType = 'image/jpeg'): array
     {
         $apiKey = config('services.gemini.api_key');
         $model = config('services.gemini.vision_model');
@@ -256,20 +256,11 @@ class NutritionController extends Controller
 }
 Sé preciso y realista en las estimaciones. Responde SOLO con el JSON, sin texto adicional.';
 
-        if (str_starts_with($imageUrl, 'http')) {
-            // URL de Cloudinary — descargar y convertir a base64
-            $imageContent = file_get_contents($imageUrl);
-            $base64Image = base64_encode($imageContent);
-            $mimeType = 'image/jpeg';
-        } else {
-            $imageContent = Storage::disk('public')->get($imageUrl);
-            $base64Image = base64_encode($imageContent);
-            $mimeType = Storage::disk('public')->mimeType($imageUrl);
-        }
+        $base64Image = base64_encode(file_get_contents($filePath));
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
-        ])->timeout(30)->post("{$baseUrl}/{$model}:generateContent?key={$apiKey}", [
+        ])->timeout(60)->post("{$baseUrl}/{$model}:generateContent?key={$apiKey}", [
             'contents' => [
                 [
                     'parts' => [

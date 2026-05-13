@@ -19,7 +19,11 @@
       "Bash(git fetch:*)",
       "Bash(composer require:*)",
       "Bash($null)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(/home/dbadell/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh *)",
+      "Bash(npm run *)",
+      "Bash(git stash *)",
+      "Bash(git *)"
     ],
     "deny": [],
     "ask": []
