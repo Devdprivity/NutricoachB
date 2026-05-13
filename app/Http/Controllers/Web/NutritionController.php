@@ -133,8 +133,8 @@ class NutritionController extends Controller
             $file = $request->file('image');
             $analysis = $this->analyzeImageWithAI($file->getPathname(), $file->getMimeType());
             return response()->json(['success' => true, 'analysis' => $analysis]);
-        } catch (\Exception $e) {
-            \Log::error('analyzeImage error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            \Log::error('analyzeImage error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -283,6 +283,10 @@ class NutritionController extends Controller
         \imagejpeg($image, null, 85);
         $jpegBytes = ob_get_clean();
         \imagedestroy($image);
+
+        if ($jpegBytes === false || $jpegBytes === '') {
+            return file_get_contents($filePath) ?: '';
+        }
 
         return $jpegBytes;
     }
