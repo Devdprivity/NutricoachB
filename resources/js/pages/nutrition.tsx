@@ -152,6 +152,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
     
     const [mealType, setMealType] = useState(() => getMealTypeByTime());
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analyzeStep, setAnalyzeStep] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [analyzeError, setAnalyzeError] = useState<string | null>(null);
     const [aiAnalysis, setAiAnalysis] = useState<{
@@ -319,42 +320,69 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
         }
     };
 
-    // Comprime la imagen en el cliente a máx 1024px JPEG antes de enviar al servidor.
-    // Evita enviar fotos de 5-10MB desde Safari iOS que cortan el request silenciosamente.
+    // Usa toDataURL (síncrono) en vez de toBlob — toBlob en iOS Safari puede
+    // nunca llamar al callback, colgando la promesa indefinidamente.
+    // Siempre resuelve: si falla la compresión, devuelve el archivo original.
     const compressImageForUpload = (file: File): Promise<Blob> =>
-        new Promise((resolve, reject) => {
+        new Promise((resolve) => {
+            // Timeout de seguridad: si el img.onload tarda >8s, usar original
+            const fallbackTimer = setTimeout(() => resolve(file), 8000);
+
             const img = new Image();
             const objectUrl = URL.createObjectURL(file);
+
             img.onload = () => {
+                clearTimeout(fallbackTimer);
                 URL.revokeObjectURL(objectUrl);
-                const MAX = 1024;
-                let { width, height } = img;
-                if (width > MAX || height > MAX) {
-                    if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
-                    else { width = Math.round(width * MAX / height); height = MAX; }
+                try {
+                    const MAX = 1024;
+                    let { width, height } = img;
+                    if (width > MAX || height > MAX) {
+                        if (width >= height) { height = Math.round(height * MAX / width); width = MAX; }
+                        else { width = Math.round(width * MAX / height); height = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) { resolve(file); return; }
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // toDataURL es síncrono — siempre retorna resultado en iOS
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    const base64 = dataUrl.split(',')[1];
+                    if (!base64) { resolve(file); return; }
+                    const binary = atob(base64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    resolve(new Blob([bytes], { type: 'image/jpeg' }));
+                } catch (_e) {
+                    resolve(file);
                 }
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-                canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob failed')), 'image/jpeg', 0.85);
             };
-            img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Image load failed')); };
+
+            img.onerror = () => {
+                clearTimeout(fallbackTimer);
+                URL.revokeObjectURL(objectUrl);
+                resolve(file);
+            };
+
             img.src = objectUrl;
         });
 
     const handleAnalyze = async () => {
         if (!selectedImage) return;
         setIsAnalyzing(true);
+        setAnalyzeStep('Preparando imagen...');
         setAnalyzeError(null);
         setAiAnalysis(null);
 
         try {
             const compressed = await compressImageForUpload(selectedImage);
+            setAnalyzeStep('Enviando a IA...');
+
             const formData = new FormData();
             formData.append('image', compressed, 'photo.jpg');
 
-            // axios gestiona CSRF automáticamente (X-XSRF-TOKEN desde cookie)
             const { data } = await axios.post('/nutrition/analyze-image', formData, {
                 headers: { 'Accept': 'application/json' },
                 timeout: 90000,
@@ -365,10 +393,11 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
             } else {
                 setAnalyzeError('No se pudo analizar la imagen. Intenta de nuevo.');
             }
-        } catch {
+        } catch (_e) {
             setAnalyzeError('No se pudo analizar la imagen. Intenta de nuevo.');
         } finally {
             setIsAnalyzing(false);
+            setAnalyzeStep('');
         }
     };
 
@@ -872,7 +901,7 @@ export default function Nutrition({ nutritionData }: { nutritionData?: Nutrition
                                                         {isAnalyzing ? (
                                                             <>
                                                                 <Loader2 className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4 animate-spin" />
-                                                                Analizando...
+                                                                {analyzeStep || 'Analizando...'}
                                                             </>
                                                         ) : (
                                                             <>
