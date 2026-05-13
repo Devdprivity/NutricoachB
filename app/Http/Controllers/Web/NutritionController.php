@@ -249,18 +249,18 @@ class NutritionController extends Controller
         }
 
         $image = match($mimeType) {
-            'image/png'  => imagecreatefrompng($filePath),
-            'image/gif'  => imagecreatefromgif($filePath),
-            'image/webp' => imagecreatefromwebp($filePath),
-            default      => imagecreatefromjpeg($filePath),
+            'image/png'  => \imagecreatefrompng($filePath),
+            'image/gif'  => \imagecreatefromgif($filePath),
+            'image/webp' => \imagecreatefromwebp($filePath),
+            default      => \imagecreatefromjpeg($filePath),
         };
 
         if (!$image) {
             return file_get_contents($filePath);
         }
 
-        $origW = imagesx($image);
-        $origH = imagesy($image);
+        $origW = \imagesx($image);
+        $origH = \imagesy($image);
         $maxPx = 1024;
 
         if ($origW > $maxPx || $origH > $maxPx) {
@@ -271,19 +271,18 @@ class NutritionController extends Controller
                 $newH = $maxPx;
                 $newW = (int) round($origW * $maxPx / $origH);
             }
-            $resized = imagecreatetruecolor($newW, $newH);
-            // Preservar transparencia para PNG
-            imagealphablending($resized, false);
-            imagesavealpha($resized, true);
-            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
-            imagedestroy($image);
+            $resized = \imagecreatetruecolor($newW, $newH);
+            \imagealphablending($resized, false);
+            \imagesavealpha($resized, true);
+            \imagecopyresampled($resized, $image, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+            \imagedestroy($image);
             $image = $resized;
         }
 
         ob_start();
-        imagejpeg($image, null, 85);
+        \imagejpeg($image, null, 85);
         $jpegBytes = ob_get_clean();
-        imagedestroy($image);
+        \imagedestroy($image);
 
         return $jpegBytes;
     }
