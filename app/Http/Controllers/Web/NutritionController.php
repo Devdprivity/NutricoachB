@@ -117,6 +117,44 @@ class NutritionController extends Controller
     }
 
     /**
+     * Diagnóstico temporal: prueba GD y conectividad con Gemini sin necesitar imagen.
+     * Visitar /nutrition/debug-ai en el navegador para ver el resultado.
+     */
+    public function debugAi()
+    {
+        $result = [];
+
+        // 1. PHP version
+        $result['php_version'] = PHP_VERSION;
+
+        // 2. GD
+        $result['gd_loaded'] = extension_loaded('gd');
+        $result['gd_info'] = extension_loaded('gd') ? \gd_info() : null;
+
+        // 3. Gemini API key presente
+        $apiKey = config('services.gemini.api_key');
+        $result['gemini_key_set'] = !empty($apiKey);
+        $result['gemini_model'] = config('services.gemini.vision_model');
+        $result['gemini_base_url'] = config('services.gemini.base_url');
+
+        // 4. Ping a Gemini con texto simple
+        if ($apiKey) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(15)->post(
+                    config('services.gemini.base_url') . '/' . config('services.gemini.vision_model') . ':generateContent?key=' . $apiKey,
+                    ['contents' => [['parts' => [['text' => 'Say OK']]]]]
+                );
+                $result['gemini_ping_status'] = $response->status();
+                $result['gemini_ping_body'] = $response->json();
+            } catch (\Throwable $e) {
+                $result['gemini_ping_error'] = $e->getMessage();
+            }
+        }
+
+        return response()->json($result, 200, [], JSON_PRETTY_PRINT);
+    }
+
+    /**
      * Analizar imagen con IA y devolver macros como JSON (sin guardar nada).
      * El frontend llama esto primero; si hay éxito muestra los resultados
      * y el usuario confirma con store().
