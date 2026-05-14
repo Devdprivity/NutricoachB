@@ -11,35 +11,11 @@ services:
     restart: unless-stopped
     ports:
       - "8088:80"
+    env_file:
+      - .env.docker
     environment:
-      APP_NAME: "NutriCoach"
-      APP_ENV: production
-      APP_DEBUG: "true"
-      APP_KEY: "base64:nNlL74CQ7qwx3QT9xjis4UrbM1e5NgTGYeuqsj36GVc="
-      APP_URL: "http://localhost:8088"
-
-      DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: 5432
-      DB_DATABASE: nutricoach
-      DB_USERNAME: postgres
-      DB_PASSWORD: secret
-
-      CACHE_STORE: file
-      SESSION_DRIVER: file
-      QUEUE_CONNECTION: sync
-
-      RUN_MIGRATIONS: "true"
-
-      GEMINI_API_KEY: "AIzaSyD1nHUraVN3B5FXEH8SS3h2NdsUlnGq_rY"
-      GEMINI_MODEL: "gemini-2.0-flash"
-      GEMINI_VISION_MODEL: "gemini-2.0-flash"
-
-      CLOUDINARY_CLOUD_NAME: "dfvea2iqh"
-      CLOUDINARY_API_KEY: "851956639835671"
-      CLOUDINARY_API_SECRET: "owIFbRsRPOO_v36LbsY6ZRlDK3s"
-      CLOUDINARY_SECURE: "true"
-
     depends_on:
       db:
         condition: service_healthy
