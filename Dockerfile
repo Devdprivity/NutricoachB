@@ -6,6 +6,9 @@ RUN apk add --no-cache \
     git \
     curl \
     libpng-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    freetype-dev \
     libzip-dev \
     zip \
     unzip \
@@ -16,7 +19,11 @@ RUN apk add --no-cache \
     supervisor \
     nginx
 
-# Instalar extensiones PHP
+# Instalar extensiones PHP (GD necesita configurarse con soporte JPEG/WebP/FreeType)
+RUN docker-php-ext-configure gd \
+    --with-jpeg \
+    --with-webp \
+    --with-freetype
 RUN docker-php-ext-install \
     pdo \
     pdo_pgsql \

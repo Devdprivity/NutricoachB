@@ -275,58 +275,12 @@ class NutritionController extends Controller
     }
 
     /**
-     * Redimensiona la imagen a máx 1024px y la convierte a JPEG para reducir el payload a Gemini.
-     * Soporta JPEG, PNG, GIF, WebP. Devuelve los bytes JPEG resultantes.
+     * El cliente ya envía la imagen comprimida a ≤1024px JPEG.
+     * En el servidor solo leemos los bytes directamente — sin GD.
      */
     private function prepareImageForAI(string $filePath, string $mimeType): string
     {
-        $supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array($mimeType, $supported)) {
-            // Si no es soportado por GD, devolver raw
-            return file_get_contents($filePath);
-        }
-
-        $image = match($mimeType) {
-            'image/png'  => \imagecreatefrompng($filePath),
-            'image/gif'  => \imagecreatefromgif($filePath),
-            'image/webp' => \imagecreatefromwebp($filePath),
-            default      => \imagecreatefromjpeg($filePath),
-        };
-
-        if (!$image) {
-            return file_get_contents($filePath);
-        }
-
-        $origW = \imagesx($image);
-        $origH = \imagesy($image);
-        $maxPx = 1024;
-
-        if ($origW > $maxPx || $origH > $maxPx) {
-            if ($origW >= $origH) {
-                $newW = $maxPx;
-                $newH = (int) round($origH * $maxPx / $origW);
-            } else {
-                $newH = $maxPx;
-                $newW = (int) round($origW * $maxPx / $origH);
-            }
-            $resized = \imagecreatetruecolor($newW, $newH);
-            \imagealphablending($resized, false);
-            \imagesavealpha($resized, true);
-            \imagecopyresampled($resized, $image, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
-            \imagedestroy($image);
-            $image = $resized;
-        }
-
-        ob_start();
-        \imagejpeg($image, null, 85);
-        $jpegBytes = ob_get_clean();
-        \imagedestroy($image);
-
-        if ($jpegBytes === false || $jpegBytes === '') {
-            return file_get_contents($filePath) ?: '';
-        }
-
-        return $jpegBytes;
+        return file_get_contents($filePath) ?: '';
     }
 
     /**
