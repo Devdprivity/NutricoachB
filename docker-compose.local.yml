@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: nuticoach-local:latest
+    container_name: nuticoach-local
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+    environment:
+      APP_NAME: "NutriCoach"
+      APP_ENV: production
+      APP_DEBUG: "true"
+      APP_KEY: "base64:nNlL74CQ7qwx3QT9xjis4UrbM1e5NgTGYeuqsj36GVc="
+      APP_URL: "http://localhost:8088"
+
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: nutricoach
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret
+
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+
+      RUN_MIGRATIONS: "true"
+
+      GEMINI_API_KEY: "AIzaSyD1nHUraVN3B5FXEH8SS3h2NdsUlnGq_rY"
+      GEMINI_MODEL: "gemini-2.0-flash"
+      GEMINI_VISION_MODEL: "gemini-2.0-flash"
+
+      CLOUDINARY_CLOUD_NAME: "dfvea2iqh"
+      CLOUDINARY_API_KEY: "851956639835671"
+      CLOUDINARY_API_SECRET: "owIFbRsRPOO_v36LbsY6ZRlDK3s"
+      CLOUDINARY_SECURE: "true"
+
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - nuticoach-local
+
+  db:
+    image: postgres:15-alpine
+    container_name: nuticoach-local-db
+    environment:
+      POSTGRES_DB: nutricoach
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - nuticoach-local-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nuticoach-local
+
+volumes:
+  nuticoach-local-db:
+
+networks:
+  nuticoach-local:
+    driver: bridge
